@@ -3,7 +3,7 @@
 #include "cubie.h"
 #include "moves.h"
 
-coord twist_move[N_TWIST_COORDS][N_MOVES];
+coord (*twist_move)[N_MOVES];
 
 coord getTwist(const CubieCube &cube) {
     return 0;
@@ -13,6 +13,8 @@ void setTwist(CubieCube &cube, coord val) {
 }
 
 void initTwistMove() {
+  twist_move = new coord[N_TWIST_COORDS][N_MOVES];
+
   CubieCube cube1;
   CubieCube cube2;
 

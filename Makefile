@@ -11,7 +11,7 @@ OBJS=$(subst .cc,.o,$(SRCS))
 all: tool
 
 tool: $(OBJS)
-	$(CXX) $(LDFLAGS) -o tool $(OBJS) $(LDLIBS) 
+	$(CXX) $(LDFLAGS) -o twophase $(OBJS) $(LDLIBS) 
 
 depend: .depend
 

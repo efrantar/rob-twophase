@@ -19,15 +19,15 @@
 
 typedef uint16_t coord;
 
-extern coord twist_move[N_TWIST_COORDS][N_MOVES];
-extern coord flip_move[N_FLIP_COORDS][N_MOVES];
-extern coord slice_move[N_SLICE_COORDS][N_MOVES];
-extern coord uedges_move[N_UEDGES_COORDS][N_MOVES];
-extern coord dedges_move[N_DEDGES_COORDS][N_MOVES];
-extern coord udedges_move[N_UDEDGES_COORDS_P2][N_MOVES];
-extern coord corners_move[N_CORNERS_COORDS][N_MOVES];
+extern coord (*twist_move)[N_MOVES];
+extern coord (*flip_move)[N_MOVES];
+extern coord (*slice_move)[N_MOVES];
+extern coord (*uedges_move)[N_MOVES];
+extern coord (*dedges_move)[N_MOVES];
+extern coord (*udedges_move)[N_MOVES];
+extern coord (*corners_move)[N_MOVES];
 
-extern coord merge_uedges_dedges[N_UEDGES_COORDS][N_DEDGES_COORDS];
+extern coord (*merge_uedges_dedges)[N_DEDGES_COORDS];
 
 coord getTwist(const CubieCube &cube);
 coord getFlip(const CubieCube &cube);
