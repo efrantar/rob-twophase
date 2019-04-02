@@ -7,6 +7,7 @@
 
 int main() {
   initTwistMove();
+  initFlipMove();
   return 0;
 }
 

@@ -27,7 +27,7 @@
 #define B2 16
 #define B3 17
 
-typedef uint8_t move;
+typedef uint8_t Move;
 
 const std::string kMoveNames[] = {
   "U", "U2", "U'", 
@@ -38,7 +38,7 @@ const std::string kMoveNames[] = {
   "B", "B2", "B'"
 };
 
-const std::vector<move> kPhase2moves = {
+const std::vector<Move> kPhase2moves = {
   U1, U2, U3, R2, F2, D1, D2, D3, L2, B2
 };
 

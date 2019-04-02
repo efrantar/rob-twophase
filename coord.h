@@ -17,34 +17,34 @@
 #define N_CORNERS_COORDS 40320
 #define N_EDGES_COORDS 4790001600
 
-typedef uint16_t coord;
+typedef uint16_t Coord;
 
-extern coord (*twist_move)[N_MOVES];
-extern coord (*flip_move)[N_MOVES];
-extern coord (*slice_move)[N_MOVES];
-extern coord (*uedges_move)[N_MOVES];
-extern coord (*dedges_move)[N_MOVES];
-extern coord (*udedges_move)[N_MOVES];
-extern coord (*corners_move)[N_MOVES];
+extern Coord (*twist_move)[N_MOVES];
+extern Coord (*flip_move)[N_MOVES];
+extern Coord (*slice_move)[N_MOVES];
+extern Coord (*uedges_move)[N_MOVES];
+extern Coord (*dedges_move)[N_MOVES];
+extern Coord (*udedges_move)[N_MOVES];
+extern Coord (*corners_move)[N_MOVES];
 
-extern coord (*merge_uedges_dedges)[N_DEDGES_COORDS];
+extern Coord (*merge_uedges_dedges)[N_DEDGES_COORDS];
 
-coord getTwist(const CubieCube &cube);
-coord getFlip(const CubieCube &cube);
-coord getSlice(const CubieCube &cube);
-coord getUEdges(const CubieCube &cube);
-coord getDEdges(const CubieCube &cube);
-coord getUDEdges(const CubieCube &cube);
-coord getCorners(const CubieCube &cube);
+Coord getTwist(const CubieCube &cube);
+Coord getFlip(const CubieCube &cube);
+Coord getSlice(const CubieCube &cube);
+Coord getUEdges(const CubieCube &cube);
+Coord getDEdges(const CubieCube &cube);
+Coord getUDEdges(const CubieCube &cube);
+Coord getCorners(const CubieCube &cube);
 
-void setTwist(CubieCube &cube, coord twist);
-void setFlip(CubieCube &cube, coord flip);
-void setSlice(CubieCube &cube, coord slice);
-void setUEdges(CubieCube &cube, coord uedges);
-void setDEdges(CubieCube &cube, coord dedges);
-void setUDEdges(CubieCube &cube, coord udedges);
-void setCorners(CubieCube &cube, coord corners);
-void setEdges(CubieCube &cube, coord edges);
+void setTwist(CubieCube &cube, Coord twist);
+void setFlip(CubieCube &cube, Coord flip);
+void setSlice(CubieCube &cube, Coord slice);
+void setUEdges(CubieCube &cube, Coord uedges);
+void setDEdges(CubieCube &cube, Coord dedges);
+void setUDEdges(CubieCube &cube, Coord udedges);
+void setCorners(CubieCube &cube, Coord corners);
+void setEdges(CubieCube &cube, Coord edges);
 
 void initTwistMove();
 void initFlipMove();
