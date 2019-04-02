@@ -15,6 +15,11 @@ void mulEdges(const CubieCube &cube_a, const CubieCube &cube_b, CubieCube &cube_
   }
 }
 
+void mulCubes(const CubieCube &cube_a, const CubieCube &cube_b, CubieCube &cube_c) {
+  mulEdges(cube_a, cube_b, cube_c);
+  mulCorners(cube_a, cube_b, cube_c);
+}
+
 bool isSolvable(const CubieCube &cube) {
   return false; // TODO: implement
 }

@@ -1,11 +1,11 @@
 C=gcc
 CXX=g++
 RM=rm -f
-CPPFLAGS=-std=c++11
+CPPFLAGS=-std=c++14
 LDFLAGS=
 LDLIBS=
 
-SRCS=cubie.cc
+SRCS=main.cc cubie.cc moves.cc coord.cc
 OBJS=$(subst .cc,.o,$(SRCS))
 
 all: tool

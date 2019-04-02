@@ -32,8 +32,12 @@
 typedef uint8_t corner;
 typedef uint8_t edge;
 
-const std::string kCornerNames[] = {"URF", "UFL", "ULB", "UBR", "DFR", "DLF", "DBL", "DRB"};
-const std::string kEdgeNames[] = {"UR", "UF", "UL", "UB", "DR", "DF", "DL", "DB", "FR", "FL", "BL", "BR"};
+const std::string kCornerNames[] = {
+  "URF", "UFL", "ULB", "UBR", "DFR", "DLF", "DBL", "DRB"
+};
+const std::string kEdgeNames[] = {
+  "UR", "UF", "UL", "UB", "DR", "DF", "DL", "DB", "FR", "FL", "BL", "BR"
+};
 
 typedef struct {
   corner cp[N_CORNERS] = {URF, UFL, ULB, UBR, DFR, DLF, DBL, DRB};
@@ -44,6 +48,7 @@ typedef struct {
 
 void mulEdges(const CubieCube &cube_a, const CubieCube &cube_b, CubieCube &cube_c);
 void mulCorners(const CubieCube &cube_a, const CubieCube &cube_b, CubieCube &cube_c);
+void mulCubes(const CubieCube &cube_a, const CubieCube &cube_b, CubieCube &cube_c);
 
 bool isSolvable(const CubieCube &cube);
 

@@ -1,1 +1,4 @@
+main.o: main.cc cubie.h moves.h coord.h
 cubie.o: cubie.cc cubie.h
+moves.o: moves.cc moves.h cubie.h
+coord.o: coord.cc coord.h cubie.h moves.h
