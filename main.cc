@@ -6,7 +6,7 @@
 #include "coord.h"
 
 int main() {
-  std::cout << "test" << std::endl;
+  initTwistMove();
   return 0;
 }
 

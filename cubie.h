@@ -29,9 +29,6 @@
 #define BL 10
 #define BR 11
 
-typedef uint8_t corner;
-typedef uint8_t edge;
-
 const std::string kCornerNames[] = {
   "URF", "UFL", "ULB", "UBR", "DFR", "DLF", "DBL", "DRB"
 };
@@ -40,10 +37,10 @@ const std::string kEdgeNames[] = {
 };
 
 typedef struct {
-  corner cp[N_CORNERS] = {URF, UFL, ULB, UBR, DFR, DLF, DBL, DRB};
-  edge ep[N_EDGES] = {UR, UF, UL, UB, DR, DF, DL, DB, FR, FL, BL, BR};
-  uint8_t co[N_CORNERS] = {};
-  uint8_t eo[N_EDGES] = {};
+  int cp[N_CORNERS] = {URF, UFL, ULB, UBR, DFR, DLF, DBL, DRB};
+  int ep[N_EDGES] = {UR, UF, UL, UB, DR, DF, DL, DB, FR, FL, BL, BR};
+  int co[N_CORNERS] = {};
+  int eo[N_EDGES] = {};
 } CubieCube;
 
 void mulEdges(const CubieCube &cube_a, const CubieCube &cube_b, CubieCube &cube_c);

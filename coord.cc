@@ -3,13 +3,33 @@
 #include "cubie.h"
 #include "moves.h"
 
+#include <iostream>
+
 coord (*twist_move)[N_MOVES];
+coord (*flip_move)[N_MOVES];
+coord (*slice_move)[N_MOVES];
+coord (*uedges_move)[N_MOVES];
+coord (*dedges_move)[N_MOVES];
+coord (*udedges_move)[N_MOVES];
+coord (*corners_move)[N_MOVES];
+
+coord (*merge_uedges_dedges)[N_DEDGES_COORDS];
 
 coord getTwist(const CubieCube &cube) {
-    return 0;
+    coord twist = 0;
+    for (int i = 0; i < N_CORNERS - 1; i++)
+        twist = 3 * twist + cube.co[i];
+    return twist;
 }
 
-void setTwist(CubieCube &cube, coord val) {
+void setTwist(CubieCube &cube, coord twist) {
+    int parity = 0;
+    for (int i = N_CORNERS - 2; i >= 0; i--) {
+        cube.co[i] = twist % 3;
+        parity += cube.co[i];
+        twist /= 3;
+    }
+    cube.co[N_CORNERS - 1] = (3 - parity % 3) % 3;
 }
 
 void initTwistMove() {
