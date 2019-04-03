@@ -1,6 +1,7 @@
 #include "coord.h"
 
 #include "cubie.h"
+#include "misc.h"
 #include "moves.h"
 
 #include <iostream>
@@ -23,12 +24,12 @@ Coord getOriCoord(const int oris[], int len, int n_oris) {
   return val;
 }
 
-Coord getPermCoord(int cubies[], int len, int min_cubie) {
+Coord getPermCoord(int cubies[], int len, int max_cubie) {
   Coord val = 0;
 
   for (int i = len - 1; i > 0; i--) {
     int n_rots = 0;
-    while (cubies[i] != min_cubie) {
+    while (cubies[i] != max_cubie) {
       int first = cubies[0];
       for (int j = 0; j < i; j++)
         cubies[j] = cubies[j + 1];
@@ -36,16 +37,40 @@ Coord getPermCoord(int cubies[], int len, int min_cubie) {
       n_rots++;
     }
     val = (val + n_rots) * i;
-    min_cubie++;
+    max_cubie--;
   }
 
   return val;
 }
 
 Coord getPosPermCoord(
-  const int cubies[], int n_cubies, int min_cubie, int max_cubie, bool from_left
+  const int cubies[], int len, int min_cubie, int max_cubie, bool from_left
 ) {
-  return 0;
+  int len1 = max_cubie - min_cubie + 1;
+  int cubies1[len1];
+
+  Coord val = 0;
+  if (from_left) {
+    int j = 0;
+    for (int i = 0; i < len; i++) {
+      if (min_cubie <= cubies[i] && cubies[i] <= max_cubie) {
+        val += cnk[i][j + 1];
+        cubies1[j] = cubies[i];
+        j++;
+      }
+    }
+  } else {
+    int j = len1 - 1;
+    for (int i = 0; i < len; i++) {
+      if (min_cubie <= cubies[i] && cubies[i] <= max_cubie) {
+        val += cnk[len - 1 - i][j + 1];
+        cubies1[len1 - 1 - j] = cubies[i];
+        j--;
+      }
+    }
+  }
+
+  return fac[len1] * val + getPermCoord(cubies1, len1, max_cubie);
 }
 
 void setOriCoord(Coord val, int oris[], int len, int n_oris) {
@@ -58,10 +83,10 @@ void setOriCoord(Coord val, int oris[], int len, int n_oris) {
   oris[len - 1] = (n_oris - parity % n_oris) % n_oris;
 }
 
-void setPermCoord(Coord val, int cubies[], int len, int min_cubie) {
-  for (int i = 0; i < len; i++) {
-    cubies[i] = min_cubie;
-    min_cubie++;
+void setPermCoord(Coord val, int cubies[], int len, int max_cubie) {
+  for (int i = len - 1; i >= 0; i--) {
+    cubies[i] = max_cubie;
+    max_cubie--;
   }
 
   for (int i = 1; i < len; i++) {
@@ -73,6 +98,38 @@ void setPermCoord(Coord val, int cubies[], int len, int min_cubie) {
       cubies[0] = last;
     }
     val /= i + 1;
+  }
+}
+
+void setPosPermCoord(
+  Coord val, int cubies[], int len, int min_cubie, int max_cubie, bool from_left
+) {
+  int len1 = max_cubie - min_cubie + 1;
+  int cubies1[len1];
+  setPermCoord(val / fac[len1], cubies1, len1, max_cubie);
+  val %= fac[len1];
+
+  int j = len1 - 1;
+  if (from_left) {
+    for (int i = len - 1; i >= 0; i--) {
+      int tmp = cnk[i][j + 1];
+      if (val - tmp >= 0) {
+        cubies[i] = cubies1[j];
+        val -= tmp;
+        j--;
+      } else
+        cubies[i] = -1;
+    }
+  } else {
+    for (int i = 0; i < len; i++) {
+      int tmp = cnk[len - 1 - i][j + 1];
+      if (val - tmp >= 0) {
+        cubies[i] = cubies1[len1 - 1 - j];
+        val -= tmp;
+        j--;
+      } else
+        cubies[i] = -1;
+    }
   }
 }
 
@@ -105,12 +162,24 @@ Coord getFlip(CubieCube &cube) {
   return getOriCoord(cube.eo, N_EDGES, 2);
 }
 
+Coord getSlice(CubieCube &cube) {
+  return getPosPermCoord(cube.ep, N_EDGES, FR, BR, false);
+}
+
+Coord getUEdges(CubieCube &cube) {
+  return getPosPermCoord(cube.ep, N_EDGES, UR, UB, true);
+}
+
+Coord getDEdges(CubieCube &cube) {
+  return getPosPermCoord(cube.ep, N_EDGES, DR, DB, true);
+}
+
 Coord getUDEdges(CubieCube &cube) {
-  return getPermCoord(cube.ep, N_EDGES - 4, 0);
+  return getPermCoord(cube.ep, N_EDGES - 4, DB);
 }
 
 Coord getCorners(CubieCube &cube) {
-  return getPermCoord(cube.cp, N_CORNERS, 0);
+  return getPermCoord(cube.cp, N_CORNERS, N_CORNERS - 1);
 }
 
 void setTwist(CubieCube &cube, Coord twist) {
@@ -121,16 +190,28 @@ void setFlip(CubieCube &cube, Coord flip) {
   setOriCoord(flip, cube.eo, N_EDGES, 2);
 }
 
+void setSlice(CubieCube &cube, Coord val) {
+  setPosPermCoord(val, cube.ep, N_EDGES, FR, BR, false);
+}
+
+void setUEdges(CubieCube &cube, Coord val) {
+  setPosPermCoord(val, cube.ep, N_EDGES, UR, BR, true);
+}
+
+void setDEdges(CubieCube &cube, Coord val) {
+  setPosPermCoord(val, cube.ep, N_EDGES, DR, DB, true);
+}
+
 void setUDEdges(CubieCube &cube, Coord udedges) {
-  setPermCoord(udedges, cube.ep, N_EDGES - 4, 0);
+  setPermCoord(udedges, cube.ep, N_EDGES - 4, DB);
 }
 
 void setCorners(CubieCube &cube, Coord corners) {
-  setPermCoord(corners, cube.cp, N_CORNERS, 0);
+  setPermCoord(corners, cube.cp, N_CORNERS, N_CORNERS - 1);
 }
 
 void setEdges(CubieCube &cube, Coord edges) {
-  setPermCoord(edges, cube.ep, N_EDGES, 0);
+  setPermCoord(edges, cube.ep, N_EDGES, N_EDGES - 1);
 }
 
 void initTwistMove() {
@@ -142,6 +223,24 @@ void initTwistMove() {
 void initFlipMove() {
   initMoveCoord(
     flip_move, N_FLIP_COORDS, getFlip, setFlip, mulEdges
+  );
+}
+
+void initSliceMove() {
+  initMoveCoord(
+    slice_move, N_SLICE_COORDS, getSlice, setSlice, mulEdges
+  );
+}
+
+void initUEdgesMove() {
+  initMoveCoord(
+    uedges_move, N_UEDGES_COORDS, getUEdges, setUEdges, mulEdges
+  );
+}
+
+void initDEdgesMove() {
+  initMoveCoord(
+    dedges_move, N_DEDGES_COORDS, getDEdges, setDEdges, mulEdges
   );
 }
 
