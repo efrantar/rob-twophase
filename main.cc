@@ -25,6 +25,9 @@ int main() {
   initCornersMove();
   std::cout << "corners\n";
 
+  initMergeUEdgesDEdges();
+  std::cout << "merge\n";
+
   return 0;
 }
 

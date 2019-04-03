@@ -11,7 +11,9 @@
 #define N_SLICE_COORDS_P2 24
 
 #define N_UEDGES_COORDS 11880
+#define N_UEDGES_COORDS_P2 1680
 #define N_DEDGES_COORDS 11880
+#define N_DEDGES_COORDS_P2 1680
 #define N_UDEDGES_COORDS_P2 40320
 
 #define N_CORNERS_COORDS 40320
@@ -27,7 +29,7 @@ extern Coord (*dedges_move)[N_MOVES];
 extern Coord (*udedges_move)[N_MOVES_P2];
 extern Coord (*corners_move)[N_MOVES];
 
-extern Coord (*merge_uedges_dedges)[N_DEDGES_COORDS];
+extern Coord (*merge_uedges_dedges)[N_DEDGES_COORDS_P2];
 
 Coord getTwist(CubieCube &cube);
 Coord getFlip(CubieCube &cube);
