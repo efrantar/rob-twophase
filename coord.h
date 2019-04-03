@@ -24,18 +24,18 @@ extern Coord (*flip_move)[N_MOVES];
 extern Coord (*slice_move)[N_MOVES];
 extern Coord (*uedges_move)[N_MOVES];
 extern Coord (*dedges_move)[N_MOVES];
-extern Coord (*udedges_move)[N_MOVES];
+extern Coord (*udedges_move)[N_MOVES_P2];
 extern Coord (*corners_move)[N_MOVES];
 
 extern Coord (*merge_uedges_dedges)[N_DEDGES_COORDS];
 
-Coord getTwist(const CubieCube &cube);
-Coord getFlip(const CubieCube &cube);
-Coord getSlice(const CubieCube &cube);
-Coord getUEdges(const CubieCube &cube);
-Coord getDEdges(const CubieCube &cube);
-Coord getUDEdges(const CubieCube &cube);
-Coord getCorners(const CubieCube &cube);
+Coord getTwist(CubieCube &cube);
+Coord getFlip(CubieCube &cube);
+Coord getSlice(CubieCube &cube);
+Coord getUEdges(CubieCube &cube);
+Coord getDEdges(CubieCube &cube);
+Coord getUDEdges(CubieCube &cube);
+Coord getCorners(CubieCube &cube);
 
 void setTwist(CubieCube &cube, Coord twist);
 void setFlip(CubieCube &cube, Coord flip);
