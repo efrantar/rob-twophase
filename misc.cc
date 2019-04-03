@@ -8,11 +8,11 @@ void initMisc() {
   for (int i = 1; i < MISC_N; i++)
     fac[i] = fac[i - 1] * i;
 
+  cnk[0][0] = 1;
   for (int n = 1; n < MISC_N; n++) {
     cnk[n][0] = 1;
-    for (int k = 1; k <= n; k++) {
+    for (int k = 1; k <= n; k++)
        cnk[n][k] = cnk[n - 1][k] + cnk[n - 1][k - 1];
-    }
   }
 }
 

@@ -21,7 +21,7 @@ Coord (*merge_uedges_dedges)[N_DEDGES_COORDS_P2];
 Coord getOriCoord(const int oris[], int len, int n_oris) {
   Coord val = 0;
   for (int i = 0; i < len - 1; i++)
-    val = 3 * val + oris[i];
+    val = n_oris * val + oris[i];
   return val;
 }
 
@@ -112,8 +112,8 @@ void setPosPermCoord(
 ) {
   int len1 = max_cubie - min_cubie + 1;
   int cubies1[len1];
-  setPermCoord(val / fac[len1], cubies1, len1, max_cubie);
-  val %= fac[len1];
+  setPermCoord(val % fac[len1], cubies1, len1, max_cubie);
+  val /= fac[len1];
 
   int j = len1 - 1;
   if (from_left) {
@@ -201,7 +201,7 @@ void setSlice(CubieCube &cube, Coord val) {
 }
 
 void setUEdges(CubieCube &cube, Coord val) {
-  setPosPermCoord(val, cube.ep, N_EDGES, UR, BR, true);
+  setPosPermCoord(val, cube.ep, N_EDGES, UR, UB, true);
 }
 
 void setDEdges(CubieCube &cube, Coord val) {
