@@ -16,7 +16,7 @@ Coord (*dedges_move)[N_MOVES];
 Coord (*udedges_move)[N_MOVES_P2];
 Coord (*corners_move)[N_MOVES];
 
-Coord (*merge_uedges_dedges)[N_DEDGES_COORDS_P2];
+Coord (*merge_udedges)[24];
 
 Coord getOriCoord(const int oris[], int len, int n_oris) {
   Coord val = 0;
@@ -25,12 +25,7 @@ Coord getOriCoord(const int oris[], int len, int n_oris) {
   return val;
 }
 
-Coord getPermCoord(int cubies[], int len, int max_cubie, bool copy = false) {
-  if (copy) {
-    int cubies1[len];
-    std::copy(cubies, cubies + len, cubies1);
-    cubies = cubies1;
-  }
+Coord getPermCoord(int cubies[], int len, int max_cubie) {
   Coord val = 0;
 
   for (int i = len - 1; i > 0; i--) {
@@ -50,7 +45,7 @@ Coord getPermCoord(int cubies[], int len, int max_cubie, bool copy = false) {
 }
 
 Coord getPosPermCoord(
-  const int cubies[], int len, int min_cubie, int max_cubie, bool from_left, bool copy = false
+  const int cubies[], int len, int min_cubie, int max_cubie, bool from_left
 ) {
   int len1 = max_cubie - min_cubie + 1;
   int cubies1[len1];
@@ -76,7 +71,7 @@ Coord getPosPermCoord(
     }
   }
 
-  return fac[len1] * val + getPermCoord(cubies1, len1, max_cubie, copy);
+  return fac[len1] * val + getPermCoord(cubies1, len1, max_cubie);
 }
 
 void setOriCoord(Coord val, int oris[], int len, int n_oris) {
@@ -300,14 +295,23 @@ void initCornersMove() {
   );
 }
 
-void initMergeUEdgesDEdges() {
-  merge_uedges_dedges = new Coord[N_UEDGES_COORDS_P2][N_DEDGES_COORDS_P2];
+void initMergeUDEdges() {
+  merge_udedges = new Coord[N_UEDGES_COORDS_P2][24];
 
   CubieCube cube;
   for (Coord c = 0; c < N_UDEDGES_COORDS_P2; c++) {
     setUDEdges(cube, c);
-    int uedges = getPosPermCoord(cube.ep, N_EDGES, UR, UB, true, true);
-    merge_uedges_dedges[uedges][getDEdges(cube)];
+    
+    int dedges[4];
+    int j = 0;
+    for (int i = 0; i < 8; i++) {
+      if (DR <= cube.ep[i] && cube.ep[i] <= DB) {
+        dedges[j] = cube.ep[i];
+        j++;
+      }
+    }
+
+    merge_udedges[getUEdges(cube)][getPermCoord(dedges, 4, DB)] = c;
   }
 }
 

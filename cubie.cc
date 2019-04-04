@@ -24,3 +24,12 @@ bool isSolvable(const CubieCube &cube) {
   return false; // TODO: implement
 }
 
+CubieCube copy(const CubieCube &cube) {
+  CubieCube cube1;
+  std::copy(cube.cp, cube.cp + N_CORNERS, cube1.cp);
+  std::copy(cube.ep, cube.ep + N_EDGES, cube1.ep);
+  std::copy(cube.co, cube.co + N_CORNERS, cube1.co);
+  std::copy(cube.eo, cube.eo + N_EDGES, cube1.eo);
+  return cube1;
+}
+

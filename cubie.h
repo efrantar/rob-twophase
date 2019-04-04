@@ -49,5 +49,7 @@ void mulCubes(const CubieCube &cube_a, const CubieCube &cube_b, CubieCube &cube_
 
 bool isSolvable(const CubieCube &cube);
 
+CubieCube copy(const CubieCube &cube);
+
 #endif
 

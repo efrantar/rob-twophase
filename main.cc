@@ -83,12 +83,28 @@ void testCoordMoves() {
   testCoordMove(corners_move, N_CORNERS_COORDS);
 }
 
+void testMergeUDEdges() {
+  std::cout << "Testing udedges merging ...\n";
+  CubieCube cube;
+  for (Coord c = 0; c < N_UDEDGES_COORDS_P2; c++) {
+    setUDEdges(cube, c);
+    CubieCube cube1 = copy(cube);
+    if (c != merge_udedges[getUEdges(cube)][getDEdges(cube) % 24]) {
+      std::cout << "error: " << c << "\n";
+      return;
+    }
+  }
+  std::cout << "ok\n";
+}
+
 int main() {
   initMisc();
   initMoves();
+  initMergeUDEdges();
 
   testCoords();
   testCoordMoves();
+  testMergeUDEdges();
 
   return 0;
 }

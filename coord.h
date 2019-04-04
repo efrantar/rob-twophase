@@ -32,7 +32,7 @@ extern Coord (*dedges_move)[N_MOVES];
 extern Coord (*udedges_move)[N_MOVES_P2];
 extern Coord (*corners_move)[N_MOVES];
 
-extern Coord (*merge_uedges_dedges)[N_DEDGES_COORDS_P2];
+extern Coord (*merge_udedges)[24];
 
 Coord getTwist(CubieCube &cube);
 Coord getFlip(CubieCube &cube);
@@ -61,7 +61,7 @@ void initDEdgesMove();
 void initUDEdgesMove();
 void initCornersMove();
 
-void initMergeUEdgesDEdges();
+void initMergeUDEdges();
 
 #endif
 
