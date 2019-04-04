@@ -43,6 +43,15 @@ const std::vector<Move> kPhase2Moves = {
   U1, U2, U3, R2, F2, D1, D2, D3, L2, B2
 };
 
+const Move kInvMove[] = {
+  U3, U2, U1, 
+  R3, R2, R1, 
+  F3, F2, F1, 
+  D3, D2, D1, 
+  L3, L2, L1, 
+  B3, B2, B1
+};
+
 const CubieCube kUCube = { 
   {UBR, URF, UFL, ULB, DFR, DLF, DBL, DRB},
   {UB, UR, UF, UL, DR, DF, DL, DB, FR, FL, BL, BR},

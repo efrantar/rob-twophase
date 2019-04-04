@@ -12,8 +12,8 @@ void initMoveCubes() {
   move_cubes[B1] = kBCube;
 
   for (int i = 0; i < N_MOVES; i += 3) {
-    mulCorners(move_cubes[i], move_cubes[i], move_cubes[i + 1]);
-    mulCorners(move_cubes[i + 1], move_cubes[i], move_cubes[i + 2]);
+    mulCubes(move_cubes[i], move_cubes[i], move_cubes[i + 1]);
+    mulCubes(move_cubes[i + 1], move_cubes[i], move_cubes[i + 2]);
   }
 }
 

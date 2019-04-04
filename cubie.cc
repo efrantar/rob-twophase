@@ -4,7 +4,7 @@
 void mulCorners(const CubieCube &cube_a, const CubieCube &cube_b, CubieCube &cube_c) {
   for (int i = 0; i < N_CORNERS; i++) {
     cube_c.cp[i] = cube_a.cp[cube_b.cp[i]];
-    cube_c.co[i] = (cube_a.co[cube_b.ep[i]] + cube_b.ep[i]) % 3;
+    cube_c.co[i] = (cube_a.co[cube_b.cp[i]] + cube_b.co[i]) % 3;
   }
 }
 

@@ -140,13 +140,13 @@ void setPosPermCoord(
 }
 
 void initMoveCoord(
-  Coord (*coord_move)[N_MOVES], 
+  Coord (**coord_move)[N_MOVES], 
   int n_coords,
   Coord (*getCoord)(CubieCube &),
   void (*setCoord)(CubieCube &, Coord),
   void (*mul)(const CubieCube &, const CubieCube &, CubieCube &)
 ) {
-  coord_move = new Coord[n_coords][N_MOVES];
+  Coord (*coord_move1)[N_MOVES] = new Coord[n_coords][N_MOVES];
 
   CubieCube cube1;
   CubieCube cube2;
@@ -155,9 +155,11 @@ void initMoveCoord(
     setCoord(cube1, c);
     for (Move m = 0; m < N_MOVES; m++) {
       mul(cube1, move_cubes[m], cube2);
-      coord_move[c][m] = getCoord(cube2);
+      coord_move1[c][m] = getCoord(cube2);
     }
   }
+
+  *coord_move = coord_move1;
 }
 
 Coord getTwist(CubieCube &cube) {
@@ -222,31 +224,31 @@ void setEdges(CubieCube &cube, Coord edges) {
 
 void initTwistMove() {
   initMoveCoord(
-    twist_move, N_TWIST_COORDS, getTwist, setTwist, mulCorners
+    &twist_move, N_TWIST_COORDS, getTwist, setTwist, mulCorners
   );
 }
 
 void initFlipMove() {
   initMoveCoord(
-    flip_move, N_FLIP_COORDS, getFlip, setFlip, mulEdges
+    &flip_move, N_FLIP_COORDS, getFlip, setFlip, mulEdges
   );
 }
 
 void initSliceMove() {
   initMoveCoord(
-    slice_move, N_SLICE_COORDS, getSlice, setSlice, mulEdges
+    &slice_move, N_SLICE_COORDS, getSlice, setSlice, mulEdges
   );
 }
 
 void initUEdgesMove() {
   initMoveCoord(
-    uedges_move, N_UEDGES_COORDS, getUEdges, setUEdges, mulEdges
+    &uedges_move, N_UEDGES_COORDS, getUEdges, setUEdges, mulEdges
   );
 }
 
 void initDEdgesMove() {
   initMoveCoord(
-    dedges_move, N_DEDGES_COORDS, getDEdges, setDEdges, mulEdges
+    &dedges_move, N_DEDGES_COORDS, getDEdges, setDEdges, mulEdges
   );
 }
 
@@ -267,7 +269,7 @@ void initUDEdgesMove() {
 
 void initCornersMove() {
   initMoveCoord(
-    corners_move, N_CORNERS_COORDS, getCorners, setCorners, mulCorners
+    &corners_move, N_CORNERS_COORDS, getCorners, setCorners, mulCorners
   );
 }
 
