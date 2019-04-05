@@ -115,6 +115,15 @@ void testSyms() {
     }
   }
 
+  for (int m = 0; m < N_MOVES; m++) {
+    for (Sym s = 0; s < N_SYMS; s++) {
+      if (conj_move[conj_move[m][s]][inv_sym[s]] != m) {
+        std::cout << "error: " << m << " " << (int) s << "\n";
+        break;
+      }
+    }
+  }
+
   std::cout << "ok\n";
 }
 

@@ -1,7 +1,6 @@
 #include "sym.h"
 
 #include <iostream>
-#include <utility>
 
 CubieCube sym_cubes[N_SYMS];
 Sym inv_sym[N_SYMS];
@@ -43,8 +42,8 @@ void initSyms() {
 
   for (int m = 0; m < N_MOVES; m++) {
     for (Sym s = 0; s < N_SYMS; s++) {
-      mulCubes(sym_cubes[s], move_cubes[m], cube);
-      mulCubes(cube, sym_cubes[inv_sym[s]], cube);
+      mulCubes(sym_cubes[s], move_cubes[m], tmp);
+      mulCubes(tmp, sym_cubes[inv_sym[s]], cube);
       for (int conj = 0; conj < N_MOVES; conj++) {
         if (equal(cube, move_cubes[conj])) {
           conj_move[m][s] = conj;
