@@ -9,3 +9,4 @@ extern int cnk[MISC_N][MISC_N];
 void initMisc();
 
 #endif
+

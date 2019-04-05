@@ -32,4 +32,5 @@
 *.app
 
 twophase
+.depend
 

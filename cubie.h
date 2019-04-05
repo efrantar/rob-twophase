@@ -1,6 +1,7 @@
 #ifndef CUBIE_H_
 #define CUBIE_H_
 
+#include <iostream>
 #include <stdint.h>
 #include <string>
 
@@ -46,10 +47,13 @@ typedef struct {
 void mulEdges(const CubieCube &cube_a, const CubieCube &cube_b, CubieCube &cube_c);
 void mulCorners(const CubieCube &cube_a, const CubieCube &cube_b, CubieCube &cube_c);
 void mulCubes(const CubieCube &cube_a, const CubieCube &cube_b, CubieCube &cube_c);
+CubieCube mulCubes(const CubieCube &cube_a, const CubieCube &cube_b);
 
 bool isSolvable(const CubieCube &cube);
 
-CubieCube copy(const CubieCube &cube);
+void copy(const CubieCube &cube_from, CubieCube &cube_to);
+bool equal(const CubieCube &cube1, const CubieCube &cube2);
+void print(const CubieCube &cube);
 
 #endif
 

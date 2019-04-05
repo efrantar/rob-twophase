@@ -3,9 +3,14 @@
 #include <stdlib.h>
 
 #include "cubie.h"
+#include "coord.h"
 #include "misc.h"
 #include "moves.h"
-#include "coord.h"
+#include "sym.h"
+
+double tock(clock_t tick) {
+  return double(clock() - tick) / CLOCKS_PER_SEC;
+}
 
 void initMoves() {
   initMoveCubes();
@@ -18,7 +23,7 @@ void initMoves() {
   initDEdgesMove();
   initUDEdgesMove();
   initCornersMove();
-  std::cout << "int tables: " << double(clock() - tick) / CLOCKS_PER_SEC << "\n";
+  std::cout << "Move tables: " << tock(tick) << "\n";
 }
 
 void testCoord(int n_coords, Coord (*get)(CubieCube &), void (*set)(CubieCube &, Coord)) {
@@ -88,7 +93,8 @@ void testMergeUDEdges() {
   CubieCube cube;
   for (Coord c = 0; c < N_UDEDGES_COORDS_P2; c++) {
     setUDEdges(cube, c);
-    CubieCube cube1 = copy(cube);
+    CubieCube cube1;
+    copy(cube, cube1);
     if (c != merge_udedges[getUEdges(cube)][getDEdges(cube) % 24]) {
       std::cout << "error: " << c << "\n";
       return;
@@ -97,14 +103,31 @@ void testMergeUDEdges() {
   std::cout << "ok\n";
 }
 
+void testSyms() {
+  std::cout << "Testing syms ...\n";
+  
+  CubieCube cube;
+  for (Sym s = 0; s < N_SYMS; s++) {
+    mulCubes(sym_cubes[s], sym_cubes[inv_sym[s]], cube);
+    if (!equal(cube, sym_cubes[0])) {
+      std::cout << "error: " << (int) s << "\n";
+      break;
+    }
+  }
+
+  std::cout << "ok\n";
+}
+
 int main() {
   initMisc();
-  initMoves();
+  initMoves();  
   initMergeUDEdges();
+  initSyms();
 
   testCoords();
   testCoordMoves();
   testMergeUDEdges();
+  testSyms();
 
   return 0;
 }

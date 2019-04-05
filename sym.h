@@ -27,12 +27,12 @@ const CubieCube kF2Cube = {
 };
 const CubieCube kU4Cube = {
   {UBR, URF, UFL, ULB, DRB, DFR, DLF, DBL},
-  {UB, UR, UF, UL, DB, DR, DF, DL, BR, FR, FL, BL}
+  {UB, UR, UF, UL, DB, DR, DF, DL, BR, FR, FL, BL},
   {}, {0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1}
 };
 const CubieCube kLR2Cube = {
   {UFL, URF, UBR, ULB, DLF, DFR, DRB, DBL},
-  {UL, UF, UR, UB, DL, DF, DR, DB, FL, FR, BR, BL}
+  {UL, UF, UR, UB, DL, DF, DR, DB, FL, FR, BR, BL},
   {3, 3, 3, 3, 3, 3, 3, 3}, {}
 };
 

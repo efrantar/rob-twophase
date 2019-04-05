@@ -5,7 +5,7 @@ CPPFLAGS=-std=c++14
 LDFLAGS=
 LDLIBS=
 
-SRCS=main.cc cubie.cc misc.cc moves.cc coord.cc
+SRCS=main.cc coord.cc cubie.cc misc.cc moves.cc sym.cc
 OBJS=$(subst .cc,.o,$(SRCS))
 
 all: tool
