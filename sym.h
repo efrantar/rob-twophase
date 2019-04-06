@@ -8,11 +8,14 @@
 #define N_SYMS 48
 #define N_SYMS_DH4 16
 
-#define N_FLIPSLICE_CLASSES 
-#define N_CORNERS_CLASSES 
+#define N_FLIPSLICE_CLASSES 64430 
+#define N_CORNERS_CLASSES 2768
+
+#define FLIPSLICE(flip, slice) ((LargeCoord) slice * N_FLIP_COORDS + flip)
 
 typedef uint8_t Sym;
 typedef uint16_t Class;
+typedef int LargeCoord;
 
 const CubieCube kURF3Cube = {
   {URF, DFR, DLF, UFL, UBR, DRB, DBL, ULB},
@@ -43,11 +46,11 @@ extern int conj_move[N_MOVES][N_SYMS];
 extern Coord (*conj_twist)[N_SYMS_DH4];
 extern Coord (*conj_udedges)[N_SYMS_DH4];
 
-extern Class *flipslice_class;
+extern Class *flipslice_cls;
 extern Sym *flipslice_sym;
-extern Coord *flipslice_rep;
+extern LargeCoord *flipslice_rep;
 
-extern Class *corners_class;
+extern Class *corners_cls;
 extern Sym *corners_sym;
 extern Coord *corners_rep;
 
@@ -57,7 +60,7 @@ void initConjTwist();
 void initConjUDEdges();
 
 void initFlipSliceSyms();
-void initCornerSyms();
+void initCornersSyms();
 
 #endif
 

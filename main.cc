@@ -33,6 +33,8 @@ void initSymTables() {
   clock_t tick = clock();
   initConjTwist();
   initConjUDEdges();
+  initFlipSliceSyms();
+  initCornersSyms();
   std::cout << "Sym tables: " << tock(tick) << "\n";
 }
 
