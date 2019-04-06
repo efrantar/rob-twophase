@@ -12,7 +12,7 @@ double tock(clock_t tick) {
   return double(clock() - tick) / CLOCKS_PER_SEC;
 }
 
-void initMoves() {
+void initCoordTables() {
   initMoveCubes();
 
   clock_t tick = clock();
@@ -23,7 +23,17 @@ void initMoves() {
   initDEdgesMove();
   initUDEdgesMove();
   initCornersMove();
-  std::cout << "Move tables: " << tock(tick) << "\n";
+  initMergeUDEdges();
+  std::cout << "Coord tables: " << tock(tick) << "\n";
+}
+
+void initSymTables() {
+  initSyms();
+
+  clock_t tick = clock();
+  initConjTwist();
+  initConjUDEdges();
+  std::cout << "Sym tables: " << tock(tick) << "\n";
 }
 
 void testCoord(int n_coords, Coord (*get)(CubieCube &), void (*set)(CubieCube &, Coord)) {
@@ -129,9 +139,8 @@ void testSyms() {
 
 int main() {
   initMisc();
-  initMoves();  
-  initMergeUDEdges();
-  initSyms();
+  initCoordTables();
+  initSymTables();
 
   testCoords();
   testCoordMoves();

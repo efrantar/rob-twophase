@@ -40,16 +40,16 @@ extern CubieCube sym_cubes[N_SYMS];
 extern Sym inv_sym[N_SYMS];
 extern int conj_move[N_MOVES][N_SYMS];
 
-extern Coord *conj_twist[N_SYMS_DH4];
-extern Coord *conj_udedges[N_SYMS_DH4];
+extern Coord (*conj_twist)[N_SYMS_DH4];
+extern Coord (*conj_udedges)[N_SYMS_DH4];
 
-extern Class flipslice_class[N_FLIPSLICE_COORDS];
-extern Sym flipslice_sym[N_FLIPSLICE_COORDS];
-extern Coord flipslice_rep[N_FLIPSLICE_CLASSES];
+extern Class *flipslice_class;
+extern Sym *flipslice_sym;
+extern Coord *flipslice_rep;
 
-extern Class corners_class[N_CORNERS_COORDS];
-extern Sym corners_sym[N_CORNERS_COORDS];
-extern Coord corners_rep[N_CORNERS_CLASSES];
+extern Class *corners_class;
+extern Sym *corners_sym;
+extern Coord *corners_rep;
 
 void initSyms();
 

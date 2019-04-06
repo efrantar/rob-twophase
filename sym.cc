@@ -6,6 +6,9 @@ CubieCube sym_cubes[N_SYMS];
 Sym inv_sym[N_SYMS];
 int conj_move[N_MOVES][N_SYMS];
 
+Coord (*conj_twist)[N_SYMS_DH4];
+Coord (*conj_udedges)[N_SYMS_DH4];
+
 void initSyms() {
   CubieCube cube;
   CubieCube tmp;
@@ -52,5 +55,38 @@ void initSyms() {
       }
     }
   }
+}
+
+void initConjCoord(
+  Coord (**conj_coord)[N_SYMS_DH4],
+  int n_coords,
+  Coord (*getCoord)(CubieCube &),
+  void (*setCoord)(CubieCube &, Coord),
+  void (*mul)(const CubieCube &, const CubieCube &, CubieCube &)
+) {
+  Coord (*conj_coord1)[N_SYMS_DH4] = new Coord[n_coords][N_SYMS_DH4];
+
+  CubieCube cube1;
+  CubieCube cube2;
+  CubieCube tmp;
+
+  for (Coord c = 0; c < n_coords; c++) {
+    setCoord(cube1, c);
+    for (Sym s = 0; s < N_SYMS_DH4; s++) { 
+      mul(cube1, sym_cubes[s], tmp);
+      mul(tmp, sym_cubes[inv_sym[s]], cube2);
+      conj_coord1[c][s] = getCoord(cube2);
+    }
+  }
+
+  *conj_coord = conj_coord1;
+}
+
+void initConjTwist() {
+  initConjCoord(&conj_twist, N_TWIST_COORDS, getTwist, setTwist, mulCorners);
+}
+
+void initConjUDEdges() {
+  initConjCoord(&conj_udedges, N_UDEDGES_COORDS_P2, getUDEdges, setUDEdges, mulEdges);
 }
 
