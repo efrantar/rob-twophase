@@ -11,13 +11,15 @@ int conj_move[N_MOVES][N_SYMS];
 Coord (*conj_twist)[N_SYMS_DH4];
 Coord (*conj_udedges)[N_SYMS_DH4];
 
-Class *flipslice_cls;
-Sym *flipslice_sym;
-LargeCoord *flipslice_rep;
+SymCoord *flipslice_sym;
+Sym *flipslice_sym_sym;
+LargeCoord *flipslice_raw;
+SymSet *flipslice_symset;
 
-Class *corners_cls;
-Sym *corners_sym;
-Coord *corners_rep;
+SymCoord *corners_sym;
+Sym *corners_sym_sym;
+Coord *corners_raw;
+SymSet *corners_symset;
 
 void initSyms() {
   CubieCube cube;
@@ -82,7 +84,8 @@ void initConjCoord(
 
   for (Coord c = 0; c < n_coords; c++) {
     setCoord(cube1, c);
-    for (Sym s = 0; s < N_SYMS_DH4; s++) { 
+    conj_coord1[c][0] = c;
+    for (Sym s = 1; s < N_SYMS_DH4; s++) { 
       mul(cube1, sym_cubes[s], tmp);
       mul(tmp, sym_cubes[inv_sym[s]], cube2);
       conj_coord1[c][s] = getCoord(cube2);
@@ -101,15 +104,16 @@ void initConjUDEdges() {
 }
 
 void initFlipSliceSyms() {
-  flipslice_cls = new Class[N_FLIPSLICE_COORDS];
-  flipslice_sym = new Sym[N_FLIPSLICE_COORDS];
-  flipslice_rep = new LargeCoord[N_FLIPSLICE_CLASSES];
-  std::fill(flipslice_cls, flipslice_cls + N_FLIPSLICE_COORDS, EMPTY);
+  flipslice_sym = new SymCoord[N_FLIPSLICE_COORDS];
+  flipslice_sym_sym = new Sym[N_FLIPSLICE_COORDS];
+  flipslice_raw = new LargeCoord[N_FLIPSLICE_SYM_COORDS];
+  flipslice_symset = new SymSet[N_FLIPSLICE_SYM_COORDS];  
+  std::fill(flipslice_sym, flipslice_sym + N_FLIPSLICE_COORDS, EMPTY);
 
   CubieCube cube1;
   CubieCube cube2;
   CubieCube tmp;
-  Class cls = 0;
+  SymCoord cls = 0;
 
   for (Coord slice = 0; slice < N_SLICE_COORDS; slice++) {
     setSlice(cube1, slice);
@@ -117,21 +121,23 @@ void initFlipSliceSyms() {
       setFlip(cube1, flip);
       LargeCoord flipslice1 = FLIPSLICE(flip, slice);
 
-      if (flipslice_cls[flipslice1] != EMPTY)
+      if (flipslice_sym[flipslice1] != EMPTY)
         continue;
 
-      flipslice_cls[flipslice1] = cls;
-      flipslice_sym[flipslice1] = 0;
-      flipslice_rep[cls] = flipslice1;
-     
-      for (Sym s = 0; s < N_SYMS_DH4; s++) {
+      flipslice_sym[flipslice1] = cls;
+      flipslice_sym_sym[flipslice1] = 0;
+      flipslice_raw[cls] = flipslice1;
+      flipslice_symset[cls] = 1;
+
+      for (Sym s = 1; s < N_SYMS_DH4; s++) {
         mulEdges(sym_cubes[inv_sym[s]], cube1, tmp);
         mulEdges(tmp, sym_cubes[s], cube2);
         LargeCoord flipslice2 = FLIPSLICE(getFlip(cube2), getSlice(cube2));
-        if (flipslice_cls[flipslice2] == EMPTY) {
-          flipslice_cls[flipslice2] = cls;
-          flipslice_sym[flipslice2] = s;
-        }
+        if (flipslice_sym[flipslice2] == EMPTY) {
+          flipslice_sym[flipslice2] = cls;
+          flipslice_sym_sym[flipslice2] = s;
+        } else if (flipslice2 == flipslice1)
+          flipslice_symset[cls] |= 1 << s;
       }
       cls++;
     }
@@ -139,33 +145,36 @@ void initFlipSliceSyms() {
 }
 
 void initCornersSyms() {
-  corners_cls = new Class[N_CORNERS_COORDS];
-  corners_sym = new Sym[N_CORNERS_COORDS];
-  corners_rep = new Coord[N_CORNERS_CLASSES];
-  std::fill(corners_cls, corners_cls + N_CORNERS_COORDS, EMPTY);
+  corners_sym = new SymCoord[N_CORNERS_COORDS];
+  corners_sym_sym = new Sym[N_CORNERS_COORDS];
+  corners_raw = new Coord[N_CORNERS_SYM_COORDS];
+  corners_symset = new SymSet[N_CORNERS_SYM_COORDS];
+  std::fill(corners_sym, corners_sym + N_CORNERS_COORDS, EMPTY);
 
   CubieCube cube1;
   CubieCube cube2;
   CubieCube tmp;
-  Class cls = 0;
+  SymCoord cls = 0;
 
   for (Coord corners1 = 0; corners1 < N_CORNERS_COORDS; corners1++) {
     setCorners(cube1, corners1);
-    if (corners_cls[corners1] != EMPTY)
+    if (corners_sym[corners1] != EMPTY)
       continue;
 
-    corners_cls[corners1] = cls;
-    corners_sym[corners1] = 0;
-    corners_rep[cls] = corners1;
+    corners_sym[corners1] = cls;
+    corners_sym_sym[corners1] = 0;
+    corners_raw[cls] = corners1;
+    corners_symset[cls] = 1;
 
-    for (Sym s = 0; s < N_SYMS_DH4; s++) {
+    for (Sym s = 1; s < N_SYMS_DH4; s++) {
       mulCorners(sym_cubes[inv_sym[s]], cube1, tmp);
       mulCorners(tmp, sym_cubes[s], cube2);
       Coord corners2 = getCorners(cube2);
-      if (corners_cls[corners2] == EMPTY) {
-        corners_cls[corners2] = cls;
-        corners_sym[corners2] = s;
-      }
+      if (corners_sym[corners2] == EMPTY) {
+        corners_sym[corners2] = cls;
+        corners_sym_sym[corners2] = s;
+      } else if (corners2 == corners1)
+        corners_symset[cls] |= 1 << s;
     }
     cls++;
   }

@@ -125,6 +125,11 @@ void testSyms() {
       std::cout << "error: " << (int) s << "\n";
       break;
     }
+    mulCubes(sym_cubes[inv_sym[s]], sym_cubes[s], cube);
+    if (!equal(cube, sym_cubes[0])) {
+      std::cout << "error: " << (int) s << "\n";
+      break;
+    }
   }
 
   for (int m = 0; m < N_MOVES; m++) {
