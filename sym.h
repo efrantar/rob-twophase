@@ -8,7 +8,7 @@
 #define N_SYMS 48
 #define N_SYMS_DH4 16
 
-#define N_FLIPSLICE_SYM_COORDS 64430 
+#define N_FLIPSLICE_SYM_COORDS 63790 // TODO: 64430 
 #define N_CORNERS_SYM_COORDS 2768
 
 #define FLIPSLICE(flip, slice) ((LargeCoord) slice * N_FLIP_COORDS + flip)
@@ -57,6 +57,7 @@ extern SymSet *flipslice_symset;
 extern SymCoord *corners_sym;
 extern Sym *corners_sym_sym;
 extern Coord *corners_raw;
+extern Coord *corners_symset;
 
 void initSyms();
 

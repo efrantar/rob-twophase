@@ -142,11 +142,31 @@ void testFlipSliceSyms() {
     }
   }
 
+  CubieCube cube1;
+  CubieCube cube2;
+  CubieCube tmp;
+
+  for (SymCoord c = 0; c < N_FLIPSLICE_SYM_COORDS; c++) {
+    setFlip(cube1, FS_FLIP(flipslice_raw[c]));
+    setSlice(cube1, FS_SLICE(flipslice_raw[c]));
+    for (Sym s = 0; s < N_SYMS_DH4; s++) {
+      mulEdges(sym_cubes[s], cube1, tmp);
+      mulEdges(tmp, sym_cubes[inv_sym[s]], cube2);
+      if (
+        FLIPSLICE(getFlip(cube2), getSlice(cube2)) == flipslice_raw[c] && 
+        (flipslice_symset[c] & (1 << s)) == 0
+      ) {
+        std::cout << "error: " << c << " " << (int) s << "\n";
+        return;
+      }
+    }
+  }
   std::cout << "ok\n";
 }
 
 void testCornersSyms() {
   std::cout << "Testing corners syms ...\n";
+  
   for (Coord c = 0; c < N_CORNERS_COORDS; c++) {
     for (int m : kPhase2Moves) {
       if (
@@ -158,6 +178,23 @@ void testCornersSyms() {
       }
     }
   }
+
+  CubieCube cube1;
+  CubieCube cube2;
+  CubieCube tmp;
+
+  for (SymCoord c = 0; c < N_CORNERS_SYM_COORDS; c++) {
+    setCorners(cube1, corners_raw[c]);
+    for (Sym s = 0; s < N_SYMS_DH4; s++) {
+      mulCorners(sym_cubes[s], cube1, tmp);
+      mulCorners(tmp, sym_cubes[inv_sym[s]], cube2);
+      if (getCorners(cube2) == corners_raw[c] && (corners_symset[c] & (1 << s)) == 0) {
+        std::cout << "error: " << c << " " << (int) s << "\n";
+        return;
+      }
+    }
+  }
+
   std::cout << "ok\n";
 }
 
