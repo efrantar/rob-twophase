@@ -22,6 +22,9 @@
 
 #define N_EDGES_COORDS 4790001600
 
+#define SLICESORTED(slice) (slice * N_SLICESORTED_COORDS_P2)
+#define SS_SLICE(slicesorted) (slicesorted / N_SLICESORTED_COORDS_P2)
+
 typedef uint16_t Coord;
 
 extern Coord (*twist_move)[N_MOVES];

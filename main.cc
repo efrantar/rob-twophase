@@ -115,6 +115,52 @@ void testMergeUDEdges() {
   std::cout << "ok\n";
 }
 
+void testFlipSliceSyms() {
+  std::cout << "Testing flipslice syms ...\n";
+
+  for (Coord flip = 0; flip < N_FLIP_COORDS; flip++) {
+    for (Coord slice = 0; slice < N_SLICE_COORDS; slice++) {
+      LargeCoord flipslice = FLIPSLICE(flip, slice);
+      for (int m = 0; m < N_MOVES; m++) {
+        LargeCoord flipslice1 = FLIPSLICE(
+          flip_move[flip][m],
+          SS_SLICE(slicesorted_move[SLICESORTED(slice)][m])
+        );
+        
+        LargeCoord flipslice2 = flipslice_raw[flipslice_sym[flipslice]];
+        int m_conj = conj_move[m][flipslice_sym_sym[flipslice]];
+        flipslice2 = FLIPSLICE(
+          flip_move[FS_FLIP(flipslice2)][m_conj],
+          SS_SLICE(slicesorted_move[SLICESORTED(FS_SLICE(flipslice2))][m_conj])
+        );
+
+        if (flipslice_sym[flipslice1] != flipslice_sym[flipslice2]) {
+          std::cout << "error: " << flipslice << " " << m << "\n";
+          return;
+        }
+      }
+    }
+  }
+
+  std::cout << "ok\n";
+}
+
+void testCornersSyms() {
+  std::cout << "Testing corners syms ...\n";
+  for (Coord c = 0; c < N_CORNERS_COORDS; c++) {
+    for (int m : kPhase2Moves) {
+      if (
+        corners_sym[corners_move[corners_raw[corners_sym[c]]][conj_move[m][corners_sym_sym[c]]]]
+        != corners_sym[corners_move[c][m]]
+      ) {
+        std::cout << "error: " << c << " " << m << "\n";
+        return;
+      }
+    }
+  }
+  std::cout << "ok\n";
+}
+
 void testSyms() {
   std::cout << "Testing syms ...\n";
   
@@ -153,6 +199,8 @@ int main() {
   testCoordMoves();
   testMergeUDEdges();
   testSyms();
+  testFlipSliceSyms();
+  testCornersSyms();
 
   return 0;
 }
