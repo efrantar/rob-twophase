@@ -18,14 +18,19 @@
 #define N_CORNERS_COORDS 40320
 
 #define N_SLICE_COORDS 495
-#define N_FLIPSLICE_COORDS 1013760
+#define N_FLIPSLICE_COORDS (N_FLIP_COORDS * N_SLICE_COORDS)
 
 #define N_EDGES_COORDS 4790001600
+
+#define FLIPSLICE(flip, slice) ((LargeCoord) slice * N_FLIP_COORDS + flip)
+#define FS_FLIP(flipslice) (flipslice % N_FLIP_COORDS)
+#define FS_SLICE(flipslice) (flipslice / N_FLIP_COORDS)
 
 #define SLICESORTED(slice) (slice * N_SLICESORTED_COORDS_P2)
 #define SS_SLICE(slicesorted) (slicesorted / N_SLICESORTED_COORDS_P2)
 
 typedef uint16_t Coord;
+typedef int LargeCoord;
 
 extern Coord (*twist_move)[N_MOVES];
 extern Coord (*flip_move)[N_MOVES];

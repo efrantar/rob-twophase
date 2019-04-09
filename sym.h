@@ -11,13 +11,8 @@
 #define N_FLIPSLICE_SYM_COORDS 63790
 #define N_CORNERS_SYM_COORDS 2768
 
-#define FLIPSLICE(flip, slice) ((LargeCoord) slice * N_FLIP_COORDS + flip)
-#define FS_FLIP(flipslice) (flipslice % N_FLIP_COORDS)
-#define FS_SLICE(flipslice) (flipslice / N_FLIP_COORDS)
-
 typedef uint8_t Sym;
 typedef uint16_t SymCoord;
-typedef int LargeCoord;
 typedef uint16_t SymSet;
 
 const CubieCube kURF3Cube = {
