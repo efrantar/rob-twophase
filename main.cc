@@ -131,7 +131,7 @@ void testFlipSliceSyms() {
         int m_conj = conj_move[m][flipslice_sym_sym[flipslice]];
         flipslice2 = FLIPSLICE(
           flip_move[FS_FLIP(flipslice2)][m_conj],
-          SS_SLICE(slicesorted_move[SLICESORTED(FS_SLICE(flipslice2))][m_conj])
+          sliceMove(FS_SLICE(flipslice2), m_conj)
         );
 
         if (flipslice_sym[flipslice1] != flipslice_sym[flipslice2]) {

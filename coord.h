@@ -66,5 +66,7 @@ void initCornersMove();
 
 void initMergeUDEdges();
 
+Coord sliceMove(Coord slice, int move);
+
 #endif
 

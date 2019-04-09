@@ -8,7 +8,7 @@
 #define N_SYMS 48
 #define N_SYMS_DH4 16
 
-#define N_FLIPSLICE_SYM_COORDS 63790 // TODO: 64430 
+#define N_FLIPSLICE_SYM_COORDS 63790
 #define N_CORNERS_SYM_COORDS 2768
 
 #define FLIPSLICE(flip, slice) ((LargeCoord) slice * N_FLIP_COORDS + flip)

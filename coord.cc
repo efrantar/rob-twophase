@@ -315,3 +315,7 @@ void initMergeUDEdges() {
   }
 }
 
+Coord sliceMove(Coord slice, int move) {
+  return SS_SLICE(slicesorted_move[SLICESORTED(slice)][move]);
+}
+
