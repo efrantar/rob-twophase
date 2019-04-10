@@ -86,7 +86,7 @@ void initConjCoord(
     setCoord(cube1, c);
     conj_coord1[c][0] = c;
     for (Sym s = 1; s < N_SYMS_DH4; s++) { 
-      mul(cube1, sym_cubes[s], tmp);
+      mul(sym_cubes[s], cube1, tmp);
       mul(tmp, sym_cubes[inv_sym[s]], cube2);
       conj_coord1[c][s] = getCoord(cube2);
     }
