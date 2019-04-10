@@ -236,7 +236,7 @@ void setSlice(CubieCube &cube, Coord slice) {
       slice -= tmp;
       j--;
     } else
-      cube.ep[i] = -1;
+      cube.ep[i] = i - (3 - j);
   }
 }
 

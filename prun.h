@@ -14,7 +14,7 @@ extern uint64_t *fssymtwist_prun;
 
 void getDepthFSSymTwist(LargeCoord flipslicetwist);
 
-void initFSSymTWistPrun();
+void initFSSymTwistPrun();
 
 #endif
 

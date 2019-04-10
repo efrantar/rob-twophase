@@ -6,6 +6,7 @@
 #include "coord.h"
 #include "misc.h"
 #include "moves.h"
+#include "prun.h"
 #include "sym.h"
 
 double tock(clock_t tick) {
@@ -36,6 +37,12 @@ void initSymTables() {
   initFlipSliceSyms();
   initCornersSyms();
   std::cout << "Sym tables: " << tock(tick) << "\n";
+}
+
+void initPrunTables() {
+  clock_t tick = clock();
+  initFSSymTwistPrun();
+  std::cout << "Prun tables: " << tock(tick) << "\n";
 }
 
 void testCoord(int n_coords, Coord (*get)(CubieCube &), void (*set)(CubieCube &, Coord)) {
@@ -231,6 +238,7 @@ int main() {
   initMisc();
   initCoordTables();
   initSymTables();
+  initPrunTables();
 
   testCoords();
   testCoordMoves();

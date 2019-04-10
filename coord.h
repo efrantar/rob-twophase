@@ -22,7 +22,7 @@
 
 #define N_EDGES_COORDS 4790001600
 
-#define FLIPSLICE(flip, slice) ((LargeCoord) slice * N_FLIP_COORDS + flip)
+#define FLIPSLICE(flip, slice) (LargeCoord(slice) * N_FLIP_COORDS + flip)
 #define FS_FLIP(flipslice) (flipslice % N_FLIP_COORDS)
 #define FS_SLICE(flipslice) (flipslice / N_FLIP_COORDS)
 

@@ -8,7 +8,7 @@
 #define N_SYMS 48
 #define N_SYMS_DH4 16
 
-#define N_FLIPSLICE_SYM_COORDS 63790
+#define N_FLIPSLICE_SYM_COORDS 64430
 #define N_CORNERS_SYM_COORDS 2768
 
 typedef uint8_t Sym;
