@@ -4,11 +4,12 @@
 #include <bitset>
 
 #define BACKSEARCH_DEPTH 9
+#define MAX_DEPTH_P2 10
 #define EMPTY 0x3
 #define EMPTY_CELL ~uint64_t(0)
 
 uint64_t *fssymtwist_prun3;
-uint64_t *udsymcorners_prun3;
+uint64_t *csymudedges_prun3;
 
 int getPrun3(uint64_t *prun3, LargeCoord c) {
   uint64_t tmp = prun3[c / 32];
@@ -98,6 +99,73 @@ void initFSSymTwistPrun3() {
     depth++;
     if (depth == BACKSEARCH_DEPTH)
       backsearch = true;
+  }
+
+  delete bits;
+}
+
+void initCSymUDEdgesPrun3() {
+  csymudedges_prun3 = new uint64_t[N_CSYMUDEDGES_COORDS / 32 + 1];
+  std::fill(csymudedges_prun3, csymudedges_prun3 + N_CSYMUDEDGES_COORDS / 32 + 1, EMPTY_CELL);
+
+  int filled = 1;
+  int depth = 0;
+  std::bitset<N_CSYMUDEDGES_COORDS> *bits = new std::bitset<N_CSYMUDEDGES_COORDS>();
+
+  setPrun3(csymudedges_prun3, 0, 0);
+  while (depth < MAX_DEPTH_P2) {
+    LargeCoord c = 0;
+    int depth3 = depth % 3;
+
+    std::cout << "depth: " << depth << "\n";
+    std::cout << "filled: " << filled << "\n";
+
+    for (SymCoord csym = 0; csym < N_CORNERS_SYM_COORDS; csym++) {
+      for (Coord udedges = 0; udedges < N_UDEDGES_COORDS_P2; udedges++, c++) {
+        if (
+          c % 32 == 0 && 
+          csymudedges_prun3[c / 32] == EMPTY_CELL && 
+          udedges < N_UDEDGES_COORDS_P2 - 32
+        ) {
+          udedges += 31;
+          c += 31;
+          continue;
+        }
+        if (bits->test(c) || getPrun3(csymudedges_prun3, c) != depth3)
+          continue;
+        bits->set(c);
+
+        for (int m = 0; m < N_MOVES_P2; m++) {
+          Coord corners1 = corners_move[corners_raw[csym]][kPhase2Moves[m]];
+          Coord udedges1 = udedges_move[udedges][m];
+          SymCoord csym1 = corners_sym[corners1];
+          udedges1 = conj_udedges[udedges1][corners_sym_sym[corners1]];
+          LargeCoord c1 = CSYMUDEDGES(csym1, udedges1);
+
+          if (getPrun3(csymudedges_prun3, c1) != EMPTY)
+            continue;
+    
+//          std::cout << c1 << "\n";
+//          std::cout << "udedges1 " << udedges1 << " corners1 " << corners1 << " csym1 " << csym1 << "\n";
+          setPrun3(csymudedges_prun3, c1, depth + 1);
+          filled++;
+            
+          SymSet symset = corners_symset[csym1] >> 1;
+          for (Sym s = 1; symset > 0; symset >>= 1, s++) {
+            if (symset & 1) {
+              LargeCoord c2 = CSYMUDEDGES(csym1, conj_udedges[udedges1][s]);
+              if (getPrun3(csymudedges_prun3, c2) == EMPTY) {
+                setPrun3(csymudedges_prun3, c2, depth + 1);
+                bits->set(c2);
+                filled++;
+              }
+            }
+          }
+        }
+      }
+    }
+
+    depth++;
   }
 
   delete bits;

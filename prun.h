@@ -7,19 +7,19 @@
 #include "sym.h"
 
 #define N_FSSYMTWIST_COORDS (N_FLIPSLICE_SYM_COORDS * N_TWIST_COORDS)
-#define N_UDSYMCORNERS_COORDS (N_UDEDGES_SYM_COORDS * N_CORNERS_COORDS)
+#define N_CSYMUDEDGES_COORDS (N_CORNERS_SYM_COORDS * N_UDEDGES_COORDS_P2)
 
-#define FSSYMTWIST(fs_sym, twist) (fs_sym * N_TWIST_COORDS + twist)
-#define UDSYMCORNERS(ud_sym, corners) (ud_sym * N_CORNERS_COORDS + corners)
+#define FSSYMTWIST(fssym, twist) (fssym * N_TWIST_COORDS + twist)
+#define CSYMUDEDGES(csym, udedges) (csym * N_UDEDGES_COORDS_P2 + udedges)
 
 extern uint64_t *fssymtwist_prun3;
-extern uint64_t *udsymcorners_prun3;
+extern uint64_t *csymudedges_prun3;
 
 void getDepthFSSymTwist(LargeCoord fssymtwist);
-void getDepthUDSymCorners(LargeCoord udsymcorners);
+void getDepthCSymUDEdges(LargeCoord udsymcorners);
 
 void initFSSymTwistPrun3();
-void initUDSymCornersPrun3();
+void initCSymUDEdgesPrun3();
 
 #endif
 
