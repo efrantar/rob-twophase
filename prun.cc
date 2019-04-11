@@ -2,6 +2,7 @@
 
 #include <algorithm>
 #include <bitset>
+#include <queue>
 
 #define BACKSEARCH_DEPTH 9
 #define MAX_DEPTH_P2 10
@@ -10,6 +11,7 @@
 
 uint64_t *fssymtwist_prun3;
 uint64_t *csymudedges_prun3;
+uint8_t *cornersslices_prun;
 
 int getPrun3(uint64_t *prun3, LargeCoord c) {
   uint64_t tmp = prun3[c / 32];
@@ -117,9 +119,6 @@ void initCSymUDEdgesPrun3() {
     LargeCoord c = 0;
     int depth3 = depth % 3;
 
-    std::cout << "depth: " << depth << "\n";
-    std::cout << "filled: " << filled << "\n";
-
     for (SymCoord csym = 0; csym < N_CORNERS_SYM_COORDS; csym++) {
       for (Coord udedges = 0; udedges < N_UDEDGES_COORDS_P2; udedges++, c++) {
         if (
@@ -145,8 +144,6 @@ void initCSymUDEdgesPrun3() {
           if (getPrun3(csymudedges_prun3, c1) != EMPTY)
             continue;
     
-//          std::cout << c1 << "\n";
-//          std::cout << "udedges1 " << udedges1 << " corners1 " << corners1 << " csym1 " << csym1 << "\n";
           setPrun3(csymudedges_prun3, c1, depth + 1);
           filled++;
             
@@ -169,5 +166,31 @@ void initCSymUDEdgesPrun3() {
   }
 
   delete bits;
+}
+
+void initCornersSliceSPrun() {
+  cornersslices_prun = new uint8_t[N_CORNERSSLICES_COORDS];
+  std::fill(cornersslices_prun, cornersslices_prun + N_CORNERSSLICES_COORDS, 0xff);
+
+  std::queue<LargeCoord> q;
+  cornersslices_prun[0] = 0;
+  q.push(0);
+  
+  while (q.size() > 0) {
+    LargeCoord c = q.front();
+    q.pop();
+    Coord corners = CS_CORNERS(c);
+    Coord slicesorted = CS_SLICESORTED(c);
+
+    for (int m : kPhase2Moves) {
+      LargeCoord c1 = CORNERSSLICES(
+        corners_move[corners][m], slicesorted_move[slicesorted][m]
+      );
+      if (cornersslices_prun[c1] == 0xff) {
+        cornersslices_prun[c1] = cornersslices_prun[c] + 1;
+        q.push(c1);
+      }
+    }
+  }
 }
 
