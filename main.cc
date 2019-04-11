@@ -41,7 +41,7 @@ void initSymTables() {
 
 void initPrunTables() {
   clock_t tick = clock();
-  initFSSymTwistPrun();
+  initFSSymTwistPrun3();
   std::cout << "Prun tables: " << tock(tick) << "\n";
 }
 

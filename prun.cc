@@ -7,29 +7,30 @@
 #define EMPTY 0x3
 #define EMPTY_CELL ~uint64_t(0)
 
-uint64_t *fssymtwist_prun;
+uint64_t *fssymtwist_prun3;
+uint64_t *udsymcorners_prun3;
 
-int getFSSymTwistPrun(LargeCoord c) {
-  uint64_t tmp = fssymtwist_prun[c / 32];
+int getPrun3(uint64_t *prun3, LargeCoord c) {
+  uint64_t tmp = prun3[c / 32];
   tmp >>= (c % 32) * 2;
   return tmp & 0x3;
 }
 
-void setFSSymTwistPrun(LargeCoord c, int depth) {
+void setPrun3(uint64_t *prun3, LargeCoord c, int depth) {
   int shift = (c % 32) * 2;
-  fssymtwist_prun[c / 32] &= ~(uint64_t(0x3) << shift) | (uint64_t(depth % 3) << shift);
+  prun3[c / 32] &= ~(uint64_t(0x3) << shift) | (uint64_t(depth % 3) << shift);
 }
 
-void initFSSymTwistPrun() {
-  fssymtwist_prun = new uint64_t[N_FSSYMTWIST_COORDS / 32 + 1];
-  std::fill(fssymtwist_prun, fssymtwist_prun + N_FSSYMTWIST_COORDS / 32 + 1, EMPTY_CELL);
+void initFSSymTwistPrun3() {
+  fssymtwist_prun3 = new uint64_t[N_FSSYMTWIST_COORDS / 32 + 1];
+  std::fill(fssymtwist_prun3, fssymtwist_prun3 + N_FSSYMTWIST_COORDS / 32 + 1, EMPTY_CELL);
 
   int filled = 1;
   int depth = 0;
   std::bitset<N_FSSYMTWIST_COORDS> *bits = new std::bitset<N_FSSYMTWIST_COORDS>();
   bool backsearch = false;
 
-  setFSSymTwistPrun(0, 0);
+  setPrun3(fssymtwist_prun3, 0, 0);
   while (filled < N_FSSYMTWIST_COORDS) {
     LargeCoord c = 0;
     int depth3 = depth % 3;
@@ -42,17 +43,17 @@ void initFSSymTwistPrun() {
         if (!backsearch) {
           if (
             c % 32 == 0 && 
-            fssymtwist_prun[c / 32] == EMPTY_CELL && 
+            fssymtwist_prun3[c / 32] == EMPTY_CELL && 
             twist < N_TWIST_COORDS - 32
           ) {
             twist += 31;
             c += 31;
             continue;
           }
-          if (bits->test(c) || getFSSymTwistPrun(c) != depth3)
+          if (bits->test(c) || getPrun3(fssymtwist_prun3, c) != depth3)
             continue;
           bits->set(c);
-        } else if (getFSSymTwistPrun(c) != EMPTY)
+        } else if (getPrun3(fssymtwist_prun3, c) != EMPTY)
           continue;
 
         for (int m = 0; m < N_MOVES; m++) {
@@ -66,22 +67,22 @@ void initFSSymTwistPrun() {
           LargeCoord c1 = FSSYMTWIST(fssym1, twist1);
 
           if (backsearch) {
-            if (getFSSymTwistPrun(c1) != depth3)
+            if (getPrun3(fssymtwist_prun3, c1) != depth3)
               continue;
             c1 = c;
             fssym1 = fssym;
-          } else if (getFSSymTwistPrun(c1) != EMPTY)
+          } else if (getPrun3(fssymtwist_prun3, c1) != EMPTY)
             continue;
      
-          setFSSymTwistPrun(c1, depth + 1);
+          setPrun3(fssymtwist_prun3, c1, depth + 1);
           filled++;
             
           SymSet symset = flipslice_symset[fssym1] >> 1;
           for (Sym s = 1; symset > 0; symset >>= 1, s++) {
             if (symset & 1) {
               LargeCoord c2 = FSSYMTWIST(fssym1, conj_twist[twist1][s]);
-              if (getFSSymTwistPrun(c2) == EMPTY) {
-                setFSSymTwistPrun(c2, depth + 1);
+              if (getPrun3(fssymtwist_prun3, c2) == EMPTY) {
+                setPrun3(fssymtwist_prun3, c2, depth + 1);
                 bits->set(c2);
                 filled++;
               }
