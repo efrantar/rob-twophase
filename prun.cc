@@ -9,9 +9,20 @@
 #define EMPTY 0x3
 #define EMPTY_CELL ~uint64_t(0)
 
+int (*next_depth)[3];
+
 uint64_t *fssymtwist_prun3;
 uint64_t *csymudedges_prun3;
 uint8_t *cornersslices_prun;
+
+void initPrun() {
+ next_depth = new int[22][3];
+ for (int i = 1; i < 22; i++) {
+   next_depth[i][(i - 1) % 3] = i - 1;
+   next_depth[i][i % 3] = i;
+   next_depth[i][(i + 1) % 3] = i + 1;
+ }
+}
 
 int getPrun3(uint64_t *prun3, LargeCoord c) {
   uint64_t tmp = prun3[c / 32];
@@ -22,6 +33,66 @@ int getPrun3(uint64_t *prun3, LargeCoord c) {
 void setPrun3(uint64_t *prun3, LargeCoord c, int depth) {
   int shift = (c % 32) * 2;
   prun3[c / 32] &= ~(uint64_t(0x3) << shift) | (uint64_t(depth % 3) << shift);
+}
+
+int getDepthFSSymTwistPrun3(Coord flip, Coord slicesorted, Coord twist) {
+  LargeCoord flipslice = FLIPSLICE(flip, SS_SLICE(slicesorted));
+  LargeCoord fssymtwist = FSSYMTWIST(
+    flipslice_sym[flipslice], conj_twist[twist][flipslice_sym_sym[flipslice]]
+  );
+
+  int depth3 = getPrun3(fssymtwist_prun3, fssymtwist);
+  for (int depth = 0; fssymtwist != 0; depth++) {
+    if (depth3 == 0)
+      depth3 = 3;
+
+    for (int m = 0; m < N_MOVES; m++) {
+      Coord flip1 = flip_move[flip][m];
+      Coord slicesorted1 = slicesorted_move[slicesorted][m];
+      Coord twist1 = twist_move[twist][m];
+      LargeCoord flipslice1 = FLIPSLICE(flip, SS_SLICE(slicesorted));
+      
+      twist1 = conj_twist[twist1][flipslice_sym_sym[flipslice1]];
+      LargeCoord fssymtwist1 = FSSYMTWIST(flipslice_sym[flipslice1], twist1);
+
+      if (getPrun3(fssymtwist_prun3, fssymtwist1) == depth3 - 1) {
+        flip = flip1;
+        slicesorted = slicesorted1;
+        twist = twist1;
+        fssymtwist = fssymtwist1;
+        break;
+      }
+    }
+  }
+}
+
+int getDepthCSymUDEdgesPrun3(Coord corners, Coord udedges) {
+  LargeCoord csymudedges = CSYMUDEDGES(
+    corners_sym[corners], conj_udedges[udedges][corners_sym_sym[corners]]
+  );
+
+  int depth3 = getPrun3(csymudedges_prun3, csymudedges);
+  if (depth3 == EMPTY)
+    return MAX_DEPTH_P2 + 1;
+
+  for (int depth = 0; csymudedges != 0; depth++) {
+    if (depth3 == 0)
+      depth3 = 3;
+
+    for (int m = 0; m < N_MOVES; m++) {
+      Coord corners1 = corners_move[corners][m];
+      Coord udedges1 = udedges_move[udedges][m];
+      udedges1 = conj_udedges[udedges1][corners_sym_sym[corners1]];
+      LargeCoord csymudedges1 = CSYMUDEDGES(corners_sym[corners1], udedges1);
+
+      if (getPrun3(csymudedges_prun3, csymudedges1) == depth3 - 1) {
+        corners = corners1;
+        udedges = udedges1;
+        csymudedges = csymudedges1;
+        break;
+      }
+    }
+  }
 }
 
 void initFSSymTwistPrun3() {

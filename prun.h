@@ -18,6 +18,8 @@
 #define CS_CORNERS(cornersslices) (cornersslices / N_SLICESORTED_COORDS_P2)
 #define CS_SLICESORTED(cornersslices) (cornersslices % N_SLICESORTED_COORDS_P2)
 
+extern int (*next_depth)[3];
+
 extern uint64_t *fssymtwist_prun3;
 extern uint64_t *csymudedges_prun3;
 extern uint8_t *cornersslices_prun;
@@ -25,6 +27,7 @@ extern uint8_t *cornersslices_prun;
 void getDepthFSSymTwist(LargeCoord fssymtwist);
 void getDepthCSymUDEdges(LargeCoord udsymcorners);
 
+void initPrun();
 void initFSSymTwistPrun3();
 void initCSymUDEdgesPrun3();
 void initCornersSliceSPrun();

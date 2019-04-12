@@ -40,6 +40,8 @@ void initSymTables() {
 }
 
 void initPrunTables() {
+  initPrun();
+
   clock_t tick = clock();
   initFSSymTwistPrun3();
   initCSymUDEdgesPrun3();
