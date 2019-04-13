@@ -238,6 +238,31 @@ void testSyms() {
   std::cout << "ok\n";
 }
 
+void testPrunTables() {
+  std::cout << "Testing pruning tables ...\n";
+
+  int count1[14] = {};
+  for (SymCoord fssym = 0; fssym < N_FLIPSLICE_SYM_COORDS; fssym++) {
+    for (Coord twist = 0; twist < N_TWIST_COORDS; twist++) {
+      count1[getDepthFSSymTwistPrun3(
+        FS_FLIP(flipslice_raw[fssym]), SLICESORTED(FS_SLICE(flipslice_raw[fssym])), twist
+      )]++; 
+    }
+    std::cout << "test\n";
+  }
+  std::cout << "fssymtwist:\n";
+  for (int i = 0; i < 14; i++)
+    std::cout << "depth " << i << ": " << count1[i] << "\n";
+
+  int count2[12] = {};
+  for (SymCoord csym = 0; csym < N_CORNERS_SYM_COORDS; csym++) {
+    for (Coord udedges = 0; udedges < N_UDEDGES_COORDS_P2; udedges++)
+      count2[getDepthCSymUDEdgesPrun3(corners_raw[csym], udedges)]++;
+  }
+  for (int i = 0; i < 12; i++)
+    std::cout << "depth " << i << ": " << count2[i] << "\n";
+}
+
 int main() {
   initMisc();
   initCoordTables();
@@ -250,6 +275,7 @@ int main() {
   testSyms();
   testFlipSliceSyms();
   testCornersSyms();
+  testPrunTables();
 
   return 0;
 }

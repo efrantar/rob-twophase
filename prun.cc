@@ -42,7 +42,9 @@ int getDepthFSSymTwistPrun3(Coord flip, Coord slicesorted, Coord twist) {
   );
 
   int depth3 = getPrun3(fssymtwist_prun3, fssymtwist);
-  for (int depth = 0; fssymtwist != 0; depth++) {
+  int depth = 0;
+
+  while (fssymtwist != 0) {
     if (depth3 == 0)
       depth3 = 3;
 
@@ -52,9 +54,9 @@ int getDepthFSSymTwistPrun3(Coord flip, Coord slicesorted, Coord twist) {
       Coord twist1 = twist_move[twist][m];
       LargeCoord flipslice1 = FLIPSLICE(flip, SS_SLICE(slicesorted));
       
-      twist1 = conj_twist[twist1][flipslice_sym_sym[flipslice1]];
-      LargeCoord fssymtwist1 = FSSYMTWIST(flipslice_sym[flipslice1], twist1);
-
+      LargeCoord fssymtwist1 = FSSYMTWIST(
+        flipslice_sym[flipslice1], conj_twist[twist1][flipslice_sym_sym[flipslice1]]
+      );
       if (getPrun3(fssymtwist_prun3, fssymtwist1) == depth3 - 1) {
         flip = flip1;
         slicesorted = slicesorted1;
@@ -63,7 +65,12 @@ int getDepthFSSymTwistPrun3(Coord flip, Coord slicesorted, Coord twist) {
         break;
       }
     }
+
+    depth3--;
+    depth++;
   }
+
+  return depth;
 }
 
 int getDepthCSymUDEdgesPrun3(Coord corners, Coord udedges) {
@@ -75,15 +82,17 @@ int getDepthCSymUDEdgesPrun3(Coord corners, Coord udedges) {
   if (depth3 == EMPTY)
     return MAX_DEPTH_P2 + 1;
 
-  for (int depth = 0; csymudedges != 0; depth++) {
+  int depth = 0;
+  while (csymudedges != 0) {
     if (depth3 == 0)
       depth3 = 3;
 
-    for (int m = 0; m < N_MOVES; m++) {
-      Coord corners1 = corners_move[corners][m];
+    for (int m = 0; m < N_MOVES_P2; m++) {
+      Coord corners1 = corners_move[corners][kPhase2Moves[m]];
       Coord udedges1 = udedges_move[udedges][m];
-      udedges1 = conj_udedges[udedges1][corners_sym_sym[corners1]];
-      LargeCoord csymudedges1 = CSYMUDEDGES(corners_sym[corners1], udedges1);
+      LargeCoord csymudedges1 = CSYMUDEDGES(
+        corners_sym[corners1], conj_udedges[udedges1][corners_sym_sym[corners1]]
+      );
 
       if (getPrun3(csymudedges_prun3, csymudedges1) == depth3 - 1) {
         corners = corners1;
@@ -92,7 +101,12 @@ int getDepthCSymUDEdgesPrun3(Coord corners, Coord udedges) {
         break;
       }
     }
+
+    depth3--;
+    depth++;
   }
+
+  return depth;
 }
 
 void initFSSymTwistPrun3() {

@@ -24,8 +24,8 @@ extern uint64_t *fssymtwist_prun3;
 extern uint64_t *csymudedges_prun3;
 extern uint8_t *cornersslices_prun;
 
-void getDepthFSSymTwist(LargeCoord fssymtwist);
-void getDepthCSymUDEdges(LargeCoord udsymcorners);
+int getDepthFSSymTwistPrun3(Coord flip, Coord slice, Coord twist);
+int getDepthCSymUDEdgesPrun3(Coord corners, Coord udedges);
 
 void initPrun();
 void initFSSymTwistPrun3();
