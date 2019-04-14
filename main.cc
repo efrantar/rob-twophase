@@ -259,6 +259,7 @@ void testPrunTables() {
     for (Coord udedges = 0; udedges < N_UDEDGES_COORDS_P2; udedges++)
       count2[getDepthCSymUDEdgesPrun3(corners_raw[csym], udedges)]++;
   }
+  std::cout << "csymudedges:\n";
   for (int i = 0; i < 12; i++)
     std::cout << "depth " << i << ": " << count2[i] << "\n";
 }
