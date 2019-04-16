@@ -43,7 +43,7 @@ void initPrunTables() {
   initPrun();
 
   clock_t tick = clock();
-//  initFSSymTwistPrun3();
+  initFSSymTwistPrun3();
   initCSymUDEdgesPrun3();
   initCornersSliceSPrun();
   std::cout << "Prun tables: " << tock(tick) << "\n";
@@ -241,20 +241,28 @@ void testSyms() {
 void testPrunTables() {
   std::cout << "Testing pruning tables ...\n";
 
-  /*
+  std::cout << slicesorted_move[slicesorted_move[0][F1]][F3] << "\n";
+
+  std::cout << getDepthFSSymTwistPrun3(
+    flip_move[flip_move[flip_move[0][F1]][U1]][R2],
+    slicesorted_move[slicesorted_move[slicesorted_move[0][F1]][U1]][R2],
+    twist_move[twist_move[twist_move[0][F1]][U1]][R2]
+  ) << "\n";
+
+  std::cout << "fssymtwist:\n";
   int count1[14] = {};
   for (SymCoord fssym = 0; fssym < N_FLIPSLICE_SYM_COORDS; fssym++) {
     for (Coord twist = 0; twist < N_TWIST_COORDS; twist++) {
       count1[getDepthFSSymTwistPrun3(
         FS_FLIP(flipslice_raw[fssym]), SLICESORTED(FS_SLICE(flipslice_raw[fssym])), twist
-      )]++; 
+      )]++;
+      std::cout << twist << "\n";
     }
-    std::cout << "test\n";
+    std::cout << fssym << "\n";
   }
-  std::cout << "fssymtwist:\n";
   for (int i = 0; i < 14; i++)
     std::cout << "depth " << i << ": " << count1[i] << "\n";
-  */
+
  
   std::cout << "csymudedges:\n";
   int count2[12] = {};
@@ -271,6 +279,17 @@ void testPrunTables() {
       count3[cornersslices_prun[cornersslices]]++;
   for (int i = 0; i < 15; i++)
     std::cout << "depth " << i << ": " << count3[i] << "\n";
+
+  for (int i = 1; i < 22; i++) {
+    int j1 = (i + 1) % 3;
+    int j2 = (i - 1) % 3;
+    if (next_depth[i][j1] != i + 1 || next_depth[i][j2] != i - 1) {
+      std::cout << "error\n";
+      return;
+    }
+  }
+
+  std::cout << "ok\n";
 }
 
 int main() {

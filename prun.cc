@@ -52,12 +52,16 @@ int getDepthFSSymTwistPrun3(Coord flip, Coord slicesorted, Coord twist) {
       Coord flip1 = flip_move[flip][m];
       Coord slicesorted1 = slicesorted_move[slicesorted][m];
       Coord twist1 = twist_move[twist][m];
-      LargeCoord flipslice1 = FLIPSLICE(flip, SS_SLICE(slicesorted));
+      LargeCoord flipslice1 = FLIPSLICE(flip1, SS_SLICE(slicesorted1));
       
       LargeCoord fssymtwist1 = FSSYMTWIST(
         flipslice_sym[flipslice1], conj_twist[twist1][flipslice_sym_sym[flipslice1]]
       );
+
+      // std::cout << flip1 << " " << slicesorted1 << " " << twist1 << " " << flipslice1 << "\n";
+
       if (getPrun3(fssymtwist_prun3, fssymtwist1) == depth3 - 1) {
+        // std::cout << flip1 << " " << slicesorted1 << " " << twist1 << " " << flipslice1 << "\n";
         flip = flip1;
         slicesorted = slicesorted1;
         twist = twist1;
@@ -68,6 +72,9 @@ int getDepthFSSymTwistPrun3(Coord flip, Coord slicesorted, Coord twist) {
 
     depth3--;
     depth++;
+
+    if (depth == 50)
+      return -10000;
   }
 
   return depth;
