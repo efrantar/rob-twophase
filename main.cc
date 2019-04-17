@@ -242,7 +242,7 @@ void testPrunTables() {
   std::cout << "Testing pruning tables ...\n";
 
   std::cout << "fssymtwist:\n";
-  int count1[14] = {};
+  int count1[13] = {};
   for (SymCoord fssym = 0; fssym < N_FLIPSLICE_SYM_COORDS; fssym++) {
     for (Coord twist = 0; twist < N_TWIST_COORDS; twist++) {
       count1[getDepthFSSymTwistPrun3(
@@ -250,7 +250,7 @@ void testPrunTables() {
       )]++;
     }
   }
-  for (int i = 0; i < 14; i++)
+  for (int i = 0; i < 13; i++)
     std::cout << "depth " << i << ": " << count1[i] << "\n";
  
   std::cout << "csymudedges:\n";
