@@ -241,14 +241,6 @@ void testSyms() {
 void testPrunTables() {
   std::cout << "Testing pruning tables ...\n";
 
-  std::cout << slicesorted_move[slicesorted_move[0][F1]][F3] << "\n";
-
-  std::cout << getDepthFSSymTwistPrun3(
-    flip_move[flip_move[flip_move[0][F1]][U1]][R2],
-    slicesorted_move[slicesorted_move[slicesorted_move[0][F1]][U1]][R2],
-    twist_move[twist_move[twist_move[0][F1]][U1]][R2]
-  ) << "\n";
-
   std::cout << "fssymtwist:\n";
   int count1[14] = {};
   for (SymCoord fssym = 0; fssym < N_FLIPSLICE_SYM_COORDS; fssym++) {
@@ -256,13 +248,10 @@ void testPrunTables() {
       count1[getDepthFSSymTwistPrun3(
         FS_FLIP(flipslice_raw[fssym]), SLICESORTED(FS_SLICE(flipslice_raw[fssym])), twist
       )]++;
-      std::cout << twist << "\n";
     }
-    std::cout << fssym << "\n";
   }
   for (int i = 0; i < 14; i++)
     std::cout << "depth " << i << ": " << count1[i] << "\n";
-
  
   std::cout << "csymudedges:\n";
   int count2[12] = {};
@@ -295,13 +284,13 @@ void testPrunTables() {
 int main() {
   initMisc();
   initCoordTables();
-  initSymTables();
+  // initSymTables();
   initPrunTables();
 
   testCoords();
   testCoordMoves();
   testMergeUDEdges();
-  testSyms();
+  // testSyms();
   testFlipSliceSyms();
   testCornersSyms();
   testPrunTables();

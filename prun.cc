@@ -58,10 +58,7 @@ int getDepthFSSymTwistPrun3(Coord flip, Coord slicesorted, Coord twist) {
         flipslice_sym[flipslice1], conj_twist[twist1][flipslice_sym_sym[flipslice1]]
       );
 
-      // std::cout << flip1 << " " << slicesorted1 << " " << twist1 << " " << flipslice1 << "\n";
-
       if (getPrun3(fssymtwist_prun3, fssymtwist1) == depth3 - 1) {
-        // std::cout << flip1 << " " << slicesorted1 << " " << twist1 << " " << flipslice1 << "\n";
         flip = flip1;
         slicesorted = slicesorted1;
         twist = twist1;
@@ -72,9 +69,6 @@ int getDepthFSSymTwistPrun3(Coord flip, Coord slicesorted, Coord twist) {
 
     depth3--;
     depth++;
-
-    if (depth == 50)
-      return -10000;
   }
 
   return depth;
@@ -129,7 +123,7 @@ void initFSSymTwistPrun3() {
   while (filled < N_FSSYMTWIST_COORDS) {
     LargeCoord c = 0;
     int depth3 = depth % 3;
-
+    
     for (SymCoord fssym = 0; fssym < N_FLIPSLICE_SYM_COORDS; fssym++) {
       Coord flip = FS_FLIP(flipslice_raw[fssym]);
       Coord slice = FS_SLICE(flipslice_raw[fssym]);
@@ -164,8 +158,9 @@ void initFSSymTwistPrun3() {
           if (backsearch) {
             if (getPrun3(fssymtwist_prun3, c1) != depth3)
               continue;
-            c1 = c;
-            fssym1 = fssym;
+            setPrun3(fssymtwist_prun3, c, depth + 1);
+            filled++;
+            break;
           } else if (getPrun3(fssymtwist_prun3, c1) != EMPTY)
             continue;
      
@@ -183,9 +178,6 @@ void initFSSymTwistPrun3() {
               }
             }
           }
-
-          if (backsearch)
-            break;
         }
       }
     }
