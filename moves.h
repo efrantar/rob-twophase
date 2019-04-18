@@ -41,6 +41,12 @@ const std::vector<int> kPhase2Moves = {
   U1, U2, U3, R2, F2, D1, D2, D3, L2, B2
 };
 
+const bool kIsPhase2Move = {
+  true, true, true, false, true, false,
+  false, true, false, true, true, true,
+  false, true, false, false, true, false
+};
+
 const int kInvMove[] = {
   U3, U2, U1, 
   R3, R2, R1, 
