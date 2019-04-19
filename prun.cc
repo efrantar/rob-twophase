@@ -9,20 +9,20 @@
 #define EMPTY 0x3
 #define EMPTY_CELL ~uint64_t(0)
 
-int (*next_depth)[3];
+int (*next_dist)[3];
 
 uint64_t *fssymtwist_prun3;
 uint64_t *csymudedges_prun3;
 uint8_t *cornersslices_prun;
 
 void initPrun() {
- next_depth = new int[22][3];
+ next_dist = new int[22][3];
  
  for (int i = 0; i < 22; i++) {
    if (i > 0)
-     next_depth[i][(i - 1) % 3] = i - 1;
-   next_depth[i][i % 3] = i;
-   next_depth[i][(i + 1) % 3] = i + 1;
+     next_dist[i][(i - 1) % 3] = i - 1;
+   next_dist[i][i % 3] = i;
+   next_dist[i][(i + 1) % 3] = i + 1;
  }
 }
 

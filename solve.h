@@ -1,9 +1,15 @@
 #ifndef SOLVE_H_
 #define SOLVE_H_
 
+#include <string>
+#include <vector>
+
+#include "coord.h"
+#include "moves.h"
+
 #define N 100
 
-#include <vector>
+bool skip_move[N_MOVES][N_MOVES];
 
 class Solver {
   
@@ -32,7 +38,9 @@ class Solver {
     Solver(int max_depth);
     std::string solve(const CubieCube &cube);
 
-}
+};
+
+void initSolve();
 
 #endif
 

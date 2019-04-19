@@ -272,7 +272,7 @@ void testPrunTables() {
   for (int i = 1; i < 22; i++) {
     int j1 = (i + 1) % 3;
     int j2 = (i - 1) % 3;
-    if (next_depth[i][j1] != i + 1 || next_depth[i][j2] != i - 1) {
+    if (next_dist[i][j1] != i + 1 || next_dist[i][j2] != i - 1) {
       std::cout << "error\n";
       return;
     }
