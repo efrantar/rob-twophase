@@ -17,8 +17,10 @@ uint8_t *cornersslices_prun;
 
 void initPrun() {
  next_depth = new int[22][3];
- for (int i = 1; i < 22; i++) {
-   next_depth[i][(i - 1) % 3] = i - 1;
+ 
+ for (int i = 0; i < 22; i++) {
+   if (i > 0)
+     next_depth[i][(i - 1) % 3] = i - 1;
    next_depth[i][i % 3] = i;
    next_depth[i][(i + 1) % 3] = i + 1;
  }

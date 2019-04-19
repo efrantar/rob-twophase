@@ -5,12 +5,6 @@
 
 #include <vector>
 
-bool kPairMove[] = {
-  false, false, false, false, false, true,
-  false, false, true, false, false, false,
-  false, false, true, false, false, true
-};
-
 class Solver {
   
   private:
@@ -24,10 +18,12 @@ class Solver {
     Coord udedges[N];
 
     int max_depth;
-    
-    bool found;
-    int moves[N];
+
     std::vector<int> sol;
+    int moves[N];
+    bool found;
+    int corners_depth;
+    int udedges_depth;
 
     void phase1(int depth, int dist, int limit);
     void phase2(int depth, int dist, int limit);
