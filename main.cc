@@ -7,6 +7,7 @@
 #include "misc.h"
 #include "moves.h"
 #include "prun.h"
+#include "solve.h"
 #include "sym.h"
 
 double tock(clock_t tick) {
@@ -284,16 +285,19 @@ void testPrunTables() {
 int main() {
   initMisc();
   initCoordTables();
-  // initSymTables();
+  initSymTables();
   initPrunTables();
+  initSolve();
 
+  /*
   testCoords();
   testCoordMoves();
   testMergeUDEdges();
-  // testSyms();
+  testSyms();
   testFlipSliceSyms();
   testCornersSyms();
   testPrunTables();
+  */
 
   return 0;
 }

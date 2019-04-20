@@ -9,7 +9,7 @@
 
 #define N 100
 
-bool skip_move[N_MOVES][N_MOVES];
+extern bool skip_move[N_MOVES][N_MOVES];
 
 class Solver {
   

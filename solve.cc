@@ -6,6 +6,8 @@
 #include "sym.h"
 #include "prun.h"
 
+bool skip_move[N_MOVES][N_MOVES];
+
 std::string Solver::solve(const CubieCube &cube) {
   CubieCube cube1;
   copy(cube, cube1);
@@ -57,7 +59,7 @@ void Solver::phase1(int depth, int dist, int limit) {
 
     int dist1 = getDepthCSymUDEdgesPrun3(corners[depth], udedges[depth]);
     for (int limit1 = dist1; limit1 < max_limit; limit1++)
-      phase2(depth + 1, dist1, limit1);
+      phase2(depth, dist1, limit1);
 
     return;
   }
