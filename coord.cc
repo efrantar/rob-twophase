@@ -7,6 +7,7 @@
 #include <algorithm>
 #include <iostream>
 #include <vector>
+#include <stdint.h>
 
 Coord (*twist_move)[N_MOVES];
 Coord (*flip_move)[N_MOVES];
@@ -84,7 +85,7 @@ void setOriCoord(Coord val, int oris[], int len, int n_oris) {
   oris[len - 1] = (n_oris - parity % n_oris) % n_oris;
 }
 
-void setPermCoord(Coord val, int cubies[], int len, int max_cubie) {
+void setPermCoord(uint64_t val, int cubies[], int len, int max_cubie) {
   for (int i = len - 1; i >= 0; i--) {
     cubies[i] = max_cubie;
     max_cubie--;
@@ -240,7 +241,7 @@ void setSlice(CubieCube &cube, Coord slice) {
   }
 }
 
-void setEdges(CubieCube &cube, Coord edges) {
+void setEdges(CubieCube &cube, uint64_t edges) {
   setPermCoord(edges, cube.ep, N_EDGES, N_EDGES - 1);
 }
 

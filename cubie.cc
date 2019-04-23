@@ -78,7 +78,7 @@ int checkCube(const CubieCube &cube) {
     if (cube.ep[i] < 0 || cube.ep[i] >= N_EDGES)
       return 5;
     edges[cube.ep[i]] = true;
-    if (cube.eo[i] < 0 || cube.co[i] >= 2)
+    if (cube.eo[i] < 0 || cube.eo[i] >= 2)
       return 6;
     eo_sum += cube.eo[i];
   }
@@ -101,7 +101,7 @@ CubieCube randomCube() {
   setFlip(cube, rand(N_FLIP_COORDS));
   do {
     setCorners(cube, rand(N_CORNERS_COORDS));
-    setEdges(cube, rand(N_EDGES_COORDS));
+    setEdges(cube, randLong(N_EDGES_COORDS));
   } while (parity(cube.cp, N_CORNERS) != parity(cube.ep, N_EDGES));
 
   return cube;

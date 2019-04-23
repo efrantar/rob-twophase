@@ -1,15 +1,26 @@
 #include "misc.h"
+
 #include <random>
+#include <stdint.h>
 
 int fac[MISC_N];
 int cnk[MISC_N][MISC_N] = {};
 
 int mod(int a, int m) {
-  return a > 0 ? a % m : a % m + m;
+  return a > 0 ? a % m : (a % m + m) % m;
 }
+
+/* TODO: make the random generation cleaner */
 
 int rand(int max) {
   return std::rand() % max;
+}
+
+uint64_t randLong(uint64_t max) {
+  std::random_device rd;
+  std::mt19937_64 gen(rd());
+  std::uniform_int_distribution<uint64_t> dis;
+  return dis(gen);
 }
 
 void initMisc() {

@@ -58,7 +58,7 @@ void setUEdges(CubieCube &cube, Coord uedges);
 void setDEdges(CubieCube &cube, Coord dedges);
 void setUDEdges(CubieCube &cube, Coord udedges);
 void setCorners(CubieCube &cube, Coord corners);
-void setEdges(CubieCube &cube, Coord edges);
+void setEdges(CubieCube &cube, uint64_t edges);
 void setSlice(CubieCube &cube, Coord slice);
 
 void initTwistMove();

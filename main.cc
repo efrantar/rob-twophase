@@ -4,6 +4,7 @@
 
 #include "cubie.h"
 #include "coord.h"
+#include "face.h"
 #include "misc.h"
 #include "moves.h"
 #include "prun.h"
@@ -56,6 +57,25 @@ void testCoord(int n_coords, Coord (*get)(CubieCube &), void (*set)(CubieCube &,
     set(cube, c);
     if (get(cube) != c) {
       std::cout << "error: " << c << "\n";
+      return;
+    }
+  }
+  std::cout << "ok\n";
+}
+
+void testCube() {
+  std::cout << "Testing cube ...\n";
+  for (int i = 0; i < 1000; i++) {
+    CubieCube c = randomCube();
+    int tmp = checkCube(c);
+    if (tmp != 0) {
+      std::cout << "error 1: " << tmp << "\n";
+      return;
+    }
+    CubieCube c1;
+    faceToCubie(cubieToFace(c), c1);
+    if (!equal(c1, c)) {
+      std::cout << "error 2\n";
       return;
     }
   }
@@ -286,7 +306,7 @@ int main() {
   initMisc();
   initCoordTables();
   initSymTables();
-  initPrunTables();
+//  initPrunTables();
   initSolve();
 
   /*
@@ -298,6 +318,8 @@ int main() {
   testCornersSyms();
   testPrunTables();
   */
+
+  testCube();
 
   return 0;
 }
