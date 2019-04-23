@@ -279,4 +279,3 @@ void initCornersSliceSPrun() {
     }
   }
 }
-

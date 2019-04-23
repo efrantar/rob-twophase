@@ -306,7 +306,7 @@ int main() {
   initMisc();
   initCoordTables();
   initSymTables();
-//  initPrunTables();
+  initPrunTables();
   initSolve();
 
   /*
@@ -319,8 +319,14 @@ int main() {
   testPrunTables();
   */
 
-  testCube();
+  // testCube();
+
+  for (int i = 0; i < 100; i++) {
+    clock_t tick = clock();
+    Solver solver(21);
+    solver.solve(randomCube());
+    std::cout << "Solve: " << tock(tick) << "\n";
+  }
 
   return 0;
 }
-

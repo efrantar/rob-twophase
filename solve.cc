@@ -8,6 +8,10 @@
 
 bool skip_move[N_MOVES][N_MOVES];
 
+Solver::Solver(int max_depth1) {
+    max_depth = max_depth1;
+}
+
 std::string Solver::solve(const CubieCube &cube) {
   CubieCube cube1;
   copy(cube, cube1);
@@ -35,6 +39,7 @@ std::string Solver::solve(const CubieCube &cube) {
     if (i != sol.size() - 1)
       s += " ";
   }
+  return s;
 }
 
 void Solver::phase1(int depth, int dist, int limit) {
@@ -46,9 +51,10 @@ void Solver::phase1(int depth, int dist, int limit) {
       corners[i] = corners_move[corners[i - 1]][moves[i - 1]];
     corners_depth = depth - 1;
 
-    int max_limit = depth + std::min(max_depth - depth, 11);
-    if (max_limit >= cornersslices_prun[corners[depth]])
+    int max_limit = std::min(max_depth - depth, 11);
+    if (cornersslices_prun[CORNERSSLICES(corners[depth], slicesorted[depth])] >= max_limit)
       return;
+    max_limit += depth;
 
     for (int i = udedges_depth + 1; i <= depth; i++) {
       uedges[i] = uedges_move[uedges[i - 1]][moves[i - 1]];
@@ -58,7 +64,7 @@ void Solver::phase1(int depth, int dist, int limit) {
     udedges[depth] = merge_udedges[uedges[depth]][dedges[depth] % 24];
 
     int dist1 = getDepthCSymUDEdgesPrun3(corners[depth], udedges[depth]);
-    for (int limit1 = dist1; limit1 < max_limit; limit1++)
+    for (int limit1 = depth + dist1; limit1 <= max_limit; limit1++)
       phase2(depth, dist1, limit1);
 
     return;
@@ -86,6 +92,8 @@ void Solver::phase1(int depth, int dist, int limit) {
     if (depth + dist1 < limit) {
       moves[depth] = m;
       phase1(depth + 1, dist1, limit);
+      if (found)
+        return;
     }
   }
 
@@ -125,6 +133,8 @@ void Solver::phase2(int depth, int dist, int limit) {
     if (depth + std::max(dist1, tmp) < limit) {
       moves[depth] = kPhase2Moves[m];
       phase2(depth + 1, dist1, limit);
+      if (found)
+        return;
     }
   }
 }
@@ -137,4 +147,3 @@ void initSolve() {
     }
   }
 }
-
