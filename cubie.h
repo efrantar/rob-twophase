@@ -49,7 +49,8 @@ void mulCorners(const CubieCube &cube_a, const CubieCube &cube_b, CubieCube &cub
 void mulCubes(const CubieCube &cube_a, const CubieCube &cube_b, CubieCube &cube_c);
 CubieCube mulCubes(const CubieCube &cube_a, const CubieCube &cube_b);
 
-bool isSolvable(const CubieCube &cube);
+int checkCube(const CubieCube &cube);
+CubieCube randomCube();
 
 void copy(const CubieCube &cube_from, CubieCube &cube_to);
 bool equal(const CubieCube &cube1, const CubieCube &cube2);

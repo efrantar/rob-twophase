@@ -16,7 +16,7 @@
 
 const char kColorNames[] = {'U', 'R', 'F', 'D', 'L', 'B'};
 
-bool faceToCubie(const std::string &s, CubieCube &cubiecube);
+int faceToCubie(const std::string &s, CubieCube &cubiecube);
 std::string cubieToFace(const CubieCube &cubiecube);
 
 #endif

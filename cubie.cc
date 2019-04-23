@@ -1,5 +1,8 @@
 #include "cubie.h"
 
+#include "coord.h"
+#include "misc.h"
+
 void mulCorners(const CubieCube &cube_a, const CubieCube &cube_b, CubieCube &cube_c) {
   for (int i = 0; i < N_CORNERS; i++) {
     cube_c.cp[i] = cube_a.cp[cube_b.cp[i]];
@@ -38,8 +41,70 @@ void mulCubes(const CubieCube &cube_a, const CubieCube &cube_b, CubieCube &cube_
   mulCorners(cube_a, cube_b, cube_c);
 }
 
-bool isSolvable(const CubieCube &cube) {
-  return false; // TODO: implement
+bool parity(const int perm[], int len) {
+  int par = 0;
+  for (int i = 0; i < len; i++) {
+    for (int j = 0; j < i; j++) {
+      if (perm[j] > perm[i])
+        par++;
+    }
+  }
+  return par & 1;
+}
+
+int checkCube(const CubieCube &cube) {
+  bool corners[N_CORNERS] = {};
+  int co_sum = 0;
+  
+  for (int i = 0; i < N_CORNERS; i++) {
+    if (cube.cp[i] < 0 || cube.cp[i] >= N_CORNERS)
+      return 1;
+    corners[cube.cp[i]] = true;
+    if (cube.co[i] < 0 || cube.co[i] >= 3)
+      return 2;
+    co_sum += cube.co[i];
+  }
+  if (co_sum % 3 != 0)
+    return 3;
+  for (int i = 0; i < N_CORNERS; i++) {
+    if (!corners[i])
+      return 4;
+  }
+
+  bool edges[N_EDGES] = {};
+  int eo_sum = 0;
+
+  for (int i = 0; i < N_EDGES; i++) {
+    if (cube.ep[i] < 0 || cube.ep[i] >= N_EDGES)
+      return 5;
+    edges[cube.ep[i]] = true;
+    if (cube.eo[i] < 0 || cube.co[i] >= 2)
+      return 6;
+    eo_sum += cube.eo[i];
+  }
+  if (eo_sum & 1 != 0)
+    return 7;
+  for (int i = 0; i < N_EDGES; i++) {
+    if (!edges[i])
+      return 8;
+  }
+  
+  if (parity(cube.cp, N_CORNERS) != parity(cube.ep, N_EDGES))
+    return 9;
+  return 0;
+}
+
+CubieCube randomCube() {
+  CubieCube cube;
+
+  setTwist(cube, rand(N_TWIST_COORDS));
+  setFlip(cube, rand(N_FLIP_COORDS));
+  do {
+    setCorners(cube, rand(N_CORNERS_COORDS));
+    setEdges(cube, rand(N_EDGES_COORDS));
+  } while (parity(cube.cp, N_CORNERS) != parity(cube.ep, N_EDGES));
+
+  return cube;
 }
 
 void copy(const CubieCube &cube_from, CubieCube &cube_to) {

@@ -1,10 +1,15 @@
 #include "misc.h"
+#include <random>
 
 int fac[MISC_N];
 int cnk[MISC_N][MISC_N] = {};
 
 int mod(int a, int m) {
   return a > 0 ? a % m : a % m + m;
+}
+
+int rand(int max) {
+  return std::rand() % max;
 }
 
 void initMisc() {

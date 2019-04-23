@@ -46,13 +46,13 @@ void maybeInit() {
   inited = true;
 }
 
-bool faceToCubie(const std::string &s, CubieCube &cubiecube) {
+int faceToCubie(const std::string &s, CubieCube &cubiecube) {
   maybeInit();
 
   int facecube[N_FACELETS];
   for (int i = 0; i < N_FACELETS; i++) {
     if (colors.find(s[i]) == colors.end())
-      return false;
+      return 1;
     facecube[i] = colors[s[i]];
   }
 
@@ -62,7 +62,7 @@ bool faceToCubie(const std::string &s, CubieCube &cubiecube) {
       cornlet[i] = facecube[cornlets[corner][i]];
     auto tmp = corners.find(encode(cornlet, 3, 0));
     if (tmp == corners.end())
-      return false;
+      return 2;
     cubiecube.cp[corner] = tmp->second.first;
     cubiecube.co[corner] = tmp->second.second;
   }
@@ -73,12 +73,12 @@ bool faceToCubie(const std::string &s, CubieCube &cubiecube) {
       edgelet[i] = facecube[edgelets[edge][i]];
     auto tmp = edges.find(encode(edgelet, 2, 0));
     if (tmp == edges.end())
-      return false;
+      return 3;
     cubiecube.ep[edge] = tmp->second.first;
     cubiecube.eo[edge] = tmp->second.second;
   }
  
-  return true;
+  return 0;
 }
 
 std::string cubieToFace(const CubieCube &cube) {
