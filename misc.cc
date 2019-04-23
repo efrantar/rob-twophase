@@ -3,6 +3,10 @@
 int fac[MISC_N];
 int cnk[MISC_N][MISC_N] = {};
 
+int mod(int a, int m) {
+  return a > 0 ? a % m : a % m + m;
+}
+
 void initMisc() {
   fac[0] = 1;
   for (int i = 1; i < MISC_N; i++)

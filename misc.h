@@ -6,6 +6,8 @@
 extern int fac[MISC_N];
 extern int cnk[MISC_N][MISC_N];
 
+int mod(int a, int m);
+
 void initMisc();
 
 #endif
