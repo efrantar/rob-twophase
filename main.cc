@@ -321,9 +321,17 @@ int main() {
 
   // testCube();
 
+  /*
+  CubieCube c;
+  faceToCubie("BUUDUURBFUFBRRFRUFBLRUFDRBBDDULDBFLLLFDRLLUFFLRDRBBDDL", c);
+  solve(c, 20, 10000000);
+  */
+
   for (int i = 0; i < 100; i++) {
     clock_t tick = clock();
-    solve(randomCube(), 21, 1000);
+    CubieCube c = randomCube();
+    // std::cout << cubieToFace(c) << "\n";
+    solve(c, 20, 10000000);
     std::cout << "Solve: " << tock(tick) << "\n";
   }
 

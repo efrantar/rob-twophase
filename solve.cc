@@ -10,6 +10,7 @@
 #include "moves.h"
 #include "sym.h"
 #include "prun.h"
+#include "face.h" // TODO: remove
 
 bool skip_move[N_MOVES][N_MOVES];
 
@@ -28,16 +29,32 @@ Solver::Solver(int rot1, bool inv1) {
 
 void Solver::solve(const CubieCube &cube) {
   CubieCube cube1;
-  copy(cube, cube1);
+  CubieCube cube2;
 
-  flip[0] = getFlip(cube1);
-  twist[0] = getTwist(cube1);
+  if (rot == 1) {
+    CubieCube tmp;
+    mulCubes(sym_cubes[inv_sym[16]], cube, tmp);
+    mulCubes(tmp, sym_cubes[16], cube1);
+  } else if (rot == 2) {
+    CubieCube tmp;
+    mulCubes(sym_cubes[inv_sym[32]], cube, tmp);
+    mulCubes(tmp, sym_cubes[32], cube1);
+  } else
+    copy(cube, cube1);
+  if (inv)
+    cube1 = invCube(cube1);
+  copy(cube1, cube2);
 
-  slicesorted[0] = getSliceSorted(cube1);
-  copy(cube, cube1);
-  uedges[0] = getUEdges(cube1);
-  copy(cube, cube1);
-  dedges[0] = getDEdges(cube1);
+  flip[0] = getFlip(cube2);
+  twist[0] = getTwist(cube2);
+
+  slicesorted[0] = getSliceSorted(cube2);
+  copy(cube1, cube2);
+  uedges[0] = getUEdges(cube2);
+  copy(cube1, cube2);
+  dedges[0] = getDEdges(cube2);
+  copy(cube1, cube2);
+  corners[0] = getCorners(cube2);
 
   corners_depth = 0;
   udedges_depth = 0;
@@ -55,64 +72,67 @@ void Solver::phase1(int depth, int dist, int limit) {
     return;
   }
 
+  // TODO: get the optimization to work
   if (depth == limit) {
+    corners_depth = 0;
     for (int i = corners_depth + 1; i <= depth; i++)
       corners[i] = corners_move[corners[i - 1]][moves[i - 1]];
-    corners_depth = depth - 1;
+    corners_depth = depth;
 
-    int max_limit = std::min(len - 1 - depth, 11);
-    if (cornersslices_prun[CORNERSSLICES(corners[depth], slicesorted[depth])] >= max_limit)
+    int max_limit = std::min(len - 1 - depth, 10);
+    if (cornersslices_prun[CORNERSSLICES(corners[depth], slicesorted[depth])] > max_limit)
       return;
     max_limit += depth;
 
+    udedges_depth = 0;
     for (int i = udedges_depth + 1; i <= depth; i++) {
       uedges[i] = uedges_move[uedges[i - 1]][moves[i - 1]];
       dedges[i] = dedges_move[dedges[i - 1]][moves[i - 1]];
     }
-    udedges_depth = depth - 1;
+    udedges_depth = depth;
     udedges[depth] = merge_udedges[uedges[depth]][dedges[depth] % 24];
 
     int dist1 = getDepthCSymUDEdgesPrun3(corners[depth], udedges[depth]);
     for (int limit1 = depth + dist1; limit1 <= max_limit; limit1++)
       phase2(depth, dist1, limit1);
+  } else {
+    for (int m = 0; m < N_MOVES; m++) {
+      if (depth > 0 && skip_move[moves[depth - 1]][m])
+        continue;
+      if (dist == 0 && depth > limit - 5 && kIsPhase2Move[m])
+        continue;
 
-    return;
-  }
+      flip[depth + 1] = flip_move[flip[depth]][m];
+      slicesorted[depth + 1] = slicesorted_move[slicesorted[depth]][m];
+      twist[depth + 1] = twist_move[twist[depth]][m];
 
-  for (int m = 0; m < N_MOVES; m++) {
-    if (depth > 0 && skip_move[moves[depth - 1]][m])
-      continue;
-    if (dist == 0 && depth > limit - 5 && kIsPhase2Move[m])
-      continue;
+      LargeCoord flipslice = FLIPSLICE(
+        flip[depth + 1], SS_SLICE(slicesorted[depth + 1])
+      );
+      LargeCoord fssymtwist = FSSYMTWIST(
+        flipslice_sym[flipslice],
+        conj_twist[twist[depth + 1]][flipslice_sym_sym[flipslice]]
+      );
+      int dist1 = next_dist[dist][getPrun3(fssymtwist_prun3, fssymtwist)];
 
-    flip[depth + 1] = flip_move[flip[depth]][m];
-    slicesorted[depth + 1] = slicesorted_move[slicesorted[depth]][m];
-    twist[depth + 1] = twist_move[twist[depth]][m];
-
-    LargeCoord flipslice = FLIPSLICE(
-      flip[depth + 1], SS_SLICE(slicesorted[depth + 1])
-    );
-    LargeCoord fssymtwist = FSSYMTWIST(
-      flipslice_sym[flipslice], 
-      conj_twist[twist[depth + 1]][flipslice_sym_sym[flipslice]]
-    );
-    int dist1 = next_dist[dist][getPrun3(fssymtwist_prun3, fssymtwist)];
-
-    if (depth + dist1 < limit) {
-      moves[depth] = m;
-      phase1(depth + 1, dist1, limit);
-      if (done)
-        return;
+      if (depth + dist1 < limit) {
+        moves[depth] = m;
+        phase1(depth + 1, dist1, limit);
+        if (done)
+          return;
+      }
     }
   }
 
-  if (corners_depth == depth)
+  if (depth > 0 && corners_depth == depth)
     corners_depth--;
-  if (udedges_depth == depth)
+  if (depth > 0 && udedges_depth == depth)
     udedges_depth--;
 }
 
 void Solver::phase2(int depth, int dist, int limit) {
+  // std::cout << "phase2 " << corners[depth] << " " << udedges[depth] << " " << slicesorted[depth] << " " << dist << "\n";
+
   if (done)
     return;
   else if (clock() > endtime) {
@@ -120,6 +140,7 @@ void Solver::phase2(int depth, int dist, int limit) {
     return;
   }
 
+  // TODO: transform back
   if (depth == limit) {
     mutex.lock();
 
@@ -129,7 +150,7 @@ void Solver::phase2(int depth, int dist, int limit) {
         sol[i] = moves[i];
       len = depth;
 
-      if (depth == max_depth)
+      if (depth <= max_depth)
         done = true;
     }
 
@@ -169,9 +190,27 @@ std::string solve(const CubieCube &cube, int max_depth1, int timelimit) {
   len = max_depth > 0 ? max_depth + 1 : 23;
   endtime = clock() + clock_t(CLOCKS_PER_SEC / 1000. * timelimit);
 
+  /*
   Solver solver(0, false);
-  std::thread t(&Solver::solve, solver, cube);
-  t.join();
+  solver.solve(cube);
+
+  for (int rot = 0; rot < 3; rot++) {
+    for (int inv = 0; inv < 2; inv++) {
+      Solver solver(rot, (bool) inv);
+      solver.solve(cube);
+    }
+  }
+  */
+
+  std::vector<std::thread> threads;
+  for (int rot = 0; rot < 3; rot++) {
+    for (int inv = 0; inv < 2; inv++) {
+      Solver solver(rot, (bool) inv);
+      threads.push_back(std::thread(&Solver::solve, solver, cube));
+    }
+  }
+  for (int i = 0; i < 6; i++)
+    threads[i].join();
 
   std::string s;
   for (int i = 0; i < sol.size(); i++) {
