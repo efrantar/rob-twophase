@@ -72,55 +72,56 @@ void Solver::phase1(int depth, int dist, int limit) {
     return;
   }
 
-  // TODO: get the optimization to work
   if (depth == limit) {
-    corners_depth = 0;
     for (int i = corners_depth + 1; i <= depth; i++)
       corners[i] = corners_move[corners[i - 1]][moves[i - 1]];
-    corners_depth = depth;
+    if (depth > 0)
+      corners_depth = depth - 1;
 
     int max_limit = std::min(len - 1 - depth, 10);
     if (cornersslices_prun[CORNERSSLICES(corners[depth], slicesorted[depth])] > max_limit)
       return;
     max_limit += depth;
 
-    udedges_depth = 0;
     for (int i = udedges_depth + 1; i <= depth; i++) {
       uedges[i] = uedges_move[uedges[i - 1]][moves[i - 1]];
       dedges[i] = dedges_move[dedges[i - 1]][moves[i - 1]];
     }
-    udedges_depth = depth;
+    if (depth > 0)
+      udedges_depth = depth - 1;
     udedges[depth] = merge_udedges[uedges[depth]][dedges[depth] % 24];
 
     int dist1 = getDepthCSymUDEdgesPrun3(corners[depth], udedges[depth]);
     for (int limit1 = depth + dist1; limit1 <= max_limit; limit1++)
       phase2(depth, dist1, limit1);
-  } else {
-    for (int m = 0; m < N_MOVES; m++) {
-      if (depth > 0 && skip_move[moves[depth - 1]][m])
-        continue;
-      if (dist == 0 && depth > limit - 5 && kIsPhase2Move[m])
-        continue;
 
-      flip[depth + 1] = flip_move[flip[depth]][m];
-      slicesorted[depth + 1] = slicesorted_move[slicesorted[depth]][m];
-      twist[depth + 1] = twist_move[twist[depth]][m];
+    return;
+  }
 
-      LargeCoord flipslice = FLIPSLICE(
-        flip[depth + 1], SS_SLICE(slicesorted[depth + 1])
-      );
-      LargeCoord fssymtwist = FSSYMTWIST(
-        flipslice_sym[flipslice],
-        conj_twist[twist[depth + 1]][flipslice_sym_sym[flipslice]]
-      );
-      int dist1 = next_dist[dist][getPrun3(fssymtwist_prun3, fssymtwist)];
+  for (int m = 0; m < N_MOVES; m++) {
+    if (depth > 0 && skip_move[moves[depth - 1]][m])
+      continue;
+    if (dist == 0 && depth > limit - 5 && kIsPhase2Move[m])
+      continue;
 
-      if (depth + dist1 < limit) {
-        moves[depth] = m;
-        phase1(depth + 1, dist1, limit);
-        if (done)
-          return;
-      }
+    flip[depth + 1] = flip_move[flip[depth]][m];
+    slicesorted[depth + 1] = slicesorted_move[slicesorted[depth]][m];
+    twist[depth + 1] = twist_move[twist[depth]][m];
+
+    LargeCoord flipslice = FLIPSLICE(
+      flip[depth + 1], SS_SLICE(slicesorted[depth + 1])
+    );
+    LargeCoord fssymtwist = FSSYMTWIST(
+      flipslice_sym[flipslice],
+      conj_twist[twist[depth + 1]][flipslice_sym_sym[flipslice]]
+    );
+    int dist1 = next_dist[dist][getPrun3(fssymtwist_prun3, fssymtwist)];
+
+    if (depth + dist1 < limit) {
+      moves[depth] = m;
+      phase1(depth + 1, dist1, limit);
+      if (done)
+        return;
     }
   }
 
@@ -131,8 +132,6 @@ void Solver::phase1(int depth, int dist, int limit) {
 }
 
 void Solver::phase2(int depth, int dist, int limit) {
-  // std::cout << "phase2 " << corners[depth] << " " << udedges[depth] << " " << slicesorted[depth] << " " << dist << "\n";
-
   if (done)
     return;
   else if (clock() > endtime) {
