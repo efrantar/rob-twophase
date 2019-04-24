@@ -138,8 +138,7 @@ void Solver::phase2(int depth, int dist, int limit) {
     done = true;
     return;
   }
-
-  // TODO: transform back
+  
   if (depth == limit) {
     mutex.lock();
 
@@ -148,6 +147,15 @@ void Solver::phase2(int depth, int dist, int limit) {
       for (int i = 0; i < depth; i++)
         sol[i] = moves[i];
       len = depth;
+
+      if (inv) {
+        for (int i = 0; i < depth; i++)
+          sol[i] = kInvMove[sol[i]];
+      }
+      if (rot > 0) {
+        for (int i = 0; i < depth; i++)
+          sol[i] = conj_move[sol[i]][16 * rot];
+      }
 
       if (depth <= max_depth)
         done = true;
