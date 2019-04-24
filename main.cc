@@ -323,8 +323,7 @@ int main() {
 
   for (int i = 0; i < 100; i++) {
     clock_t tick = clock();
-    Solver solver(21);
-    solver.solve(randomCube());
+    solve(randomCube(), 21, 1000);
     std::cout << "Solve: " << tock(tick) << "\n";
   }
 

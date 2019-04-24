@@ -47,7 +47,7 @@ typedef struct {
 void mulEdges(const CubieCube &cube_a, const CubieCube &cube_b, CubieCube &cube_c);
 void mulCorners(const CubieCube &cube_a, const CubieCube &cube_b, CubieCube &cube_c);
 void mulCubes(const CubieCube &cube_a, const CubieCube &cube_b, CubieCube &cube_c);
-CubieCube mulCubes(const CubieCube &cube_a, const CubieCube &cube_b);
+CubieCube invCube(const CubieCube &cube);
 
 int checkCube(const CubieCube &cube);
 CubieCube randomCube();

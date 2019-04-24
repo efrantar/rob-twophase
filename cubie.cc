@@ -94,6 +94,27 @@ int checkCube(const CubieCube &cube) {
   return 0;
 }
 
+CubieCube invCube(const CubieCube &cube) {
+  CubieCube inv;
+
+  for (int corner = 0; corner < N_CORNERS; corner++)
+    inv.cp[cube.cp[corner]] = corner;
+  for (int edge = 0; edge < N_EDGES; edge++)
+    inv.ep[cube.ep[edge]] = edge;
+
+  for (int i = 0; i < N_CORNERS; i++) {
+    int ori = cube.co[inv.cp[i]];
+    if (ori >= 3)
+      inv.co[i] = ori;
+    else
+      inv.co[i] = mod(ori, 3);
+  }
+  for (int i = 0; i < N_EDGES; i++)
+    inv.eo[i] = cube.eo[inv.ep[i]];
+
+  return inv;
+}
+
 CubieCube randomCube() {
   CubieCube cube;
 

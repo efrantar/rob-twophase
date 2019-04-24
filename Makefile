@@ -1,9 +1,9 @@
 C=gcc
 CXX=g++
 RM=rm -f
-CPPFLAGS=-std=c++14
+CPPFLAGS=-std=c++14 -lpthread
 LDFLAGS=
-LDLIBS=
+LDLIBS=-lpthread
 
 SRCS=main.cc coord.cc cubie.cc face.cc misc.cc moves.cc prun.cc solve.cc sym.cc
 OBJS=$(subst .cc,.o,$(SRCS))
@@ -26,4 +26,3 @@ distclean: clean
 	$(RM) *~ .depend
 
 include .depend
-
