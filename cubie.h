@@ -30,6 +30,9 @@
 #define BL 10
 #define BR 11
 
+typedef uint8_t edge_t;
+typedef uint8_t corner_t;
+
 const std::string kCornerNames[] = {
   "URF", "UFL", "ULB", "UBR", "DFR", "DLF", "DBL", "DRB"
 };

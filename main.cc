@@ -1,3 +1,11 @@
+/**
+ * Possible optimizations:
+ * - Sym and sym_sym in a single 2D table
+ * - Raw and symset in a single 2D table
+ * - Axis skipping in pruning table generation
+ * - Switch from mod 3 to full 4 bit phase 2 pruning table representation -> 26MB
+ */
+
 #include <ctime>
 #include <iostream>
 #include <stdlib.h>

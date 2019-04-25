@@ -138,7 +138,7 @@ void Solver::phase2(int depth, int dist, int limit) {
     done = true;
     return;
   }
-  
+
   if (depth == limit) {
     mutex.lock();
 
@@ -196,18 +196,6 @@ std::string solve(const CubieCube &cube, int max_depth1, int timelimit) {
   max_depth = max_depth1;
   len = max_depth > 0 ? max_depth + 1 : 23;
   endtime = clock() + clock_t(CLOCKS_PER_SEC / 1000. * timelimit);
-
-  /*
-  Solver solver(0, false);
-  solver.solve(cube);
-
-  for (int rot = 0; rot < 3; rot++) {
-    for (int inv = 0; inv < 2; inv++) {
-      Solver solver(rot, (bool) inv);
-      solver.solve(cube);
-    }
-  }
-  */
 
   std::vector<std::thread> threads;
   for (int rot = 0; rot < 3; rot++) {
