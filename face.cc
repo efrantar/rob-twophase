@@ -3,49 +3,41 @@
 #include <string>
 #include <unordered_map>
 #include "misc.h"
-#include "moves.h"
 
-bool inited = false;
-
-std::unordered_map<char, int> colors;
-std::unordered_map<std::string, int> moves;
-std::unordered_map<int, std::pair<int, int>> corners;
-std::unordered_map<int, std::pair<int, int>> edges;
-
-int encode(std::string cubelet, int ori) {
+int encode(const std::string &cubelet, int ori) {
   int res = 0;
   for (int i = 0; i < cubelet.size(); i++)
-    res = N_COLORS * res + colors[cubelet[mod(i - ori, cubelet.size())]];
+    res = N_COLORS * res + kNameToColor.at(cubelet[mod(i - ori, cubelet.size())]);
   return res;
 }
 
-void maybeInit() {
-  if (inited)
-    return;
-
-  for (int color = 0; color < N_COLORS; color++)
-    colors[kColorNames[color]] = color;
-  for (int move = 0; move < N_MOVES; move++)
-    moves[kMoveNames[move]] = move;
-
+auto createCorners() {
+  std::unordered_map<int, std::pair<int, int>> corners;
   for (int corner = 0; corner < N_CORNERS; corner++) {
     for (int ori = 0; ori < 3; ori++)
       corners[encode(kCornerNames[corner], ori)] = std::make_pair(corner, ori);
   }
+  return corners;
+}
+
+auto createEdges() {
+  std::unordered_map<int, std::pair<int, int>> edges;
   for (int edge = 0; edge < N_EDGES; edge++) {
     for (int ori = 0; ori < 2; ori++)
       edges[encode(kEdgeNames[edge], ori)] = std::make_pair(edge, ori);
   }
-
-  inited = true;
+  return edges;
 }
 
-int faceToCubie(const std::string &s, CubieCube &cube) {
-  maybeInit();
+auto corners = createCorners();
+auto edges = createEdges();
 
+int faceToCubie(const std::string &s, CubieCube &cube) {
   for (int i = 0; i < N_FACELETS; i++) {
-    if (colors.find(s[i]) == colors.end())
+    if (kNameToColor.find(s[i]) == kNameToColor.end())
       return 1;
+    if ((i - 4) % 9 == 0 && kNameToColor.at(s[i]) != i / 9)
+      return 2;
   }
 
   for (int corner = 0; corner < N_CORNERS; corner++) {
@@ -54,7 +46,7 @@ int faceToCubie(const std::string &s, CubieCube &cube) {
       cornlet[i] = s[kCornlets[corner][i]];
     auto tmp = corners.find(encode(std::string(cornlet, 3), 0));
     if (tmp == corners.end())
-      return 2;
+      return 3;
     cube.cp[corner] = tmp->second.first;
     cube.co[corner] = tmp->second.second;
   }
@@ -65,7 +57,7 @@ int faceToCubie(const std::string &s, CubieCube &cube) {
       edgelet[i] = s[kEdgelets[edge][i]];
     auto tmp = edges.find(encode(std::string(edgelet, 2), 0));
     if (tmp == edges.end())
-      return 3;
+      return 4;
     cube.ep[edge] = tmp->second.first;
     cube.eo[edge] = tmp->second.second;
   }
@@ -74,9 +66,8 @@ int faceToCubie(const std::string &s, CubieCube &cube) {
 }
 
 std::string cubieToFace(const CubieCube &cube) {
-  maybeInit();
-
   char s[N_FACELETS];
+
   for (int color = 0; color < N_COLORS; color++)
     s[9 * color + 4] = kColorNames[color];
   for (int corner = 0; corner < N_CORNERS; corner++) {
@@ -89,12 +80,4 @@ std::string cubieToFace(const CubieCube &cube) {
   }
 
   return std::string(s, N_FACELETS);
-}
-
-std::string fromScramble(const std::string scramble) {
-  CubieCube cube;
-
-
-
-  return cubieToFace(cube);
 }

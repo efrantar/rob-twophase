@@ -2,6 +2,7 @@
 #define FACE_H_
 
 #include <string>
+#include <unordered_map>
 #include "cubie.h"
 
 #define N_COLORS 6
@@ -16,6 +17,10 @@
 
 const char kColorNames[] = {'U', 'R', 'F', 'D', 'L', 'B'};
 
+const std::unordered_map<char, int> kNameToColor = {
+  {'U', U}, {'R', R}, {'F', F}, {'D', D}, {'L', L}, {'B', B}
+};
+
 const int kCornlets[][3] = {
   {8, 9, 20}, {6, 18, 38}, {0, 36, 47}, {2, 45, 11},
   {29, 26, 15}, {27, 44, 24}, {33, 53, 42}, {35, 17, 51}
@@ -28,6 +33,5 @@ const int kEdgelets[][2] = {
 
 int faceToCubie(const std::string &s, CubieCube &cube);
 std::string cubieToFace(const CubieCube &cube);
-std::string fromScramble(const std::string &scramble);
 
 #endif
