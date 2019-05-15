@@ -37,7 +37,7 @@ const std::string kEdgeNames[] = {
   "UR", "UF", "UL", "UB", "DR", "DF", "DL", "DB", "FR", "FL", "BL", "BR"
 };
 
-typedef struct CubieCube {
+typedef struct {
   int cp[N_CORNERS];
   int ep[N_EDGES];
   int co[N_CORNERS];

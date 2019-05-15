@@ -117,8 +117,8 @@ void Solver::phase1(int depth, int dist, int limit) {
       flip[depth + 1], SS_SLICE(sslice[depth + 1])
     );
     CoordL fstwist = FSTWIST(
-      fslice_sym[fslice],
-      conj_twist[twist[depth + 1]][fslice_sym_sym[fslice]]
+      fslice_sym[fslice].coord,
+      conj_twist[twist[depth + 1]][fslice_sym[fslice].sym]
     );
     int dist1 = next_dist[dist][getPrun3(fstwist_prun3, fstwist)];
 
@@ -179,8 +179,8 @@ void Solver::phase2(int depth, int dist, int limit) {
     udedges[depth + 1] = udedges_move[udedges[depth]][m];
 
     CoordL cornud = CORNUD(
-      corners_sym[corners[depth + 1]], 
-      conj_udedges[udedges[depth + 1]][corners_sym_sym[corners[depth + 1]]]
+      corners_sym[corners[depth + 1]].coord,
+      conj_udedges[udedges[depth + 1]][corners_sym[corners[depth + 1]].sym]
     );
     int dist1 = next_dist[dist][getPrun3(cornud_prun3, cornud)];
 

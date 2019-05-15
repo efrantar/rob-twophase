@@ -1,9 +1,5 @@
 /**
  * Possible optimizations:
- * - Sym and sym_sym in a single 2D table
- * - Raw and symset in a single 2D table
- * - Axis skipping in pruning table generation
- * - Symset on backward search?
  * - Switch from mod 3 to full 4 bit phase 2 pruning table representation -> 26MB
  */
 
@@ -41,8 +37,8 @@ void initSymTables() {
   clock_t tick = clock();
   initConjTwist();
   initConjUDEdges();
-  initFlipSliceSyms();
-  initCornersSyms();
+  initFlipSliceSym();
+  initCornersSym();
   std::cout << "Sym tables: " << tock(tick) << "\n";
 }
 
@@ -162,14 +158,14 @@ void testFlipSliceSyms() {
           SS_SLICE(sslice_move[SSLICE(slice)][m])
         );
         
-        CoordL flipslice2 = fslice_raw[fslice_sym[flipslice]];
-        int m_conj = conj_move[m][fslice_sym_sym[flipslice]];
+        CoordL flipslice2 = fslice_raw[fslice_sym[flipslice].coord].coord;
+        int m_conj = conj_move[m][fslice_sym[flipslice].sym];
         flipslice2 = FSLICE(
           flip_move[FS_FLIP(flipslice2)][m_conj],
           sliceMove(FS_SLICE(flipslice2), m_conj)
         );
 
-        if (fslice_sym[flipslice1] != fslice_sym[flipslice2]) {
+        if (fslice_sym[flipslice1].coord != fslice_sym[flipslice2].coord) {
           std::cout << "error: " << flipslice << " " << m << "\n";
           return;
         }
@@ -181,15 +177,15 @@ void testFlipSliceSyms() {
   CubieCube cube2;
   CubieCube tmp;
 
-  for (SymCoord c = 0; c < N_FSLICE_SYM; c++) {
-    setFlip(cube1, FS_FLIP(fslice_raw[c]));
-    setSlice(cube1, FS_SLICE(fslice_raw[c]));
-    for (Sym s = 0; s < N_SYMS_DH4; s++) {
+  for (Coord c = 0; c < N_FSLICE_SYM; c++) {
+    setFlip(cube1, FS_FLIP(fslice_raw[c].coord));
+    setSlice(cube1, FS_SLICE(fslice_raw[c].coord));
+    for (int s = 0; s < N_SYMS_DH4; s++) {
       mulEdges(sym_cubes[s], cube1, tmp);
       mulEdges(tmp, sym_cubes[inv_sym[s]], cube2);
       if (
-        FSLICE(getFlip(cube2), getSlice(cube2)) == fslice_raw[c] &&
-        (fslice_symset[c] & (1 << s)) == 0
+        FSLICE(getFlip(cube2), getSlice(cube2)) == fslice_raw[c].coord &&
+        (fslice_raw[c].syms & (1 << s)) == 0
       ) {
         std::cout << "error: " << c << " " << (int) s << "\n";
         return;
@@ -205,8 +201,8 @@ void testCornersSyms() {
   for (Coord c = 0; c < N_CORNERS_C; c++) {
     for (int m : kPhase2Moves) {
       if (
-        corners_sym[corners_move[corners_raw[corners_sym[c]]][conj_move[m][corners_sym_sym[c]]]]
-        != corners_sym[corners_move[c][m]]
+        corners_sym[corners_move[corners_raw[corners_sym[c].coord].coord][conj_move[m][corners_sym[c].sym]]].coord
+        != corners_sym[corners_move[c][m]].coord
       ) {
         std::cout << "error: " << c << " " << m << "\n";
         return;
@@ -218,12 +214,12 @@ void testCornersSyms() {
   CubieCube cube2;
   CubieCube tmp;
 
-  for (SymCoord c = 0; c < N_CORNERS_SYM; c++) {
-    setCorners(cube1, corners_raw[c]);
-    for (Sym s = 0; s < N_SYMS_DH4; s++) {
+  for (Coord c = 0; c < N_CORNERS_SYM; c++) {
+    setCorners(cube1, corners_raw[c].coord);
+    for (int s = 0; s < N_SYMS_DH4; s++) {
       mulCorners(sym_cubes[s], cube1, tmp);
       mulCorners(tmp, sym_cubes[inv_sym[s]], cube2);
-      if (getCorners(cube2) == corners_raw[c] && (corners_symset[c] & (1 << s)) == 0) {
+      if (getCorners(cube2) == corners_raw[c].coord && (corners_raw[c].syms & (1 << s)) == 0) {
         std::cout << "error: " << c << " " << (int) s << "\n";
         return;
       }
@@ -237,7 +233,7 @@ void testSyms() {
   std::cout << "Testing syms ...\n";
   
   CubieCube cube;
-  for (Sym s = 0; s < N_SYMS; s++) {
+  for (int s = 0; s < N_SYMS; s++) {
     mul(sym_cubes[s], sym_cubes[inv_sym[s]], cube);
     if (cube != sym_cubes[0]) {
       std::cout << "error: " << (int) s << "\n";
@@ -251,7 +247,7 @@ void testSyms() {
   }
 
   for (int m = 0; m < N_MOVES; m++) {
-    for (Sym s = 0; s < N_SYMS; s++) {
+    for (int s = 0; s < N_SYMS; s++) {
       if (conj_move[conj_move[m][s]][inv_sym[s]] != m) {
         std::cout << "error: " << m << " " << (int) s << "\n";
         break;
@@ -267,10 +263,10 @@ void testPrunTables() {
 
   std::cout << "fssymtwist:\n";
   int count1[13] = {};
-  for (SymCoord fssym = 0; fssym < N_FSLICE_SYM; fssym++) {
+  for (Coord fssym = 0; fssym < N_FSLICE_SYM; fssym++) {
     for (Coord twist = 0; twist < N_TWIST; twist++) {
       count1[getFSTwistDist(
-        FS_FLIP(fslice_raw[fssym]), SSLICE(FS_SLICE(fslice_raw[fssym])), twist
+        FS_FLIP(fslice_raw[fssym].coord), SSLICE(FS_SLICE(fslice_raw[fssym].coord)), twist
       )]++;
     }
   }
@@ -279,9 +275,9 @@ void testPrunTables() {
  
   std::cout << "csymudedges:\n";
   int count2[12] = {};
-  for (SymCoord csym = 0; csym < N_CORNERS_SYM; csym++) {
+  for (Coord csym = 0; csym < N_CORNERS_SYM; csym++) {
     for (Coord udedges = 0; udedges < N_UDEDGES2; udedges++)
-      count2[getCORNUDDist(corners_raw[csym], udedges)]++;
+      count2[getCORNUDDist(corners_raw[csym].coord, udedges)]++;
   }
   for (int i = 0; i < 12; i++)
     std::cout << "depth " << i << ": " << count2[i] << "\n";

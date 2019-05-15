@@ -17,7 +17,7 @@ uint8_t *cornslice_prun;
 
 static bool init() {
  next_dist = new int[22][3];
- 
+
  for (int i = 0; i < 22; i++) {
    if (i > 0)
      next_dist[i][(i - 1) % 3] = i - 1;
@@ -41,7 +41,7 @@ void setPrun3(uint64_t *prun3, CoordL c, int dist) {
 int getFSTwistDist(Coord flip, Coord sslice, Coord twist) {
   CoordL fslice = FSLICE(flip, SS_SLICE(sslice));
   CoordL fstwist = FSTWIST(
-    fslice_sym[fslice], conj_twist[twist][fslice_sym_sym[fslice]]
+    fslice_sym[fslice].coord, conj_twist[twist][fslice_sym[fslice].sym]
   );
 
   int depth3 = getPrun3(fstwist_prun3, fstwist);
@@ -58,7 +58,7 @@ int getFSTwistDist(Coord flip, Coord sslice, Coord twist) {
       CoordL fslice1 = FSLICE(flip1, SS_SLICE(sslice1));
       
       CoordL fstwist1 = FSTWIST(
-        fslice_sym[fslice1], conj_twist[twist1][fslice_sym_sym[fslice1]]
+        fslice_sym[fslice1].coord, conj_twist[twist1][fslice_sym[fslice1].sym]
       );
 
       if (getPrun3(fstwist_prun3, fstwist1) == depth3 - 1) {
@@ -79,7 +79,7 @@ int getFSTwistDist(Coord flip, Coord sslice, Coord twist) {
 
 int getCORNUDDist(Coord corners, Coord udedges) {
   CoordL cornud = CORNUD(
-    corners_sym[corners], conj_udedges[udedges][corners_sym_sym[corners]]
+    corners_sym[corners].coord, conj_udedges[udedges][corners_sym[corners].sym]
   );
 
   int depth3 = getPrun3(cornud_prun3, cornud);
@@ -95,7 +95,7 @@ int getCORNUDDist(Coord corners, Coord udedges) {
       Coord corners1 = corners_move[corners][kPhase2Moves[m]];
       Coord udedges1 = udedges_move[udedges][m];
       CoordL cornud1 = CORNUD(
-        corners_sym[corners1], conj_udedges[udedges1][corners_sym_sym[corners1]]
+        corners_sym[corners1].coord, conj_udedges[udedges1][corners_sym[corners1].sym]
       );
 
       if (getPrun3(cornud_prun3, cornud1) == depth3 - 1) {
@@ -127,9 +127,9 @@ void initFSTwistPrun3() {
     CoordL c = 0;
     int depth3 = depth % 3;
     
-    for (SymCoord fssym = 0; fssym < N_FSLICE_SYM; fssym++) {
-      Coord flip = FS_FLIP(fslice_raw[fssym]);
-      Coord slice = FS_SLICE(fslice_raw[fssym]);
+    for (Coord fssym = 0; fssym < N_FSLICE_SYM; fssym++) {
+      Coord flip = FS_FLIP(fslice_raw[fssym].coord);
+      Coord slice = FS_SLICE(fslice_raw[fssym].coord);
 
       for (Coord twist = 0; twist < N_TWIST; twist++, c++) {
         if (!backsearch) {
@@ -154,8 +154,8 @@ void initFSTwistPrun3() {
           CoordL fslice1 = FSLICE(flip1, slice1);
           Coord twist1 = twist_move[twist][m];
 
-          SymCoord fssym1 = fslice_sym[fslice1];
-          twist1 = conj_twist[twist1][fslice_sym_sym[fslice1]];
+          Coord fssym1 = fslice_sym[fslice1].coord;
+          twist1 = conj_twist[twist1][fslice_sym[fslice1].sym];
           CoordL c1 = FSTWIST(fssym1, twist1);
 
           if (backsearch) {
@@ -165,13 +165,13 @@ void initFSTwistPrun3() {
             filled++;
             break;
           } else if (getPrun3(fstwist_prun3, c1) != EMPTY)
-            continue;
+              continue;
      
           setPrun3(fstwist_prun3, c1, depth + 1);
           filled++;
             
-          SymSet symset = fslice_symset[fssym1] >> 1;
-          for (Sym s = 1; symset > 0; symset >>= 1, s++) {
+          int symset = fslice_raw[fssym1].syms >> 1;
+          for (int s = 1; symset > 0; symset >>= 1, s++) {
             if (symset & 1) {
               CoordL c2 = FSTWIST(fssym1, conj_twist[twist1][s]);
               if (getPrun3(fstwist_prun3, c2) == EMPTY) {
@@ -206,7 +206,7 @@ void initCornUDPrun3() {
     CoordL c = 0;
     int depth3 = depth % 3;
 
-    for (SymCoord csym = 0; csym < N_CORNERS_SYM; csym++) {
+    for (Coord csym = 0; csym < N_CORNERS_SYM; csym++) {
       for (Coord udedges = 0; udedges < N_UDEDGES2; udedges++, c++) {
         if (
           c % 32 == 0 && 
@@ -222,10 +222,10 @@ void initCornUDPrun3() {
         bits->set(c);
 
         for (int m = 0; m < N_MOVES2; m++) {
-          Coord corners1 = corners_move[corners_raw[csym]][kPhase2Moves[m]];
+          Coord corners1 = corners_move[corners_raw[csym].coord][kPhase2Moves[m]];
           Coord udedges1 = udedges_move[udedges][m];
-          SymCoord csym1 = corners_sym[corners1];
-          udedges1 = conj_udedges[udedges1][corners_sym_sym[corners1]];
+          Coord csym1 = corners_sym[corners1].coord;
+          udedges1 = conj_udedges[udedges1][corners_sym[corners1].sym];
           CoordL c1 = CORNUD(csym1, udedges1);
 
           if (getPrun3(cornud_prun3, c1) != EMPTY)
@@ -234,8 +234,8 @@ void initCornUDPrun3() {
           setPrun3(cornud_prun3, c1, depth + 1);
           filled++;
             
-          SymSet symset = corners_symset[csym1] >> 1;
-          for (Sym s = 1; symset > 0; symset >>= 1, s++) {
+          int symset = corners_raw[csym1].syms >> 1;
+          for (int s = 1; symset > 0; symset >>= 1, s++) {
             if (symset & 1) {
               CoordL c2 = CORNUD(csym1, conj_udedges[udedges1][s]);
               if (getPrun3(cornud_prun3, c2) == EMPTY) {
