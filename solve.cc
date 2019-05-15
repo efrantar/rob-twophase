@@ -10,9 +10,19 @@
 #include "moves.h"
 #include "sym.h"
 #include "prun.h"
-#include "face.h" // TODO: remove
 
 bool skip_move[N_MOVES][N_MOVES];
+
+static bool init() {
+  for (int m1 = 0; m1 < N_MOVES; m1++) {
+    for (int m2 = 0; m2 < N_MOVES; m2++) {
+      int axis_diff = m1 / 3 - m2 / 3;
+      skip_move[m1][m2] = axis_diff == 0 || axis_diff == 3;
+    }
+  }
+  return true;
+}
+static bool inited = init();
 
 std::mutex mutex;
 bool done;
@@ -29,7 +39,6 @@ Solver::Solver(int rot1, bool inv1) {
 
 void Solver::solve(const CubieCube &cube) {
   CubieCube cube1;
-  CubieCube cube2;
 
   if (rot == 1) {
     CubieCube tmp;
@@ -43,23 +52,19 @@ void Solver::solve(const CubieCube &cube) {
     copy(cube, cube1);
   if (inv)
     cube1 = invCube(cube1);
-  copy(cube1, cube2);
 
-  flip[0] = getFlip(cube2);
-  twist[0] = getTwist(cube2);
+  flip[0] = getFlip(cube1);
+  twist[0] = getTwist(cube1);
 
-  slicesorted[0] = getSSlice(cube2);
-  copy(cube1, cube2);
-  uedges[0] = getUEdges(cube2);
-  copy(cube1, cube2);
-  dedges[0] = getDEdges(cube2);
-  copy(cube1, cube2);
-  corners[0] = getCorners(cube2);
+  sslice[0] = getSSlice(cube1);
+  uedges[0] = getUEdges(cube1);
+  dedges[0] = getDEdges(cube1);
+  corners[0] = getCorners(cube1);
 
   corners_depth = 0;
   udedges_depth = 0;
 
-  int dist = getFSTwistDist(flip[0], slicesorted[0], twist[0]);
+  int dist = getFSTwistDist(flip[0], sslice[0], twist[0]);
   for (int limit = dist; limit < len; limit++)
     phase1(0, dist, limit);
 }
@@ -79,7 +84,7 @@ void Solver::phase1(int depth, int dist, int limit) {
       corners_depth = depth - 1;
 
     int max_limit = std::min(len - 1 - depth, 10);
-    if (cornslice_prun[CORNSLICE(corners[depth], slicesorted[depth])] > max_limit)
+    if (cornslice_prun[CORNSLICE(corners[depth], sslice[depth])] > max_limit)
       return;
     max_limit += depth;
 
@@ -105,17 +110,17 @@ void Solver::phase1(int depth, int dist, int limit) {
       continue;
 
     flip[depth + 1] = flip_move[flip[depth]][m];
-    slicesorted[depth + 1] = sslice_move[slicesorted[depth]][m];
+    sslice[depth + 1] = sslice_move[sslice[depth]][m];
     twist[depth + 1] = twist_move[twist[depth]][m];
 
-    CoordL flipslice = FSLICE(
-      flip[depth + 1], SS_SLICE(slicesorted[depth + 1])
+    CoordL fslice = FSLICE(
+      flip[depth + 1], SS_SLICE(sslice[depth + 1])
     );
-    CoordL fssymtwist = FSTWIST(
-      fslice_sym[flipslice],
-      conj_twist[twist[depth + 1]][fslice_sym_sym[flipslice]]
+    CoordL fstwist = FSTWIST(
+      fslice_sym[fslice],
+      conj_twist[twist[depth + 1]][fslice_sym_sym[fslice]]
     );
-    int dist1 = next_dist[dist][getPrun3(fstwist_prun3, fssymtwist)];
+    int dist1 = next_dist[dist][getPrun3(fstwist_prun3, fstwist)];
 
     if (depth + dist1 < limit) {
       moves[depth] = m;
@@ -169,17 +174,17 @@ void Solver::phase2(int depth, int dist, int limit) {
     if (depth > 0 && skip_move[moves[depth - 1]][kPhase2Moves[m]])
       continue;
 
-    slicesorted[depth + 1] = sslice_move[slicesorted[depth]][kPhase2Moves[m]];
+    sslice[depth + 1] = sslice_move[sslice[depth]][kPhase2Moves[m]];
     corners[depth + 1] = corners_move[corners[depth]][kPhase2Moves[m]];
     udedges[depth + 1] = udedges_move[udedges[depth]][m];
 
-    CoordL csymudedges = CORNUD(
+    CoordL cornud = CORNUD(
       corners_sym[corners[depth + 1]], 
       conj_udedges[udedges[depth + 1]][corners_sym_sym[corners[depth + 1]]]
     );
-    int dist1 = next_dist[dist][getPrun3(cornud_prun3, csymudedges)];
+    int dist1 = next_dist[dist][getPrun3(cornud_prun3, cornud)];
 
-    int tmp = cornslice_prun[CORNSLICE(corners[depth + 1], slicesorted[depth + 1])];
+    int tmp = cornslice_prun[CORNSLICE(corners[depth + 1], sslice[depth + 1])];
     if (depth + std::max(dist1, tmp) < limit) {
       moves[depth] = kPhase2Moves[m];
       phase2(depth + 1, dist1, limit);
@@ -214,13 +219,4 @@ std::string solve(const CubieCube &cube, int max_depth1, int timelimit) {
       s += " ";
   }
   return s;
-}
-
-void initSolve() {
-  for (int m1 = 0; m1 < N_MOVES; m1++) {
-    for (int m2 = 0; m2 < N_MOVES; m2++) {
-      int axis_diff = m1 / 3 - m2 / 3;
-      skip_move[m1][m2] = axis_diff == 0 || axis_diff == 3;
-    }
-  }
 }

@@ -3,6 +3,7 @@
  * - Sym and sym_sym in a single 2D table
  * - Raw and symset in a single 2D table
  * - Axis skipping in pruning table generation
+ * - Symset on backward search?
  * - Switch from mod 3 to full 4 bit phase 2 pruning table representation -> 26MB
  */
 
@@ -308,7 +309,6 @@ int main() {
   initCoordTables();
   initSymTables();
   initPrunTables();
-  initSolve();
 
   /*
   testCoords();

@@ -13,8 +13,7 @@
 #define FSTWIST(fssym, twist) (fssym * N_TWIST + twist)
 #define CORNUD(csym, udedges) (csym * N_UDEDGES2 + udedges)
 
-#define CORNSLICE(corners, sslice) \
-  (CoordL(corners) * N_SSLICE2 + CoordL(sslice))
+#define CORNSLICE(corners, sslice) (CoordL(corners) * N_SSLICE2 + CoordL(sslice))
 #define CS_CORNERS(cornslice) (cornslice / N_SSLICE2)
 #define CS_SSLICE(cornslice) (cornslice % N_SSLICE2)
 

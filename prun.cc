@@ -119,7 +119,7 @@ void initFSTwistPrun3() {
 
   int filled = 1;
   int depth = 0;
-  std::bitset<N_FSTWIST> *bits = new std::bitset<N_FSTWIST>();
+  auto *bits = new std::bitset<N_FSTWIST>();
   bool backsearch = false;
 
   setPrun3(fstwist_prun3, 0, 0);
@@ -199,7 +199,7 @@ void initCornUDPrun3() {
 
   int filled = 1;
   int depth = 0;
-  std::bitset<N_CORNUD> *bits = new std::bitset<N_CORNUD>();
+  auto *bits = new std::bitset<N_CORNUD>();
 
   setPrun3(cornud_prun3, 0, 0);
   while (depth < MAX_DEPTH_P2) {

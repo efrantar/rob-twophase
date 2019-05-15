@@ -7,7 +7,7 @@
 #include "coord.h"
 #include "moves.h"
 
-#define N 100
+#define N 22
 
 extern bool skip_move[N_MOVES][N_MOVES];
 
@@ -18,7 +18,7 @@ class Solver {
     bool inv;
 
     Coord flip[N];
-    Coord slicesorted[N];
+    Coord sslice[N];
     Coord twist[N];
 
     Coord uedges[N];
@@ -40,7 +40,5 @@ class Solver {
 };
 
 std::string solve(const CubieCube &cube, int max_depth, int timelimit);
-
-void initSolve();
 
 #endif
