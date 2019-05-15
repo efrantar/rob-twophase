@@ -112,8 +112,8 @@ void Solver::phase1(int depth, int dist, int limit) {
       flip[depth + 1], SS_SLICE(slicesorted[depth + 1])
     );
     CoordL fssymtwist = FSSYMTWIST(
-      flipslice_sym[flipslice],
-      conj_twist[twist[depth + 1]][flipslice_sym_sym[flipslice]]
+      fslice_sym[flipslice],
+      conj_twist[twist[depth + 1]][fslice_sym_sym[flipslice]]
     );
     int dist1 = next_dist[dist][getPrun3(fssymtwist_prun3, fssymtwist)];
 

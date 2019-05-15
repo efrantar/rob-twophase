@@ -14,7 +14,7 @@ int encode(const std::string &cubelet, int ori) {
 std::unordered_map<int, std::pair<int, int>> corners;
 std::unordered_map<int, std::pair<int, int>> edges;
 
-bool initFace() {
+static bool init() {
   std::unordered_map<int, std::pair<int, int>> corners;
   for (int corner = 0; corner < N_CORNERS; corner++) {
     for (int ori = 0; ori < 3; ori++)
@@ -29,7 +29,7 @@ bool initFace() {
 
   return true;
 }
-static bool inited = initFace();
+static bool inited = init();
 
 int faceToCubie(const std::string &s, CubieCube &cube) {
   for (int i = 0; i < N_FACELETS; i++) {

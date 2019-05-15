@@ -8,8 +8,8 @@
 #define N_SYMS 48
 #define N_SYMS_DH4 16
 
-#define N_FLIPSLICE_SYM_COORDS 64430
-#define N_CORNERS_SYM_COORDS 2768
+#define N_FSLICE_SYM 64430
+#define N_CORNERS_SYM 2768
 
 typedef uint8_t Sym;
 typedef uint16_t SymCoord;
@@ -44,17 +44,15 @@ extern int conj_move[N_MOVES][N_SYMS];
 extern Coord (*conj_twist)[N_SYMS_DH4];
 extern Coord (*conj_udedges)[N_SYMS_DH4];
 
-extern SymCoord *flipslice_sym;
-extern Sym *flipslice_sym_sym;
-extern CoordL *flipslice_raw;
-extern SymSet *flipslice_symset;
+extern SymCoord *fslice_sym;
+extern Sym *fslice_sym_sym;
+extern CoordL *fslice_raw;
+extern SymSet *fslice_symset;
 
 extern SymCoord *corners_sym;
 extern Sym *corners_sym_sym;
 extern Coord *corners_raw;
 extern Coord *corners_symset;
-
-void initSyms();
 
 void initConjTwist();
 void initConjUDEdges();

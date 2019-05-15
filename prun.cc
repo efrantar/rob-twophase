@@ -40,7 +40,7 @@ void setPrun3(uint64_t *prun3, CoordL c, int depth) {
 int getDepthFSSymTwistPrun3(Coord flip, Coord slicesorted, Coord twist) {
   CoordL flipslice = FSLICE(flip, SS_SLICE(slicesorted));
   CoordL fssymtwist = FSSYMTWIST(
-    flipslice_sym[flipslice], conj_twist[twist][flipslice_sym_sym[flipslice]]
+    fslice_sym[flipslice], conj_twist[twist][fslice_sym_sym[flipslice]]
   );
 
   int depth3 = getPrun3(fssymtwist_prun3, fssymtwist);
@@ -57,7 +57,7 @@ int getDepthFSSymTwistPrun3(Coord flip, Coord slicesorted, Coord twist) {
       CoordL flipslice1 = FSLICE(flip1, SS_SLICE(slicesorted1));
       
       CoordL fssymtwist1 = FSSYMTWIST(
-        flipslice_sym[flipslice1], conj_twist[twist1][flipslice_sym_sym[flipslice1]]
+        fslice_sym[flipslice1], conj_twist[twist1][fslice_sym_sym[flipslice1]]
       );
 
       if (getPrun3(fssymtwist_prun3, fssymtwist1) == depth3 - 1) {
@@ -126,9 +126,9 @@ void initFSSymTwistPrun3() {
     CoordL c = 0;
     int depth3 = depth % 3;
     
-    for (SymCoord fssym = 0; fssym < N_FLIPSLICE_SYM_COORDS; fssym++) {
-      Coord flip = FS_FLIP(flipslice_raw[fssym]);
-      Coord slice = FS_SLICE(flipslice_raw[fssym]);
+    for (SymCoord fssym = 0; fssym < N_FSLICE_SYM; fssym++) {
+      Coord flip = FS_FLIP(fslice_raw[fssym]);
+      Coord slice = FS_SLICE(fslice_raw[fssym]);
 
       for (Coord twist = 0; twist < N_TWIST; twist++, c++) {
         if (!backsearch) {
@@ -153,8 +153,8 @@ void initFSSymTwistPrun3() {
           CoordL flipslice1 = FSLICE(flip1, slice1);
           Coord twist1 = twist_move[twist][m];
 
-          SymCoord fssym1 = flipslice_sym[flipslice1];
-          twist1 = conj_twist[twist1][flipslice_sym_sym[flipslice1]];
+          SymCoord fssym1 = fslice_sym[flipslice1];
+          twist1 = conj_twist[twist1][fslice_sym_sym[flipslice1]];
           CoordL c1 = FSSYMTWIST(fssym1, twist1);
 
           if (backsearch) {
@@ -169,7 +169,7 @@ void initFSSymTwistPrun3() {
           setPrun3(fssymtwist_prun3, c1, depth + 1);
           filled++;
             
-          SymSet symset = flipslice_symset[fssym1] >> 1;
+          SymSet symset = fslice_symset[fssym1] >> 1;
           for (Sym s = 1; symset > 0; symset >>= 1, s++) {
             if (symset & 1) {
               CoordL c2 = FSSYMTWIST(fssym1, conj_twist[twist1][s]);
@@ -205,7 +205,7 @@ void initCSymUDEdgesPrun3() {
     CoordL c = 0;
     int depth3 = depth % 3;
 
-    for (SymCoord csym = 0; csym < N_CORNERS_SYM_COORDS; csym++) {
+    for (SymCoord csym = 0; csym < N_CORNERS_SYM; csym++) {
       for (Coord udedges = 0; udedges < N_UDEDGES2; udedges++, c++) {
         if (
           c % 32 == 0 && 

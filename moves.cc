@@ -3,7 +3,7 @@
 
 CubieCube move_cubes[N_MOVES];
 
-bool initMove() {
+static bool init() {
   move_cubes[U1] = kUCube;
   move_cubes[R1] = kRCube;
   move_cubes[F1] = kFCube;
@@ -18,4 +18,4 @@ bool initMove() {
 
   return true;
 }
-static bool inited = initMove();
+static bool inited = init();

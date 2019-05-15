@@ -59,6 +59,8 @@ int check(const CubieCube &cube);
 CubieCube randomCube();
 
 void copy(const CubieCube &from, CubieCube &to);
-bool equal(const CubieCube &cube1, const CubieCube &cube2);
+bool operator==(const CubieCube &cube1, const CubieCube &cube2);
+bool operator!=(const CubieCube &cube1, const CubieCube &cube2);
+std::ostream& operator<<(std::ostream &os, const CubieCube &cube);
 
 #endif

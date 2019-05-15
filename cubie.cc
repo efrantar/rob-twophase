@@ -136,7 +136,7 @@ void copy(const CubieCube &from, CubieCube &to) {
   std::copy(from.eo, from.eo + N_EDGES, to.eo);
 }
 
-bool equal(const CubieCube &cube1, const CubieCube &cube2) {
+bool operator==(const CubieCube &cube1, const CubieCube &cube2) {
   return
     std::equal(cube1.cp, cube1.cp + N_CORNERS, cube2.cp) &&
     std::equal(cube1.ep, cube1.ep + N_EDGES, cube2.ep) &&
@@ -145,8 +145,11 @@ bool equal(const CubieCube &cube1, const CubieCube &cube2) {
   ;
 }
 
-std::ostream& operator<<(std::ostream& os, const CubieCube& cube)
-{
+bool operator!=(const CubieCube &cube1, const CubieCube &cube2) {
+  return !(cube1 == cube2);
+}
+
+std::ostream& operator<<(std::ostream &os, const CubieCube &cube) {
   for (int i = 0; i < N_CORNERS; i++)
     os << kCornerNames[cube.cp[i]] << "(" << cube.co[i] << ") ";
   os << "\n";

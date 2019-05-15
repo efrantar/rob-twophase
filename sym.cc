@@ -11,17 +11,17 @@ int conj_move[N_MOVES][N_SYMS];
 Coord (*conj_twist)[N_SYMS_DH4];
 Coord (*conj_udedges)[N_SYMS_DH4];
 
-SymCoord *flipslice_sym;
-Sym *flipslice_sym_sym;
-CoordL *flipslice_raw;
-SymSet *flipslice_symset;
+SymCoord *fslice_sym;
+Sym *fslice_sym_sym;
+CoordL *fslice_raw;
+SymSet *fslice_symset;
 
 SymCoord *corners_sym;
 Sym *corners_sym_sym;
 Coord *corners_raw;
 SymSet *corners_symset;
 
-void initSyms() {
+static bool init() {
   CubieCube cube;
   CubieCube tmp;
 
@@ -61,14 +61,17 @@ void initSyms() {
       mul(sym_cubes[s], move_cubes[m], tmp);
       mul(tmp, sym_cubes[inv_sym[s]], cube);
       for (int conj = 0; conj < N_MOVES; conj++) {
-        if (equal(cube, move_cubes[conj])) {
+        if (cube == move_cubes[conj]) {
           conj_move[m][s] = conj;
           break;
         }
       }
     }
   }
+
+  return true;
 }
+static bool inited = init();
 
 void initConjCoord(
   Coord (**conj_coord)[N_SYMS_DH4],
@@ -77,7 +80,7 @@ void initConjCoord(
   void (*setCoord)(CubieCube &, Coord),
   void (*mul)(const CubieCube &, const CubieCube &, CubieCube &)
 ) {
-  Coord (*conj_coord1)[N_SYMS_DH4] = new Coord[n_coords][N_SYMS_DH4];
+  auto conj_coord1 = new Coord[n_coords][N_SYMS_DH4];
 
   CubieCube cube1;
   CubieCube cube2;
@@ -106,11 +109,11 @@ void initConjUDEdges() {
 }
 
 void initFlipSliceSyms() {
-  flipslice_sym = new SymCoord[N_FSLICE];
-  flipslice_sym_sym = new Sym[N_FSLICE];
-  flipslice_raw = new CoordL[N_FLIPSLICE_SYM_COORDS];
-  flipslice_symset = new SymSet[N_FLIPSLICE_SYM_COORDS];  
-  std::fill(flipslice_sym, flipslice_sym + N_FSLICE, EMPTY);
+  fslice_sym = new SymCoord[N_FSLICE];
+  fslice_sym_sym = new Sym[N_FSLICE];
+  fslice_raw = new CoordL[N_FSLICE_SYM];
+  fslice_symset = new SymSet[N_FSLICE_SYM];
+  std::fill(fslice_sym, fslice_sym + N_FSLICE, EMPTY);
 
   CubieCube cube1;
   CubieCube cube2;
@@ -122,25 +125,25 @@ void initFlipSliceSyms() {
     setSlice(cube1, slice);
     for (Coord flip = 0; flip < N_FLIP; flip++) {
       setFlip(cube1, flip);
-      CoordL flipslice1 = FSLICE(flip, slice);
+      CoordL fslice = FSLICE(flip, slice);
 
-      if (flipslice_sym[flipslice1] != EMPTY)
+      if (fslice_sym[fslice] != EMPTY)
         continue;
 
-      flipslice_sym[flipslice1] = cls;
-      flipslice_sym_sym[flipslice1] = 0;
-      flipslice_raw[cls] = flipslice1;
-      flipslice_symset[cls] = 1;
+      fslice_sym[fslice] = cls;
+      fslice_sym_sym[fslice] = 0;
+      fslice_raw[cls] = fslice;
+      fslice_symset[cls] = 1;
 
       for (Sym s = 1; s < N_SYMS_DH4; s++) {
         mulEdges(sym_cubes[inv_sym[s]], cube1, tmp);
         mulEdges(tmp, sym_cubes[s], cube2);
-        CoordL flipslice2 = FSLICE(getFlip(cube2), getSlice(cube2));
-        if (flipslice_sym[flipslice2] == EMPTY) {
-          flipslice_sym[flipslice2] = cls;
-          flipslice_sym_sym[flipslice2] = s;
-        } else if (flipslice2 == flipslice1)
-          flipslice_symset[cls] |= 1 << s;
+        CoordL fslice1 = FSLICE(getFlip(cube2), getSlice(cube2));
+        if (fslice_sym[fslice1] == EMPTY) {
+          fslice_sym[fslice1] = cls;
+          fslice_sym_sym[fslice1] = s;
+        } else if (fslice1 == fslice)
+          fslice_symset[cls] |= 1 << s;
       }
       cls++;
     }
@@ -150,8 +153,8 @@ void initFlipSliceSyms() {
 void initCornersSyms() {
   corners_sym = new SymCoord[N_CORNERS_C];
   corners_sym_sym = new Sym[N_CORNERS_C];
-  corners_raw = new Coord[N_CORNERS_SYM_COORDS];
-  corners_symset = new SymSet[N_CORNERS_SYM_COORDS];
+  corners_raw = new Coord[N_CORNERS_SYM];
+  corners_symset = new SymSet[N_CORNERS_SYM];
   std::fill(corners_sym, corners_sym + N_CORNERS_C, EMPTY);
 
   CubieCube cube1;
@@ -183,4 +186,3 @@ void initCornersSyms() {
     cls++;
   }
 }
-

@@ -37,8 +37,6 @@ void initCoordTables() {
 }
 
 void initSymTables() {
-  initSyms();
-
   clock_t tick = clock();
   initConjTwist();
   initConjUDEdges();
@@ -80,7 +78,7 @@ void testCube() {
     }
     CubieCube c1;
     faceToCubie(cubieToFace(c), c1);
-    if (!equal(c1, c)) {
+    if (c1 != c) {
       std::cout << "error 2\n";
       return;
     }
@@ -165,14 +163,14 @@ void testFlipSliceSyms() {
           SS_SLICE(sslice_move[SSLICE(slice)][m])
         );
         
-        CoordL flipslice2 = flipslice_raw[flipslice_sym[flipslice]];
-        int m_conj = conj_move[m][flipslice_sym_sym[flipslice]];
+        CoordL flipslice2 = fslice_raw[fslice_sym[flipslice]];
+        int m_conj = conj_move[m][fslice_sym_sym[flipslice]];
         flipslice2 = FSLICE(
           flip_move[FS_FLIP(flipslice2)][m_conj],
           sliceMove(FS_SLICE(flipslice2), m_conj)
         );
 
-        if (flipslice_sym[flipslice1] != flipslice_sym[flipslice2]) {
+        if (fslice_sym[flipslice1] != fslice_sym[flipslice2]) {
           std::cout << "error: " << flipslice << " " << m << "\n";
           return;
         }
@@ -184,15 +182,15 @@ void testFlipSliceSyms() {
   CubieCube cube2;
   CubieCube tmp;
 
-  for (SymCoord c = 0; c < N_FLIPSLICE_SYM_COORDS; c++) {
-    setFlip(cube1, FS_FLIP(flipslice_raw[c]));
-    setSlice(cube1, FS_SLICE(flipslice_raw[c]));
+  for (SymCoord c = 0; c < N_FSLICE_SYM; c++) {
+    setFlip(cube1, FS_FLIP(fslice_raw[c]));
+    setSlice(cube1, FS_SLICE(fslice_raw[c]));
     for (Sym s = 0; s < N_SYMS_DH4; s++) {
       mulEdges(sym_cubes[s], cube1, tmp);
       mulEdges(tmp, sym_cubes[inv_sym[s]], cube2);
       if (
-        FSLICE(getFlip(cube2), getSlice(cube2)) == flipslice_raw[c] &&
-        (flipslice_symset[c] & (1 << s)) == 0
+        FSLICE(getFlip(cube2), getSlice(cube2)) == fslice_raw[c] &&
+        (fslice_symset[c] & (1 << s)) == 0
       ) {
         std::cout << "error: " << c << " " << (int) s << "\n";
         return;
@@ -221,7 +219,7 @@ void testCornersSyms() {
   CubieCube cube2;
   CubieCube tmp;
 
-  for (SymCoord c = 0; c < N_CORNERS_SYM_COORDS; c++) {
+  for (SymCoord c = 0; c < N_CORNERS_SYM; c++) {
     setCorners(cube1, corners_raw[c]);
     for (Sym s = 0; s < N_SYMS_DH4; s++) {
       mulCorners(sym_cubes[s], cube1, tmp);
@@ -242,12 +240,12 @@ void testSyms() {
   CubieCube cube;
   for (Sym s = 0; s < N_SYMS; s++) {
     mul(sym_cubes[s], sym_cubes[inv_sym[s]], cube);
-    if (!equal(cube, sym_cubes[0])) {
+    if (cube != sym_cubes[0]) {
       std::cout << "error: " << (int) s << "\n";
       break;
     }
     mul(sym_cubes[inv_sym[s]], sym_cubes[s], cube);
-    if (!equal(cube, sym_cubes[0])) {
+    if (cube != sym_cubes[0]) {
       std::cout << "error: " << (int) s << "\n";
       break;
     }
@@ -270,10 +268,10 @@ void testPrunTables() {
 
   std::cout << "fssymtwist:\n";
   int count1[13] = {};
-  for (SymCoord fssym = 0; fssym < N_FLIPSLICE_SYM_COORDS; fssym++) {
+  for (SymCoord fssym = 0; fssym < N_FSLICE_SYM; fssym++) {
     for (Coord twist = 0; twist < N_TWIST; twist++) {
       count1[getDepthFSSymTwistPrun3(
-        FS_FLIP(flipslice_raw[fssym]), SSLICE(FS_SLICE(flipslice_raw[fssym])), twist
+        FS_FLIP(fslice_raw[fssym]), SSLICE(FS_SLICE(fslice_raw[fssym])), twist
       )]++;
     }
   }
@@ -282,7 +280,7 @@ void testPrunTables() {
  
   std::cout << "csymudedges:\n";
   int count2[12] = {};
-  for (SymCoord csym = 0; csym < N_CORNERS_SYM_COORDS; csym++) {
+  for (SymCoord csym = 0; csym < N_CORNERS_SYM; csym++) {
     for (Coord udedges = 0; udedges < N_UDEDGES2; udedges++)
       count2[getDepthCSymUDEdgesPrun3(corners_raw[csym], udedges)]++;
   }
