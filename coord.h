@@ -37,7 +37,7 @@ extern Coord (*flip_move)[N_MOVES];
 extern Coord (*slicesorted_move)[N_MOVES];
 extern Coord (*uedges_move)[N_MOVES];
 extern Coord (*dedges_move)[N_MOVES];
-extern Coord (*udedges_move)[N_MOVES_P2];
+extern Coord (*udedges_move)[N_MOVES2];
 extern Coord (*corners_move)[N_MOVES];
 
 extern Coord (*merge_udedges)[24];

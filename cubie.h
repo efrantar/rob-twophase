@@ -30,9 +30,6 @@
 #define BL 10
 #define BR 11
 
-typedef uint8_t edge_t;
-typedef uint8_t corner_t;
-
 const std::string kCornerNames[] = {
   "URF", "UFL", "ULB", "UBR", "DFR", "DLF", "DBL", "DRB"
 };
@@ -40,24 +37,28 @@ const std::string kEdgeNames[] = {
   "UR", "UF", "UL", "UB", "DR", "DF", "DL", "DB", "FR", "FL", "BL", "BR"
 };
 
-typedef struct {
-  int cp[N_CORNERS] = {URF, UFL, ULB, UBR, DFR, DLF, DBL, DRB};
-  int ep[N_EDGES] = {UR, UF, UL, UB, DR, DF, DL, DB, FR, FL, BL, BR};
-  int co[N_CORNERS] = {};
-  int eo[N_EDGES] = {};
+typedef struct CubieCube {
+  int cp[N_CORNERS];
+  int ep[N_EDGES];
+  int co[N_CORNERS];
+  int eo[N_EDGES];
 } CubieCube;
 
-void mulEdges(const CubieCube &cube_a, const CubieCube &cube_b, CubieCube &cube_c);
-void mulCorners(const CubieCube &cube_a, const CubieCube &cube_b, CubieCube &cube_c);
-void mulCubes(const CubieCube &cube_a, const CubieCube &cube_b, CubieCube &cube_c);
+const CubieCube kSolvedCube = {
+  {URF, UFL, ULB, UBR, DFR, DLF, DBL, DRB},
+  {UR, UF, UL, UB, DR, DF, DL, DB, FR, FL, BL, BR},
+  {}, {}
+};
+
+void mulEdges(const CubieCube &cube1, const CubieCube &cube2, CubieCube &cube3);
+void mulCorners(const CubieCube &cube1, const CubieCube &cube2, CubieCube &cube3);
+void mul(const CubieCube &cube1, const CubieCube &cube2, CubieCube &cube3);
 CubieCube invCube(const CubieCube &cube);
 
-int checkCube(const CubieCube &cube);
+int check(const CubieCube &cube);
 CubieCube randomCube();
 
-void copy(const CubieCube &cube_from, CubieCube &cube_to);
+void copy(const CubieCube &from, CubieCube &to);
 bool equal(const CubieCube &cube1, const CubieCube &cube2);
-void print(const CubieCube &cube);
 
 #endif
-

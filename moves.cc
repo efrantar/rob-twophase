@@ -3,7 +3,7 @@
 
 CubieCube move_cubes[N_MOVES];
 
-void initMoveCubes() {
+bool initMove() {
   move_cubes[U1] = kUCube;
   move_cubes[R1] = kRCube;
   move_cubes[F1] = kFCube;
@@ -12,8 +12,10 @@ void initMoveCubes() {
   move_cubes[B1] = kBCube;
 
   for (int i = 0; i < N_MOVES; i += 3) {
-    mulCubes(move_cubes[i], move_cubes[i], move_cubes[i + 1]);
-    mulCubes(move_cubes[i + 1], move_cubes[i], move_cubes[i + 2]);
+    mul(move_cubes[i], move_cubes[i], move_cubes[i + 1]);
+    mul(move_cubes[i + 1], move_cubes[i], move_cubes[i + 2]);
   }
-}
 
+  return true;
+}
+static bool inited = initMove();

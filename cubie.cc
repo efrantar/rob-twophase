@@ -1,44 +1,45 @@
 #include "cubie.h"
 
+#include <iostream>
 #include "coord.h"
 #include "misc.h"
 
-void mulCorners(const CubieCube &cube_a, const CubieCube &cube_b, CubieCube &cube_c) {
+void mulCorners(const CubieCube &cube1, const CubieCube &cube2, CubieCube &cube3) {
   for (int i = 0; i < N_CORNERS; i++) {
-    cube_c.cp[i] = cube_a.cp[cube_b.cp[i]];
+    cube3.cp[i] = cube1.cp[cube2.cp[i]];
  
-    int ori_a = cube_a.co[cube_b.cp[i]];
-    int ori_b = cube_b.co[i];
-    int ori_c;
+    int ori1 = cube1.co[cube2.cp[i]];
+    int ori2 = cube2.co[i];
+    int ori3;
 
-    if (ori_a < 3 && ori_b < 3)
-      ori_c = (ori_a + ori_b) % 3;
+    if (ori1 < 3 && ori2 < 3)
+      ori3 = (ori1 + ori2) % 3;
     else {
-      if (ori_a >= 3) {
-        ori_c = ori_a - ori_b;
-        if (ori_b >= 3) {
-          if (ori_c < 0)
-            ori_c += 3;
+      if (ori1 >= 3) {
+        ori3 = ori1 - ori2;
+        if (ori2 >= 3) {
+          if (ori3 < 0)
+            ori3 += 3;
         } else
-          ori_c = ori_c % 3 + 3;
+          ori3 = ori3 % 3 + 3;
       } else
-        ori_c = (ori_a + ori_b - 3) % 3 + 3;
+        ori3 = (ori1 + ori2 - 3) % 3 + 3;
     }
 
-    cube_c.co[i] = ori_c;
+    cube3.co[i] = ori3;
   }
 }
 
-void mulEdges(const CubieCube &cube_a, const CubieCube &cube_b, CubieCube &cube_c) {
+void mulEdges(const CubieCube &cube1, const CubieCube &cube2, CubieCube &cube3) {
   for (int i = 0; i < N_EDGES; i++) {
-    cube_c.ep[i] = cube_a.ep[cube_b.ep[i]];
-    cube_c.eo[i] = (cube_a.eo[cube_b.ep[i]] + cube_b.eo[i]) & 1;
+    cube3.ep[i] = cube1.ep[cube2.ep[i]];
+    cube3.eo[i] = (cube1.eo[cube2.ep[i]] + cube2.eo[i]) & 1;
   }
 }
 
-void mulCubes(const CubieCube &cube_a, const CubieCube &cube_b, CubieCube &cube_c) {
-  mulEdges(cube_a, cube_b, cube_c);
-  mulCorners(cube_a, cube_b, cube_c);
+void mul(const CubieCube &cube1, const CubieCube &cube2, CubieCube &cube3) {
+  mulEdges(cube1, cube2, cube3);
+  mulCorners(cube1, cube2, cube3);
 }
 
 bool parity(const int perm[], int len) {
@@ -52,7 +53,7 @@ bool parity(const int perm[], int len) {
   return par & 1;
 }
 
-int checkCube(const CubieCube &cube) {
+int check(const CubieCube &cube) {
   bool corners[N_CORNERS] = {};
   int co_sum = 0;
   
@@ -66,8 +67,8 @@ int checkCube(const CubieCube &cube) {
   }
   if (co_sum % 3 != 0)
     return 3;
-  for (int i = 0; i < N_CORNERS; i++) {
-    if (!corners[i])
+  for (bool corner : corners) {
+    if (!corner)
       return 4;
   }
 
@@ -84,8 +85,8 @@ int checkCube(const CubieCube &cube) {
   }
   if (eo_sum & 1 != 0)
     return 7;
-  for (int i = 0; i < N_EDGES; i++) {
-    if (!edges[i])
+  for (bool edge : edges) {
+    if (!edge)
       return 8;
   }
   
@@ -128,11 +129,11 @@ CubieCube randomCube() {
   return cube;
 }
 
-void copy(const CubieCube &cube_from, CubieCube &cube_to) {
-  std::copy(cube_from.cp, cube_from.cp + N_CORNERS, cube_to.cp);
-  std::copy(cube_from.ep, cube_from.ep + N_EDGES, cube_to.ep);
-  std::copy(cube_from.co, cube_from.co + N_CORNERS, cube_to.co);
-  std::copy(cube_from.eo, cube_from.eo + N_EDGES, cube_to.eo);
+void copy(const CubieCube &from, CubieCube &to) {
+  std::copy(from.cp, from.cp + N_CORNERS, to.cp);
+  std::copy(from.ep, from.ep + N_EDGES, to.ep);
+  std::copy(from.co, from.co + N_CORNERS, to.co);
+  std::copy(from.eo, from.eo + N_EDGES, to.eo);
 }
 
 bool equal(const CubieCube &cube1, const CubieCube &cube2) {
@@ -144,12 +145,14 @@ bool equal(const CubieCube &cube1, const CubieCube &cube2) {
   ;
 }
 
-void print(const CubieCube &cube) {
+std::ostream& operator<<(std::ostream& os, const CubieCube& cube)
+{
   for (int i = 0; i < N_CORNERS; i++)
-    std::cout << kCornerNames[cube.cp[i]] << "(" << cube.co[i] << ") ";
-  std::cout << "\n";
+    os << kCornerNames[cube.cp[i]] << "(" << cube.co[i] << ") ";
+  os << "\n";
   for (int i = 0; i < N_EDGES; i++)
-    std::cout << kEdgeNames[cube.ep[i]] << "(" << cube.eo[i] << ") ";
-  std::cout << "\n";
-}
+    os << kEdgeNames[cube.ep[i]] << "(" << cube.eo[i] << ") ";
+  os << "\n";
 
+  return os;
+}

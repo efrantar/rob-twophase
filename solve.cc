@@ -33,12 +33,12 @@ void Solver::solve(const CubieCube &cube) {
 
   if (rot == 1) {
     CubieCube tmp;
-    mulCubes(sym_cubes[inv_sym[16]], cube, tmp);
-    mulCubes(tmp, sym_cubes[16], cube1);
+    mul(sym_cubes[inv_sym[16]], cube, tmp);
+    mul(tmp, sym_cubes[16], cube1);
   } else if (rot == 2) {
     CubieCube tmp;
-    mulCubes(sym_cubes[inv_sym[32]], cube, tmp);
-    mulCubes(tmp, sym_cubes[32], cube1);
+    mul(sym_cubes[inv_sym[32]], cube, tmp);
+    mul(tmp, sym_cubes[32], cube1);
   } else
     copy(cube, cube1);
   if (inv)
@@ -165,7 +165,7 @@ void Solver::phase2(int depth, int dist, int limit) {
     return;
   }
 
-  for (int m = 0; m < N_MOVES_P2; m++) {
+  for (int m = 0; m < N_MOVES2; m++) {
     if (depth > 0 && skip_move[moves[depth - 1]][kPhase2Moves[m]])
       continue;
 

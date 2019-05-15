@@ -7,7 +7,7 @@
 #include "cubie.h"
 
 #define N_MOVES 18
-#define N_MOVES_P2 10
+#define N_MOVES2 10
 
 #define U1 0
 #define U2 1
@@ -37,7 +37,7 @@ const std::string kMoveNames[] = {
   "B", "B2", "B'"
 };
 
-const std::vector<int> kPhase2Moves = {
+const int kPhase2Moves[] = {
   U1, U2, U3, R2, F2, D1, D2, D3, L2, B2
 };
 
@@ -91,7 +91,4 @@ const CubieCube kBCube = {
 
 extern CubieCube move_cubes[N_MOVES];
 
-void initMoveCubes();
-
 #endif
-

@@ -90,7 +90,7 @@ int getDepthCSymUDEdgesPrun3(Coord corners, Coord udedges) {
     if (depth3 == 0)
       depth3 = 3;
 
-    for (int m = 0; m < N_MOVES_P2; m++) {
+    for (int m = 0; m < N_MOVES2; m++) {
       Coord corners1 = corners_move[corners][kPhase2Moves[m]];
       Coord udedges1 = udedges_move[udedges][m];
       LargeCoord csymudedges1 = CSYMUDEDGES(
@@ -220,7 +220,7 @@ void initCSymUDEdgesPrun3() {
           continue;
         bits->set(c);
 
-        for (int m = 0; m < N_MOVES_P2; m++) {
+        for (int m = 0; m < N_MOVES2; m++) {
           Coord corners1 = corners_move[corners_raw[csym]][kPhase2Moves[m]];
           Coord udedges1 = udedges_move[udedges][m];
           SymCoord csym1 = corners_sym[corners1];

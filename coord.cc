@@ -14,7 +14,7 @@ Coord (*flip_move)[N_MOVES];
 Coord (*slicesorted_move)[N_MOVES];
 Coord (*uedges_move)[N_MOVES];
 Coord (*dedges_move)[N_MOVES];
-Coord (*udedges_move)[N_MOVES_P2];
+Coord (*udedges_move)[N_MOVES2];
 Coord (*corners_move)[N_MOVES];
 
 Coord (*merge_udedges)[24];
@@ -27,15 +27,18 @@ Coord getOriCoord(const int oris[], int len, int n_oris) {
 }
 
 Coord getPermCoord(int cubies[], int len, int max_cubie) {
+  int cubies1[len];
+  std::copy(cubies, cubies + len, cubies1);
+
   Coord val = 0;
 
   for (int i = len - 1; i > 0; i--) {
     int n_rots = 0;
-    while (cubies[i] != max_cubie) {
-      int first = cubies[0];
+    while (cubies1[i] != max_cubie) {
+      int first = cubies1[0];
       for (int j = 0; j < i; j++)
-        cubies[j] = cubies[j + 1];
-      cubies[i] = first;
+        cubies1[j] = cubies1[j + 1];
+      cubies1[i] = first;
       n_rots++;
     }
     val = (val + n_rots) * i;
@@ -133,6 +136,14 @@ void setPosPermCoord(
         cubies[i] = -1;
     }
   }
+
+  int cubie = 0;
+  for (int i = 0; i < len; i++) {
+    if (cubie == min_cubie)
+      cubie = max_cubie + 1;
+    if (cubies[i] == -1)
+      cubies[i] = cubie++;
+  }
 }
 
 void initMoveCoord(
@@ -147,6 +158,7 @@ void initMoveCoord(
   CubieCube cube1;
   CubieCube cube2;
 
+  copy(kSolvedCube, cube1);
   for (Coord c = 0; c < n_coords; c++) {
     setCoord(cube1, c);
     for (int m = 0; m < N_MOVES; m++) {
@@ -222,6 +234,8 @@ void setDEdges(CubieCube &cube, Coord dedges) {
 
 void setUDEdges(CubieCube &cube, Coord udedges) {
   setPermCoord(udedges, cube.ep, N_EDGES - 4, DB);
+  for (int i = N_EDGES - 4; i < N_EDGES; i++)
+    cube.ep[i] = i;
 }
 
 void setCorners(CubieCube &cube, Coord corners) {
@@ -276,14 +290,15 @@ void initDEdgesMove() {
 }
 
 void initUDEdgesMove() { 
-  udedges_move = new Coord[N_UDEDGES_COORDS_P2][N_MOVES_P2];
+  udedges_move = new Coord[N_UDEDGES_COORDS_P2][N_MOVES2];
 
   CubieCube cube1;
   CubieCube cube2;
 
+  copy(kSolvedCube, cube1);
   for (Coord c = 0; c < N_UDEDGES_COORDS_P2; c++) {
     setUDEdges(cube1, c);
-    for (int m = 0; m < N_MOVES_P2; m++) {
+    for (int m = 0; m < N_MOVES2; m++) {
       mulEdges(cube1, move_cubes[kPhase2Moves[m]], cube2);
       udedges_move[c][m] = getUDEdges(cube2);
     }

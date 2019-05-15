@@ -25,29 +25,30 @@ void initSyms() {
   CubieCube cube;
   CubieCube tmp;
 
+  copy(kSolvedCube, cube);
   for (Sym i = 0; i < N_SYMS; i++) {
     copy(cube, sym_cubes[i]);
 
-    mulCubes(cube, kLR2Cube, tmp);
+    mul(cube, kLR2Cube, tmp);
     copy(tmp, cube);
 
     if (i % 2 == 1) {
-      mulCubes(cube, kU4Cube, tmp);
+      mul(cube, kU4Cube, tmp);
       copy(tmp, cube);
     }
     if (i % 8 == 7) {
-      mulCubes(cube, kF2Cube, tmp);
+      mul(cube, kF2Cube, tmp);
       copy(tmp, cube);
     }
     if (i % 16 == 15) {
-      mulCubes(cube, kURF3Cube, tmp);
+      mul(cube, kURF3Cube, tmp);
       copy(tmp, cube);
     }
   }
 
   for (Sym i = 0; i < N_SYMS; i++) {
     for (Sym j = 0; j < N_SYMS; j++) {
-      mulCubes(sym_cubes[i], sym_cubes[j], cube);
+      mul(sym_cubes[i], sym_cubes[j], cube);
       if (cube.cp[URF] == URF && cube.cp[UFL] == UFL && cube.cp[ULB] == ULB) {
         inv_sym[i] = j;
         break;
@@ -57,8 +58,8 @@ void initSyms() {
 
   for (int m = 0; m < N_MOVES; m++) {
     for (Sym s = 0; s < N_SYMS; s++) {
-      mulCubes(sym_cubes[s], move_cubes[m], tmp);
-      mulCubes(tmp, sym_cubes[inv_sym[s]], cube);
+      mul(sym_cubes[s], move_cubes[m], tmp);
+      mul(tmp, sym_cubes[inv_sym[s]], cube);
       for (int conj = 0; conj < N_MOVES; conj++) {
         if (equal(cube, move_cubes[conj])) {
           conj_move[m][s] = conj;
@@ -82,6 +83,7 @@ void initConjCoord(
   CubieCube cube2;
   CubieCube tmp;
 
+  copy(kSolvedCube, cube1);
   for (Coord c = 0; c < n_coords; c++) {
     setCoord(cube1, c);
     conj_coord1[c][0] = c;
@@ -115,6 +117,7 @@ void initFlipSliceSyms() {
   CubieCube tmp;
   SymCoord cls = 0;
 
+  copy(kSolvedCube, cube1);
   for (Coord slice = 0; slice < N_SLICE_COORDS; slice++) {
     setSlice(cube1, slice);
     for (Coord flip = 0; flip < N_FLIP_COORDS; flip++) {
@@ -156,6 +159,7 @@ void initCornersSyms() {
   CubieCube tmp;
   SymCoord cls = 0;
 
+  copy(kSolvedCube, cube1);
   for (Coord corners1 = 0; corners1 < N_CORNERS_COORDS; corners1++) {
     setCorners(cube1, corners1);
     if (corners_sym[corners1] != EMPTY)

@@ -24,8 +24,6 @@ double tock(clock_t tick) {
 }
 
 void initCoordTables() {
-  initMoveCubes();
-
   clock_t tick = clock();
   initTwistMove();
   initFlipMove();
@@ -75,7 +73,7 @@ void testCube() {
   std::cout << "Testing cube ...\n";
   for (int i = 0; i < 1000; i++) {
     CubieCube c = randomCube();
-    int tmp = checkCube(c);
+    int tmp = check(c);
     if (tmp != 0) {
       std::cout << "error 1: " << tmp << "\n";
       return;
@@ -102,9 +100,9 @@ void testCoordMove(Coord coord_move[][N_MOVES], int n_coords) {
   std::cout << "ok\n";
 }
 
-void testCoordMoveP2(Coord coord_move[][N_MOVES_P2], int n_coords) {
+void testCoordMoveP2(Coord coord_move[][N_MOVES2], int n_coords) {
   for (Coord c = 0; c < n_coords; c++) { 
-    for (int m = 0; m < N_MOVES_P2; m++) {
+    for (int m = 0; m < N_MOVES2; m++) {
       int inv = 0;
       while (kPhase2Moves[inv] != kInvMove[kPhase2Moves[m]])
         inv++;
@@ -243,12 +241,12 @@ void testSyms() {
   
   CubieCube cube;
   for (Sym s = 0; s < N_SYMS; s++) {
-    mulCubes(sym_cubes[s], sym_cubes[inv_sym[s]], cube);
+    mul(sym_cubes[s], sym_cubes[inv_sym[s]], cube);
     if (!equal(cube, sym_cubes[0])) {
       std::cout << "error: " << (int) s << "\n";
       break;
     }
-    mulCubes(sym_cubes[inv_sym[s]], sym_cubes[s], cube);
+    mul(sym_cubes[inv_sym[s]], sym_cubes[s], cube);
     if (!equal(cube, sym_cubes[0])) {
       std::cout << "error: " << (int) s << "\n";
       break;
