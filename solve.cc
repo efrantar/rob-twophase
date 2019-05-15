@@ -59,7 +59,7 @@ void Solver::solve(const CubieCube &cube) {
   corners_depth = 0;
   udedges_depth = 0;
 
-  int dist = getDepthFSSymTwistPrun3(flip[0], slicesorted[0], twist[0]);
+  int dist = getFSTwistDist(flip[0], slicesorted[0], twist[0]);
   for (int limit = dist; limit < len; limit++)
     phase1(0, dist, limit);
 }
@@ -79,7 +79,7 @@ void Solver::phase1(int depth, int dist, int limit) {
       corners_depth = depth - 1;
 
     int max_limit = std::min(len - 1 - depth, 10);
-    if (cornersslices_prun[CORNERSSLICES(corners[depth], slicesorted[depth])] > max_limit)
+    if (cornslice_prun[CORNSLICE(corners[depth], slicesorted[depth])] > max_limit)
       return;
     max_limit += depth;
 
@@ -91,7 +91,7 @@ void Solver::phase1(int depth, int dist, int limit) {
       udedges_depth = depth - 1;
     udedges[depth] = merge_udedges[uedges[depth]][dedges[depth] % 24];
 
-    int dist1 = getDepthCSymUDEdgesPrun3(corners[depth], udedges[depth]);
+    int dist1 = getCORNUDDist(corners[depth], udedges[depth]);
     for (int limit1 = depth + dist1; limit1 <= max_limit; limit1++)
       phase2(depth, dist1, limit1);
 
@@ -111,11 +111,11 @@ void Solver::phase1(int depth, int dist, int limit) {
     CoordL flipslice = FSLICE(
       flip[depth + 1], SS_SLICE(slicesorted[depth + 1])
     );
-    CoordL fssymtwist = FSSYMTWIST(
+    CoordL fssymtwist = FSTWIST(
       fslice_sym[flipslice],
       conj_twist[twist[depth + 1]][fslice_sym_sym[flipslice]]
     );
-    int dist1 = next_dist[dist][getPrun3(fssymtwist_prun3, fssymtwist)];
+    int dist1 = next_dist[dist][getPrun3(fstwist_prun3, fssymtwist)];
 
     if (depth + dist1 < limit) {
       moves[depth] = m;
@@ -173,13 +173,13 @@ void Solver::phase2(int depth, int dist, int limit) {
     corners[depth + 1] = corners_move[corners[depth]][kPhase2Moves[m]];
     udedges[depth + 1] = udedges_move[udedges[depth]][m];
 
-    CoordL csymudedges = CSYMUDEDGES(
+    CoordL csymudedges = CORNUD(
       corners_sym[corners[depth + 1]], 
       conj_udedges[udedges[depth + 1]][corners_sym_sym[corners[depth + 1]]]
     );
-    int dist1 = next_dist[dist][getPrun3(csymudedges_prun3, csymudedges)];
+    int dist1 = next_dist[dist][getPrun3(cornud_prun3, csymudedges)];
 
-    int tmp = cornersslices_prun[CORNERSSLICES(corners[depth + 1], slicesorted[depth + 1])];
+    int tmp = cornslice_prun[CORNSLICE(corners[depth + 1], slicesorted[depth + 1])];
     if (depth + std::max(dist1, tmp) < limit) {
       moves[depth] = kPhase2Moves[m];
       phase2(depth + 1, dist1, limit);

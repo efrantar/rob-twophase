@@ -46,12 +46,10 @@ void initSymTables() {
 }
 
 void initPrunTables() {
-  initPrun();
-
   clock_t tick = clock();
-  initFSSymTwistPrun3();
-  initCSymUDEdgesPrun3();
-  initCornersSliceSPrun();
+  initFSTwistPrun3();
+  initCornUDPrun3();
+  initCornSlicePrun();
   std::cout << "Prun tables: " << tock(tick) << "\n";
 }
 
@@ -270,7 +268,7 @@ void testPrunTables() {
   int count1[13] = {};
   for (SymCoord fssym = 0; fssym < N_FSLICE_SYM; fssym++) {
     for (Coord twist = 0; twist < N_TWIST; twist++) {
-      count1[getDepthFSSymTwistPrun3(
+      count1[getFSTwistDist(
         FS_FLIP(fslice_raw[fssym]), SSLICE(FS_SLICE(fslice_raw[fssym])), twist
       )]++;
     }
@@ -282,15 +280,15 @@ void testPrunTables() {
   int count2[12] = {};
   for (SymCoord csym = 0; csym < N_CORNERS_SYM; csym++) {
     for (Coord udedges = 0; udedges < N_UDEDGES2; udedges++)
-      count2[getDepthCSymUDEdgesPrun3(corners_raw[csym], udedges)]++;
+      count2[getCORNUDDist(corners_raw[csym], udedges)]++;
   }
   for (int i = 0; i < 12; i++)
     std::cout << "depth " << i << ": " << count2[i] << "\n";
 
   std::cout << "cornersslices:\n";
   int count3[15] = {};
-  for (CoordL cornersslices = 0; cornersslices < N_CORNERSSLICES_COORDS; cornersslices++)
-      count3[cornersslices_prun[cornersslices]]++;
+  for (CoordL cornersslices = 0; cornersslices < N_CORNSLICE; cornersslices++)
+      count3[cornslice_prun[cornersslices]]++;
   for (int i = 0; i < 15; i++)
     std::cout << "depth " << i << ": " << count3[i] << "\n";
 

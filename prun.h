@@ -6,31 +6,30 @@
 #include "coord.h"
 #include "sym.h"
 
-#define N_FSSYMTWIST_COORDS (N_FSLICE_SYM * N_TWIST)
-#define N_CSYMUDEDGES_COORDS (N_CORNERS_SYM * N_UDEDGES2)
-#define N_CORNERSSLICES_COORDS (N_CORNERS_C * N_SSLICE2)
+#define N_FSTWIST (N_FSLICE_SYM * N_TWIST)
+#define N_CORNUD (N_CORNERS_SYM * N_UDEDGES2)
+#define N_CORNSLICE (N_CORNERS_C * N_SSLICE2)
 
-#define FSSYMTWIST(fssym, twist) (fssym * N_TWIST + twist)
-#define CSYMUDEDGES(csym, udedges) (csym * N_UDEDGES2 + udedges)
+#define FSTWIST(fssym, twist) (fssym * N_TWIST + twist)
+#define CORNUD(csym, udedges) (csym * N_UDEDGES2 + udedges)
 
-#define CORNERSSLICES(corners, slicesorted) \
-  (CoordL(corners) * N_SSLICE2 + CoordL(slicesorted))
-#define CS_CORNERS(cornersslices) (cornersslices / N_SSLICE2)
-#define CS_SLICESORTED(cornersslices) (cornersslices % N_SSLICE2)
+#define CORNSLICE(corners, sslice) \
+  (CoordL(corners) * N_SSLICE2 + CoordL(sslice))
+#define CS_CORNERS(cornslice) (cornslice / N_SSLICE2)
+#define CS_SSLICE(cornslice) (cornslice % N_SSLICE2)
 
 extern int (*next_dist)[3];
 
-extern uint64_t *fssymtwist_prun3;
-extern uint64_t *csymudedges_prun3;
-extern uint8_t *cornersslices_prun;
+extern uint64_t *fstwist_prun3;
+extern uint64_t *cornud_prun3;
+extern uint8_t *cornslice_prun;
 
 int getPrun3(uint64_t *prun3, CoordL c);
-int getDepthFSSymTwistPrun3(Coord flip, Coord slice, Coord twist);
-int getDepthCSymUDEdgesPrun3(Coord corners, Coord udedges);
+int getFSTwistDist(Coord flip, Coord sslice, Coord twist);
+int getCORNUDDist(Coord corners, Coord udedges);
 
-void initPrun();
-void initFSSymTwistPrun3();
-void initCSymUDEdgesPrun3();
-void initCornersSliceSPrun();
+void initFSTwistPrun3();
+void initCornUDPrun3();
+void initCornSlicePrun();
 
 #endif
