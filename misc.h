@@ -10,9 +10,6 @@ extern int cnk[MISC_N][MISC_N];
 
 int mod(int a, int m);
 int rand(int max);
-uint64_t randLong(uint64_t max);
-
-void initMisc();
+uint64_t rand64(uint64_t max);
 
 #endif
-

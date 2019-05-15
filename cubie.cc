@@ -122,7 +122,7 @@ CubieCube randomCube() {
   setFlip(cube, rand(N_FLIP_COORDS));
   do {
     setCorners(cube, rand(N_CORNERS_COORDS));
-    setEdges(cube, randLong(N_EDGES_COORDS));
+    setEdges(cube, rand64(N_EDGES_COORDS));
   } while (parity(cube.cp, N_CORNERS) != parity(cube.ep, N_EDGES));
 
   return cube;

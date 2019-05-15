@@ -11,26 +11,25 @@ int encode(const std::string &cubelet, int ori) {
   return res;
 }
 
-auto createCorners() {
+std::unordered_map<int, std::pair<int, int>> corners;
+std::unordered_map<int, std::pair<int, int>> edges;
+
+bool initFace() {
   std::unordered_map<int, std::pair<int, int>> corners;
   for (int corner = 0; corner < N_CORNERS; corner++) {
     for (int ori = 0; ori < 3; ori++)
       corners[encode(kCornerNames[corner], ori)] = std::make_pair(corner, ori);
   }
-  return corners;
-}
 
-auto createEdges() {
   std::unordered_map<int, std::pair<int, int>> edges;
   for (int edge = 0; edge < N_EDGES; edge++) {
     for (int ori = 0; ori < 2; ori++)
       edges[encode(kEdgeNames[edge], ori)] = std::make_pair(edge, ori);
   }
-  return edges;
-}
 
-auto corners = createCorners();
-auto edges = createEdges();
+  return true;
+}
+static bool inited = initFace();
 
 int faceToCubie(const std::string &s, CubieCube &cube) {
   for (int i = 0; i < N_FACELETS; i++) {

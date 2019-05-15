@@ -311,7 +311,6 @@ void testPrunTables() {
 }
 
 int main() {
-  initMisc();
   initCoordTables();
   initSymTables();
   initPrunTables();
