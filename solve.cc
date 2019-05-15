@@ -48,7 +48,7 @@ void Solver::solve(const CubieCube &cube) {
   flip[0] = getFlip(cube2);
   twist[0] = getTwist(cube2);
 
-  slicesorted[0] = getSliceSorted(cube2);
+  slicesorted[0] = getSSlice(cube2);
   copy(cube1, cube2);
   uedges[0] = getUEdges(cube2);
   copy(cube1, cube2);
@@ -105,13 +105,13 @@ void Solver::phase1(int depth, int dist, int limit) {
       continue;
 
     flip[depth + 1] = flip_move[flip[depth]][m];
-    slicesorted[depth + 1] = slicesorted_move[slicesorted[depth]][m];
+    slicesorted[depth + 1] = sslice_move[slicesorted[depth]][m];
     twist[depth + 1] = twist_move[twist[depth]][m];
 
-    LargeCoord flipslice = FLIPSLICE(
+    CoordL flipslice = FSLICE(
       flip[depth + 1], SS_SLICE(slicesorted[depth + 1])
     );
-    LargeCoord fssymtwist = FSSYMTWIST(
+    CoordL fssymtwist = FSSYMTWIST(
       flipslice_sym[flipslice],
       conj_twist[twist[depth + 1]][flipslice_sym_sym[flipslice]]
     );
@@ -169,11 +169,11 @@ void Solver::phase2(int depth, int dist, int limit) {
     if (depth > 0 && skip_move[moves[depth - 1]][kPhase2Moves[m]])
       continue;
 
-    slicesorted[depth + 1] = slicesorted_move[slicesorted[depth]][kPhase2Moves[m]];
+    slicesorted[depth + 1] = sslice_move[slicesorted[depth]][kPhase2Moves[m]];
     corners[depth + 1] = corners_move[corners[depth]][kPhase2Moves[m]];
     udedges[depth + 1] = udedges_move[udedges[depth]][m];
 
-    LargeCoord csymudedges = CSYMUDEDGES(
+    CoordL csymudedges = CSYMUDEDGES(
       corners_sym[corners[depth + 1]], 
       conj_udedges[udedges[depth + 1]][corners_sym_sym[corners[depth + 1]]]
     );

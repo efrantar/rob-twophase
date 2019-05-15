@@ -13,7 +13,7 @@ Coord (*conj_udedges)[N_SYMS_DH4];
 
 SymCoord *flipslice_sym;
 Sym *flipslice_sym_sym;
-LargeCoord *flipslice_raw;
+CoordL *flipslice_raw;
 SymSet *flipslice_symset;
 
 SymCoord *corners_sym;
@@ -98,19 +98,19 @@ void initConjCoord(
 }
 
 void initConjTwist() {
-  initConjCoord(&conj_twist, N_TWIST_COORDS, getTwist, setTwist, mulCorners);
+  initConjCoord(&conj_twist, N_TWIST, getTwist, setTwist, mulCorners);
 }
 
 void initConjUDEdges() {
-  initConjCoord(&conj_udedges, N_UDEDGES_COORDS_P2, getUDEdges, setUDEdges, mulEdges);
+  initConjCoord(&conj_udedges, N_UDEDGES2, getUDEdges, setUDEdges, mulEdges);
 }
 
 void initFlipSliceSyms() {
-  flipslice_sym = new SymCoord[N_FLIPSLICE_COORDS];
-  flipslice_sym_sym = new Sym[N_FLIPSLICE_COORDS];
-  flipslice_raw = new LargeCoord[N_FLIPSLICE_SYM_COORDS];
+  flipslice_sym = new SymCoord[N_FSLICE];
+  flipslice_sym_sym = new Sym[N_FSLICE];
+  flipslice_raw = new CoordL[N_FLIPSLICE_SYM_COORDS];
   flipslice_symset = new SymSet[N_FLIPSLICE_SYM_COORDS];  
-  std::fill(flipslice_sym, flipslice_sym + N_FLIPSLICE_COORDS, EMPTY);
+  std::fill(flipslice_sym, flipslice_sym + N_FSLICE, EMPTY);
 
   CubieCube cube1;
   CubieCube cube2;
@@ -118,11 +118,11 @@ void initFlipSliceSyms() {
   SymCoord cls = 0;
 
   copy(kSolvedCube, cube1);
-  for (Coord slice = 0; slice < N_SLICE_COORDS; slice++) {
+  for (Coord slice = 0; slice < N_SLICE; slice++) {
     setSlice(cube1, slice);
-    for (Coord flip = 0; flip < N_FLIP_COORDS; flip++) {
+    for (Coord flip = 0; flip < N_FLIP; flip++) {
       setFlip(cube1, flip);
-      LargeCoord flipslice1 = FLIPSLICE(flip, slice);
+      CoordL flipslice1 = FSLICE(flip, slice);
 
       if (flipslice_sym[flipslice1] != EMPTY)
         continue;
@@ -135,7 +135,7 @@ void initFlipSliceSyms() {
       for (Sym s = 1; s < N_SYMS_DH4; s++) {
         mulEdges(sym_cubes[inv_sym[s]], cube1, tmp);
         mulEdges(tmp, sym_cubes[s], cube2);
-        LargeCoord flipslice2 = FLIPSLICE(getFlip(cube2), getSlice(cube2));
+        CoordL flipslice2 = FSLICE(getFlip(cube2), getSlice(cube2));
         if (flipslice_sym[flipslice2] == EMPTY) {
           flipslice_sym[flipslice2] = cls;
           flipslice_sym_sym[flipslice2] = s;
@@ -148,11 +148,11 @@ void initFlipSliceSyms() {
 }
 
 void initCornersSyms() {
-  corners_sym = new SymCoord[N_CORNERS_COORDS];
-  corners_sym_sym = new Sym[N_CORNERS_COORDS];
+  corners_sym = new SymCoord[N_CORNERS_C];
+  corners_sym_sym = new Sym[N_CORNERS_C];
   corners_raw = new Coord[N_CORNERS_SYM_COORDS];
   corners_symset = new SymSet[N_CORNERS_SYM_COORDS];
-  std::fill(corners_sym, corners_sym + N_CORNERS_COORDS, EMPTY);
+  std::fill(corners_sym, corners_sym + N_CORNERS_C, EMPTY);
 
   CubieCube cube1;
   CubieCube cube2;
@@ -160,7 +160,7 @@ void initCornersSyms() {
   SymCoord cls = 0;
 
   copy(kSolvedCube, cube1);
-  for (Coord corners1 = 0; corners1 < N_CORNERS_COORDS; corners1++) {
+  for (Coord corners1 = 0; corners1 < N_CORNERS_C; corners1++) {
     setCorners(cube1, corners1);
     if (corners_sym[corners1] != EMPTY)
       continue;

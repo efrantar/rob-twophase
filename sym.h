@@ -46,7 +46,7 @@ extern Coord (*conj_udedges)[N_SYMS_DH4];
 
 extern SymCoord *flipslice_sym;
 extern Sym *flipslice_sym_sym;
-extern LargeCoord *flipslice_raw;
+extern CoordL *flipslice_raw;
 extern SymSet *flipslice_symset;
 
 extern SymCoord *corners_sym;

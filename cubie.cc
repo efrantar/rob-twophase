@@ -119,11 +119,11 @@ CubieCube invCube(const CubieCube &cube) {
 CubieCube randomCube() {
   CubieCube cube;
 
-  setTwist(cube, rand(N_TWIST_COORDS));
-  setFlip(cube, rand(N_FLIP_COORDS));
+  setTwist(cube, rand(N_TWIST));
+  setFlip(cube, rand(N_FLIP));
   do {
-    setCorners(cube, rand(N_CORNERS_COORDS));
-    setEdges(cube, rand64(N_EDGES_COORDS));
+    setCorners(cube, rand(N_CORNERS_C));
+    setEdges(cube, rand64(N_EDGES_C));
   } while (parity(cube.cp, N_CORNERS) != parity(cube.ep, N_EDGES));
 
   return cube;

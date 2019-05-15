@@ -27,7 +27,7 @@ void initCoordTables() {
   clock_t tick = clock();
   initTwistMove();
   initFlipMove();
-  initSliceSortedMove();
+  initSSliceMove();
   initUEdgesMove();
   initDEdgesMove();
   initUDEdgesMove();
@@ -117,31 +117,31 @@ void testCoordMoveP2(Coord coord_move[][N_MOVES2], int n_coords) {
 
 void testCoords() {
   std::cout << "Testing coords ...\n";
-  testCoord(N_TWIST_COORDS, getTwist, setTwist);
-  testCoord(N_FLIP_COORDS, getFlip, setFlip);
-  testCoord(N_SLICESORTED_COORDS, getSliceSorted, setSliceSorted);
-  testCoord(N_UEDGES_COORDS, getUEdges, setUEdges);
-  testCoord(N_DEDGES_COORDS, getDEdges, setDEdges);
-  testCoord(N_UDEDGES_COORDS_P2, getUDEdges, setUDEdges);
-  testCoord(N_CORNERS_COORDS, getCorners, setCorners);
-  testCoord(N_SLICE_COORDS, getSlice, setSlice);
+  testCoord(N_TWIST, getTwist, setTwist);
+  testCoord(N_FLIP, getFlip, setFlip);
+  testCoord(N_SSLICE, getSSlice, setSSlice);
+  testCoord(N_UEDGES, getUEdges, setUEdges);
+  testCoord(N_DEDGES, getDEdges, setDEdges);
+  testCoord(N_UDEDGES2, getUDEdges, setUDEdges);
+  testCoord(N_CORNERS_C, getCorners, setCorners);
+  testCoord(N_SLICE, getSlice, setSlice);
 }
 
 void testCoordMoves() {
   std::cout << "Testing coord moves ...\n";
-  testCoordMove(twist_move, N_TWIST_COORDS);
-  testCoordMove(flip_move, N_FLIP_COORDS);
-  testCoordMove(slicesorted_move, N_SLICESORTED_COORDS);
-  testCoordMove(uedges_move, N_UEDGES_COORDS);
-  testCoordMove(dedges_move, N_DEDGES_COORDS);
-  testCoordMoveP2(udedges_move, N_UEDGES_COORDS_P2);
-  testCoordMove(corners_move, N_CORNERS_COORDS);
+  testCoordMove(twist_move, N_TWIST);
+  testCoordMove(flip_move, N_FLIP);
+  testCoordMove(sslice_move, N_SSLICE);
+  testCoordMove(uedges_move, N_UEDGES);
+  testCoordMove(dedges_move, N_DEDGES);
+  testCoordMoveP2(udedges_move, N_UEDGES2);
+  testCoordMove(corners_move, N_CORNERS_C);
 }
 
 void testMergeUDEdges() {
   std::cout << "Testing udedges merging ...\n";
   CubieCube cube;
-  for (Coord c = 0; c < N_UDEDGES_COORDS_P2; c++) {
+  for (Coord c = 0; c < N_UDEDGES2; c++) {
     setUDEdges(cube, c);
     CubieCube cube1;
     copy(cube, cube1);
@@ -156,18 +156,18 @@ void testMergeUDEdges() {
 void testFlipSliceSyms() {
   std::cout << "Testing flipslice syms ...\n";
 
-  for (Coord flip = 0; flip < N_FLIP_COORDS; flip++) {
-    for (Coord slice = 0; slice < N_SLICE_COORDS; slice++) {
-      LargeCoord flipslice = FLIPSLICE(flip, slice);
+  for (Coord flip = 0; flip < N_FLIP; flip++) {
+    for (Coord slice = 0; slice < N_SLICE; slice++) {
+      CoordL flipslice = FSLICE(flip, slice);
       for (int m = 0; m < N_MOVES; m++) {
-        LargeCoord flipslice1 = FLIPSLICE(
+        CoordL flipslice1 = FSLICE(
           flip_move[flip][m],
-          SS_SLICE(slicesorted_move[SLICESORTED(slice)][m])
+          SS_SLICE(sslice_move[SSLICE(slice)][m])
         );
         
-        LargeCoord flipslice2 = flipslice_raw[flipslice_sym[flipslice]];
+        CoordL flipslice2 = flipslice_raw[flipslice_sym[flipslice]];
         int m_conj = conj_move[m][flipslice_sym_sym[flipslice]];
-        flipslice2 = FLIPSLICE(
+        flipslice2 = FSLICE(
           flip_move[FS_FLIP(flipslice2)][m_conj],
           sliceMove(FS_SLICE(flipslice2), m_conj)
         );
@@ -191,7 +191,7 @@ void testFlipSliceSyms() {
       mulEdges(sym_cubes[s], cube1, tmp);
       mulEdges(tmp, sym_cubes[inv_sym[s]], cube2);
       if (
-        FLIPSLICE(getFlip(cube2), getSlice(cube2)) == flipslice_raw[c] && 
+        FSLICE(getFlip(cube2), getSlice(cube2)) == flipslice_raw[c] &&
         (flipslice_symset[c] & (1 << s)) == 0
       ) {
         std::cout << "error: " << c << " " << (int) s << "\n";
@@ -205,7 +205,7 @@ void testFlipSliceSyms() {
 void testCornersSyms() {
   std::cout << "Testing corners syms ...\n";
   
-  for (Coord c = 0; c < N_CORNERS_COORDS; c++) {
+  for (Coord c = 0; c < N_CORNERS_C; c++) {
     for (int m : kPhase2Moves) {
       if (
         corners_sym[corners_move[corners_raw[corners_sym[c]]][conj_move[m][corners_sym_sym[c]]]]
@@ -271,9 +271,9 @@ void testPrunTables() {
   std::cout << "fssymtwist:\n";
   int count1[13] = {};
   for (SymCoord fssym = 0; fssym < N_FLIPSLICE_SYM_COORDS; fssym++) {
-    for (Coord twist = 0; twist < N_TWIST_COORDS; twist++) {
+    for (Coord twist = 0; twist < N_TWIST; twist++) {
       count1[getDepthFSSymTwistPrun3(
-        FS_FLIP(flipslice_raw[fssym]), SLICESORTED(FS_SLICE(flipslice_raw[fssym])), twist
+        FS_FLIP(flipslice_raw[fssym]), SSLICE(FS_SLICE(flipslice_raw[fssym])), twist
       )]++;
     }
   }
@@ -283,7 +283,7 @@ void testPrunTables() {
   std::cout << "csymudedges:\n";
   int count2[12] = {};
   for (SymCoord csym = 0; csym < N_CORNERS_SYM_COORDS; csym++) {
-    for (Coord udedges = 0; udedges < N_UDEDGES_COORDS_P2; udedges++)
+    for (Coord udedges = 0; udedges < N_UDEDGES2; udedges++)
       count2[getDepthCSymUDEdgesPrun3(corners_raw[csym], udedges)]++;
   }
   for (int i = 0; i < 12; i++)
@@ -291,7 +291,7 @@ void testPrunTables() {
 
   std::cout << "cornersslices:\n";
   int count3[15] = {};
-  for (LargeCoord cornersslices = 0; cornersslices < N_CORNERSSLICES_COORDS; cornersslices++)
+  for (CoordL cornersslices = 0; cornersslices < N_CORNERSSLICES_COORDS; cornersslices++)
       count3[cornersslices_prun[cornersslices]]++;
   for (int i = 0; i < 15; i++)
     std::cout << "depth " << i << ": " << count3[i] << "\n";

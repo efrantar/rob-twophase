@@ -1,23 +1,23 @@
 #include "coord.h"
 
-#include "cubie.h"
-#include "misc.h"
-#include "moves.h"
-
 #include <algorithm>
 #include <iostream>
 #include <vector>
 #include <stdint.h>
 
+#include "cubie.h"
+#include "misc.h"
+#include "moves.h"
+
 Coord (*twist_move)[N_MOVES];
 Coord (*flip_move)[N_MOVES];
-Coord (*slicesorted_move)[N_MOVES];
+Coord (*sslice_move)[N_MOVES];
 Coord (*uedges_move)[N_MOVES];
 Coord (*dedges_move)[N_MOVES];
 Coord (*udedges_move)[N_MOVES2];
 Coord (*corners_move)[N_MOVES];
 
-Coord (*merge_udedges)[24];
+Coord (*merge_udedges)[N_SSLICE2];
 
 Coord getOriCoord(const int oris[], int len, int n_oris) {
   Coord val = 0;
@@ -26,12 +26,11 @@ Coord getOriCoord(const int oris[], int len, int n_oris) {
   return val;
 }
 
-Coord getPermCoord(int cubies[], int len, int max_cubie) {
-  int cubies1[len];
-  std::copy(cubies, cubies + len, cubies1);
-
+Coord getPermCoord(const int cubies[], int len, int max_cubie) {
   Coord val = 0;
 
+  int cubies1[len];
+  std::copy(cubies, cubies + len, cubies1);
   for (int i = len - 1; i > 0; i--) {
     int n_rots = 0;
     while (cubies1[i] != max_cubie) {
@@ -88,7 +87,7 @@ void setOriCoord(Coord val, int oris[], int len, int n_oris) {
   oris[len - 1] = (n_oris - parity % n_oris) % n_oris;
 }
 
-void setPermCoord(uint64_t val, int cubies[], int len, int max_cubie) {
+void setPermCoord(CoordLL val, int cubies[], int len, int max_cubie) {
   for (int i = len - 1; i >= 0; i--) {
     cubies[i] = max_cubie;
     max_cubie--;
@@ -153,7 +152,7 @@ void initMoveCoord(
   void (*setCoord)(CubieCube &, Coord),
   void (*mul)(const CubieCube &, const CubieCube &, CubieCube &)
 ) {
-  Coord (*coord_move1)[N_MOVES] = new Coord[n_coords][N_MOVES];
+  auto coord_move1 = new Coord[n_coords][N_MOVES];
 
   CubieCube cube1;
   CubieCube cube2;
@@ -178,7 +177,7 @@ Coord getFlip(CubieCube &cube) {
   return getOriCoord(cube.eo, N_EDGES, 2);
 }
 
-Coord getSliceSorted(CubieCube &cube) {
+Coord getSSlice(CubieCube &cube) {
   return getPosPermCoord(cube.ep, N_EDGES, FR, BR, false);
 }
 
@@ -220,8 +219,8 @@ void setFlip(CubieCube &cube, Coord flip) {
   setOriCoord(flip, cube.eo, N_EDGES, 2);
 }
 
-void setSliceSorted(CubieCube &cube, Coord slicesorted) {
-  setPosPermCoord(slicesorted, cube.ep, N_EDGES, FR, BR, false);
+void setSSlice(CubieCube &cube, uint16_t sslice) {
+  setPosPermCoord(sslice, cube.ep, N_EDGES, FR, BR, false);
 }
 
 void setUEdges(CubieCube &cube, Coord uedges) {
@@ -261,42 +260,42 @@ void setEdges(CubieCube &cube, uint64_t edges) {
 
 void initTwistMove() {
   initMoveCoord(
-    &twist_move, N_TWIST_COORDS, getTwist, setTwist, mulCorners
+    &twist_move, N_TWIST, getTwist, setTwist, mulCorners
   );
 }
 
 void initFlipMove() {
   initMoveCoord(
-    &flip_move, N_FLIP_COORDS, getFlip, setFlip, mulEdges
+    &flip_move, N_FLIP, getFlip, setFlip, mulEdges
   );
 }
 
-void initSliceSortedMove() {
+void initSSliceMove() {
   initMoveCoord(
-    &slicesorted_move, N_SLICESORTED_COORDS, getSliceSorted, setSliceSorted, mulEdges
+    &sslice_move, N_SSLICE, getSSlice, setSSlice, mulEdges
   );
 }
 
 void initUEdgesMove() {
   initMoveCoord(
-    &uedges_move, N_UEDGES_COORDS, getUEdges, setUEdges, mulEdges
+    &uedges_move, N_UEDGES, getUEdges, setUEdges, mulEdges
   );
 }
 
 void initDEdgesMove() {
   initMoveCoord(
-    &dedges_move, N_DEDGES_COORDS, getDEdges, setDEdges, mulEdges
+    &dedges_move, N_DEDGES, getDEdges, setDEdges, mulEdges
   );
 }
 
 void initUDEdgesMove() { 
-  udedges_move = new Coord[N_UDEDGES_COORDS_P2][N_MOVES2];
+  udedges_move = new Coord[N_UDEDGES2][N_MOVES2];
 
   CubieCube cube1;
   CubieCube cube2;
 
   copy(kSolvedCube, cube1);
-  for (Coord c = 0; c < N_UDEDGES_COORDS_P2; c++) {
+  for (Coord c = 0; c < N_UDEDGES2; c++) {
     setUDEdges(cube1, c);
     for (int m = 0; m < N_MOVES2; m++) {
       mulEdges(cube1, move_cubes[kPhase2Moves[m]], cube2);
@@ -307,15 +306,15 @@ void initUDEdgesMove() {
 
 void initCornersMove() {
   initMoveCoord(
-    &corners_move, N_CORNERS_COORDS, getCorners, setCorners, mulCorners
+    &corners_move, N_CORNERS_C, getCorners, setCorners, mulCorners
   );
 }
 
 void initMergeUDEdges() {
-  merge_udedges = new Coord[N_UEDGES_COORDS_P2][24];
+  merge_udedges = new Coord[N_UEDGES2][24];
 
   CubieCube cube;
-  for (Coord c = 0; c < N_UDEDGES_COORDS_P2; c++) {
+  for (Coord c = 0; c < N_UDEDGES2; c++) {
     setUDEdges(cube, c);
     
     int dedges[4];
@@ -332,6 +331,5 @@ void initMergeUDEdges() {
 }
 
 Coord sliceMove(Coord slice, int move) {
-  return SS_SLICE(slicesorted_move[SLICESORTED(slice)][move]);
+  return SS_SLICE(sslice_move[SSLICE(slice)][move]);
 }
-
