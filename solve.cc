@@ -12,6 +12,8 @@
 #include "sym.h"
 #include "prun.h"
 
+#define FILENAME "twophase.tbl"
+
 bool skip_move[N_MOVES][N_MOVES];
 
 static bool init() {
@@ -224,7 +226,8 @@ std::vector<int> twophase(const CubieCube &cube, int max_depth1, int timelimit) 
   return sol;
 }
 
-void initTwophase() {
+/* TODO: very crude implementation of the file-loading, but sufficient for now */
+void initTwophase(bool file) {
   initTwistMove();
   initFlipMove();
   initSSliceMove();
@@ -239,7 +242,29 @@ void initTwophase() {
   initFlipSliceSym();
   initCornersSym();
 
-  initFSTwistPrun3();
-  initCornUDPrun3();
-  initCornSlicePrun();
+  if (!file) {
+    initFSTwistPrun3();
+    initCornUDPrun3();
+    initCornSlicePrun();
+    return;
+  }
+
+  FILE *f = fopen(FILENAME, "rb");
+  if (f == NULL) {
+    initFSTwistPrun3();
+    initCornUDPrun3();
+    initCornSlicePrun();
+    f = fopen(FILENAME, "wb");
+    int tmp = fwrite(fstwist_prun3, 8, N_FSTWIST / 32 + 1, f);
+    tmp = fwrite(cornud_prun3, 8, N_CORNUD / 32 + 1, f);
+    tmp = fwrite(cornslice_prun, 1, N_CORNSLICE, f);
+  } else {
+    fstwist_prun3 = new uint64_t[N_FSTWIST / 32 + 1];
+    cornud_prun3 = new uint64_t[N_CORNUD / 32 + 1];
+    cornslice_prun = new uint8_t[N_CORNSLICE];
+    int tmp = fread(fstwist_prun3, 8, N_FSTWIST / 32 + 1, f);
+    tmp = fread(cornud_prun3, 8, N_CORNUD / 32 + 1, f);
+    tmp = fread(cornslice_prun, 1, N_CORNSLICE, f);
+  }
+  fclose(f);
 }
