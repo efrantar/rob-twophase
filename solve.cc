@@ -1,5 +1,6 @@
 #include "solve.h"
 
+#include <algorithm>
 #include <ctime>
 #include <mutex>
 #include <thread>
@@ -32,12 +33,12 @@ int len;
 int max_depth;
 clock_t endtime;
 
-Solver::Solver(int rot1, bool inv1) {
+TwoPhaseSolver::TwoPhaseSolver(int rot1, bool inv1) {
   rot = rot1;
   inv = inv1;
 }
 
-void Solver::solve(const CubieCube &cube) {
+void TwoPhaseSolver::solve(const CubieCube &cube) {
   CubieCube cube1;
 
   if (rot == 1) {
@@ -55,7 +56,6 @@ void Solver::solve(const CubieCube &cube) {
 
   flip[0] = getFlip(cube1);
   twist[0] = getTwist(cube1);
-
   sslice[0] = getSSlice(cube1);
   uedges[0] = getUEdges(cube1);
   dedges[0] = getDEdges(cube1);
@@ -69,7 +69,7 @@ void Solver::solve(const CubieCube &cube) {
     phase1(0, dist, limit);
 }
 
-void Solver::phase1(int depth, int dist, int limit) {
+void TwoPhaseSolver::phase1(int depth, int dist, int limit) {
   if (done)
     return;
   else if (clock() > endtime) {
@@ -136,7 +136,7 @@ void Solver::phase1(int depth, int dist, int limit) {
     udedges_depth--;
 }
 
-void Solver::phase2(int depth, int dist, int limit) {
+void TwoPhaseSolver::phase2(int depth, int dist, int limit) {
   if (done)
     return;
   else if (clock() > endtime) {
@@ -156,6 +156,7 @@ void Solver::phase2(int depth, int dist, int limit) {
       if (inv) {
         for (int i = 0; i < depth; i++)
           sol[i] = kInvMove[sol[i]];
+        std::reverse(sol.begin(), sol.end());
       }
       if (rot > 0) {
         for (int i = 0; i < depth; i++)
@@ -194,13 +195,13 @@ void Solver::phase2(int depth, int dist, int limit) {
   }
 }
 
-std::string solve(const CubieCube &cube, int max_depth1, int timelimit) {
+std::vector<int> twophase(const CubieCube &cube, int max_depth1, int timelimit) {
   endtime = clock() + clock_t(CLOCKS_PER_SEC / 1000. * timelimit);
 
   done = false;
   sol.clear();
   max_depth = max_depth1;
-  len = max_depth > 0 ? max_depth + 1 : 23;
+  len = max_depth > 0 ? max_depth + 1 : 100;
 
   bool rotsym = false;
   bool antisym = false;
@@ -213,18 +214,32 @@ std::string solve(const CubieCube &cube, int max_depth1, int timelimit) {
     for (int inv = 0; inv < 2; inv++) {
       if (antisym && inv > 0)
         break;
-      Solver solver(rot, (bool) inv);
-      threads.push_back(std::thread(&Solver::solve, solver, cube));
+      TwoPhaseSolver solver(rot, (bool) inv);
+      threads.push_back(std::thread(&TwoPhaseSolver::solve, solver, cube));
     }
   }
   for (int i = 0; i < threads.size(); i++)
     threads[i].join();
 
-  std::string s;
-  for (int i = 0; i < sol.size(); i++) {
-    s += kMoveNames[sol[i]];
-    if (i != sol.size() - 1)
-      s += " ";
-  }
-  return s;
+  return sol;
+}
+
+void initTwophase() {
+  initTwistMove();
+  initFlipMove();
+  initSSliceMove();
+  initUEdgesMove();
+  initDEdgesMove();
+  initUDEdgesMove();
+  initCornersMove();
+  initMergeUDEdges();
+
+  initConjTwist();
+  initConjUDEdges();
+  initFlipSliceSym();
+  initCornersSym();
+
+  initFSTwistPrun3();
+  initCornUDPrun3();
+  initCornSlicePrun();
 }

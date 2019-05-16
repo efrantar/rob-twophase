@@ -1,11 +1,10 @@
-/**
- * Possible optimizations:
- * - Switch from mod 3 to full 4 bit phase 2 pruning table representation -> 26MB
- */
-
+#include <algorithm>
 #include <ctime>
 #include <iostream>
+#include <numeric>
 #include <stdlib.h>
+#include <string>
+#include <vector>
 
 #include "cubie.h"
 #include "coord.h"
@@ -16,320 +15,111 @@
 #include "solve.h"
 #include "sym.h"
 
+#define MAX_BENCHTIME 10000
+#define PRINT_EVERY 1000
+
 double tock(clock_t tick) {
-  return double(clock() - tick) / CLOCKS_PER_SEC;
+  return double(clock() - tick) / CLOCKS_PER_SEC * 1000;
 }
 
-void initCoordTables() {
-  clock_t tick = clock();
-  initTwistMove();
-  initFlipMove();
-  initSSliceMove();
-  initUEdgesMove();
-  initDEdgesMove();
-  initUDEdgesMove();
-  initCornersMove();
-  initMergeUDEdges();
-  std::cout << "Coord tables: " << tock(tick) << "\n";
+void printSol(const std::vector<int> &sol) {
+  for (int i = 0; i < sol.size(); i++)
+    std::cout << kMoveNames[sol[i]] << " ";
+  std::cout << "(" << sol.size() << ")\n";
 }
 
-void initSymTables() {
-  clock_t tick = clock();
-  initConjTwist();
-  initConjUDEdges();
-  initFlipSliceSym();
-  initCornersSym();
-  std::cout << "Sym tables: " << tock(tick) << "\n";
-}
-
-void initPrunTables() {
-  clock_t tick = clock();
-  initFSTwistPrun3();
-  initCornUDPrun3();
-  initCornSlicePrun();
-  std::cout << "Prun tables: " << tock(tick) << "\n";
-}
-
-void testCoord(int n_coords, Coord (*get)(CubieCube &), void (*set)(CubieCube &, Coord)) {
-  CubieCube cube;
-  for (Coord c = 0; c < n_coords; c++) {
-    set(cube, c);
-    if (get(cube) != c) {
-      std::cout << "error: " << c << "\n";
-      return;
-    }
-  }
-  std::cout << "ok\n";
-}
-
-void testCube() {
-  std::cout << "Testing cube ...\n";
-  for (int i = 0; i < 1000; i++) {
-    CubieCube c = randomCube();
-    int tmp = check(c);
-    if (tmp != 0) {
-      std::cout << "error 1: " << tmp << "\n";
-      return;
-    }
-    CubieCube c1;
-    faceToCubie(cubieToFace(c), c1);
-    if (c1 != c) {
-      std::cout << "error 2\n";
-      return;
-    }
-  }
-  std::cout << "ok\n";
-}
-
-void testCoordMove(Coord coord_move[][N_MOVES], int n_coords) {
-  for (Coord c = 0; c < n_coords; c++) {
-    for (int m = 0; m < N_MOVES; m++) {
-      if (coord_move[coord_move[c][m]][kInvMove[m]] != c) {
-        std::cout << "error: " << c << "\n";
-        return;
-      }
-    }
-  }
-  std::cout << "ok\n";
-}
-
-void testCoordMoveP2(Coord coord_move[][N_MOVES2], int n_coords) {
-  for (Coord c = 0; c < n_coords; c++) { 
-    for (int m = 0; m < N_MOVES2; m++) {
-      int inv = 0;
-      while (kPhase2Moves[inv] != kInvMove[kPhase2Moves[m]])
-        inv++;
-      if (coord_move[coord_move[c][m]][inv] != c) {
-        std::cout << "error: " << c << "\n";
-        return;
-      }
-    }
-  }
-  std::cout << "ok\n";
-}
-
-void testCoords() {
-  std::cout << "Testing coords ...\n";
-  testCoord(N_TWIST, getTwist, setTwist);
-  testCoord(N_FLIP, getFlip, setFlip);
-  testCoord(N_SSLICE, getSSlice, setSSlice);
-  testCoord(N_UEDGES, getUEdges, setUEdges);
-  testCoord(N_DEDGES, getDEdges, setDEdges);
-  testCoord(N_UDEDGES2, getUDEdges, setUDEdges);
-  testCoord(N_CORNERS_C, getCorners, setCorners);
-  testCoord(N_SLICE, getSlice, setSlice);
-}
-
-void testCoordMoves() {
-  std::cout << "Testing coord moves ...\n";
-  testCoordMove(twist_move, N_TWIST);
-  testCoordMove(flip_move, N_FLIP);
-  testCoordMove(sslice_move, N_SSLICE);
-  testCoordMove(uedges_move, N_UEDGES);
-  testCoordMove(dedges_move, N_DEDGES);
-  testCoordMoveP2(udedges_move, N_UEDGES2);
-  testCoordMove(corners_move, N_CORNERS_C);
-}
-
-void testMergeUDEdges() {
-  std::cout << "Testing udedges merging ...\n";
-  CubieCube cube;
-  for (Coord c = 0; c < N_UDEDGES2; c++) {
-    setUDEdges(cube, c);
-    CubieCube cube1;
-    copy(cube, cube1);
-    if (c != merge_udedges[getUEdges(cube)][getDEdges(cube) % 24]) {
-      std::cout << "error: " << c << "\n";
-      return;
-    }
-  }
-  std::cout << "ok\n";
-}
-
-void testFlipSliceSyms() {
-  std::cout << "Testing flipslice syms ...\n";
-
-  for (Coord flip = 0; flip < N_FLIP; flip++) {
-    for (Coord slice = 0; slice < N_SLICE; slice++) {
-      CoordL flipslice = FSLICE(flip, slice);
-      for (int m = 0; m < N_MOVES; m++) {
-        CoordL flipslice1 = FSLICE(
-          flip_move[flip][m],
-          SS_SLICE(sslice_move[SSLICE(slice)][m])
-        );
-        
-        CoordL flipslice2 = fslice_raw[fslice_sym[flipslice].coord].coord;
-        int m_conj = conj_move[m][fslice_sym[flipslice].sym];
-        flipslice2 = FSLICE(
-          flip_move[FS_FLIP(flipslice2)][m_conj],
-          sliceMove(FS_SLICE(flipslice2), m_conj)
-        );
-
-        if (fslice_sym[flipslice1].coord != fslice_sym[flipslice2].coord) {
-          std::cout << "error: " << flipslice << " " << m << "\n";
-          return;
-        }
-      }
-    }
-  }
-
+bool checkSol(const CubieCube &cube, const std::vector<int> &sol) {
   CubieCube cube1;
   CubieCube cube2;
-  CubieCube tmp;
 
-  for (Coord c = 0; c < N_FSLICE_SYM; c++) {
-    setFlip(cube1, FS_FLIP(fslice_raw[c].coord));
-    setSlice(cube1, FS_SLICE(fslice_raw[c].coord));
-    for (int s = 0; s < N_SYMS_DH4; s++) {
-      mulEdges(sym_cubes[s], cube1, tmp);
-      mulEdges(tmp, sym_cubes[inv_sym[s]], cube2);
-      if (
-        FSLICE(getFlip(cube2), getSlice(cube2)) == fslice_raw[c].coord &&
-        (fslice_raw[c].syms & (1 << s)) == 0
-      ) {
-        std::cout << "error: " << c << " " << (int) s << "\n";
-        return;
-      }
-    }
+  copy(cube, cube1);
+  for (int m : sol) {
+    mul(cube1, move_cubes[m], cube2);
+    std::swap(cube1, cube2);
   }
-  std::cout << "ok\n";
+
+  return cube1 == kSolvedCube;
 }
 
-void testCornersSyms() {
-  std::cout << "Testing corners syms ...\n";
-  
-  for (Coord c = 0; c < N_CORNERS_C; c++) {
-    for (int m : kPhase2Moves) {
-      if (
-        corners_sym[corners_move[corners_raw[corners_sym[c].coord].coord][conj_move[m][corners_sym[c].sym]]].coord
-        != corners_sym[corners_move[c][m]].coord
-      ) {
-        std::cout << "error: " << c << " " << m << "\n";
-        return;
-      }
-    }
-  }
+void benchTime(int count, int max_moves) {
+  std::vector<double> times(count);
+  int failed = 0;
 
-  CubieCube cube1;
-  CubieCube cube2;
-  CubieCube tmp;
+  for (int i = 0; i < count; i++) {
+    if (i % PRINT_EVERY == 0)
+      std::cout << "Benchmarking ...\n";
 
-  for (Coord c = 0; c < N_CORNERS_SYM; c++) {
-    setCorners(cube1, corners_raw[c].coord);
-    for (int s = 0; s < N_SYMS_DH4; s++) {
-      mulCorners(sym_cubes[s], cube1, tmp);
-      mulCorners(tmp, sym_cubes[inv_sym[s]], cube2);
-      if (getCorners(cube2) == corners_raw[c].coord && (corners_raw[c].syms & (1 << s)) == 0) {
-        std::cout << "error: " << c << " " << (int) s << "\n";
-        return;
-      }
-    }
-  }
-
-  std::cout << "ok\n";
-}
-
-void testSyms() {
-  std::cout << "Testing syms ...\n";
-  
-  CubieCube cube;
-  for (int s = 0; s < N_SYMS; s++) {
-    mul(sym_cubes[s], sym_cubes[inv_sym[s]], cube);
-    if (cube != sym_cubes[0]) {
-      std::cout << "error: " << (int) s << "\n";
-      break;
-    }
-    mul(sym_cubes[inv_sym[s]], sym_cubes[s], cube);
-    if (cube != sym_cubes[0]) {
-      std::cout << "error: " << (int) s << "\n";
-      break;
-    }
-  }
-
-  for (int m = 0; m < N_MOVES; m++) {
-    for (int s = 0; s < N_SYMS; s++) {
-      if (conj_move[conj_move[m][s]][inv_sym[s]] != m) {
-        std::cout << "error: " << m << " " << (int) s << "\n";
-        break;
-      }
-    }
-  }
-
-  std::cout << "ok\n";
-}
-
-void testPrunTables() {
-  std::cout << "Testing pruning tables ...\n";
-
-  std::cout << "fssymtwist:\n";
-  int count1[13] = {};
-  for (Coord fssym = 0; fssym < N_FSLICE_SYM; fssym++) {
-    for (Coord twist = 0; twist < N_TWIST; twist++) {
-      count1[getFSTwistDist(
-        FS_FLIP(fslice_raw[fssym].coord), SSLICE(FS_SLICE(fslice_raw[fssym].coord)), twist
-      )]++;
-    }
-  }
-  for (int i = 0; i < 13; i++)
-    std::cout << "depth " << i << ": " << count1[i] << "\n";
- 
-  std::cout << "csymudedges:\n";
-  int count2[12] = {};
-  for (Coord csym = 0; csym < N_CORNERS_SYM; csym++) {
-    for (Coord udedges = 0; udedges < N_UDEDGES2; udedges++)
-      count2[getCORNUDDist(corners_raw[csym].coord, udedges)]++;
-  }
-  for (int i = 0; i < 12; i++)
-    std::cout << "depth " << i << ": " << count2[i] << "\n";
-
-  std::cout << "cornersslices:\n";
-  int count3[15] = {};
-  for (CoordL cornersslices = 0; cornersslices < N_CORNSLICE; cornersslices++)
-      count3[cornslice_prun[cornersslices]]++;
-  for (int i = 0; i < 15; i++)
-    std::cout << "depth " << i << ": " << count3[i] << "\n";
-
-  for (int i = 1; i < 22; i++) {
-    int j1 = (i + 1) % 3;
-    int j2 = (i - 1) % 3;
-    if (next_dist[i][j1] != i + 1 || next_dist[i][j2] != i - 1) {
-      std::cout << "error\n";
-      return;
-    }
-  }
-
-  std::cout << "ok\n";
-}
-
-int main() {
-  initCoordTables();
-  initSymTables();
-  initPrunTables();
-
-  /*
-  testCoords();
-  testCoordMoves();
-  testMergeUDEdges();
-  testSyms();
-  testFlipSliceSyms();
-  testCornersSyms();
-  testPrunTables();
-  */
-
-  // testCube();
-
-  /*
-  CubieCube c;
-  faceToCubie("BUUDUURBFUFBRRFRUFBLRUFDRBBDDULDBFLLLFDRLLUFFLRDRBBDDL", c);
-  solve(c, 20, 10000000);
-  */
-
-  for (int i = 0; i < 1000; i++) {
     clock_t tick = clock();
-    CubieCube c = randomCube();
-    // std::cout << cubieToFace(c) << "\n";
-    solve(c, 20, 10000000);
-    std::cout << "Solve: " << tock(tick) << "\n";
+    CubieCube cube = randomCube();
+    std::vector<int> sol = twophase(cube, max_moves, MAX_BENCHTIME);
+    tick = tock(tick);
+
+    if (!checkSol(cube, sol) || sol.size() > max_moves)
+      failed++;
+    else
+      times[i] = tick;
+  }
+
+  std::cout
+    << "Average: " << std::accumulate(times.begin(), times.end(), 0.) / times.size()
+    << "ms Min: " << *std::min_element(times.begin(), times.end())
+    << "ms Max: " << *std::max_element(times.begin(), times.end())
+    << "ms Failed: " << failed << "\n";
+}
+
+void benchMoves(int count, int time) {
+  std::vector<int> moves(count);
+  int failed = 0;
+
+  for (int i = 0; i < count; i++) {
+    if (i % PRINT_EVERY == 0)
+      std::cout << "Benchmarking ...\n";
+    CubieCube cube = randomCube();
+    std::vector<int> sol = twophase(cube, -1, time);
+    if (!checkSol(cube, sol))
+      failed++;
+    else
+      moves[i] = sol.size();
+  }
+
+  std::cout
+    << "Average: " << std::accumulate(moves.begin(), moves.end(), 0.) / moves.size()
+    << " Min: " << *std::min_element(moves.begin(), moves.end())
+    << " Max: " << *std::max_element(moves.begin(), moves.end())
+    << " Failed: " << failed << "\n";
+}
+
+int main(int argc, char *argv[]) {
+  if (argc != 4) {
+    std::cout << "Call:\n"
+      << "./twophase FACECUBE MAX_MOVES TIME\n"
+      << "./twophase benchtime COUNT MAX_MOVES\n"
+      << "./twophase benchmoves COUNT TIME\n";
+    return 0;
+  }
+
+  std::cout << "Loading tables ...\n";
+  initTwophase();
+  std::cout << "Done.\n";
+
+  std::string s = argv[1];
+  if (s == "benchtime")
+    benchTime(std::stoi(argv[2]), std::stoi(argv[3]));
+  else if (s == "benchmoves")
+    benchMoves(std::stoi(argv[2]), std::stoi(argv[3]));
+  else {
+    CubieCube cube;
+    int tmp = faceToCubie(std::string(argv[1]), cube);
+    if (tmp) {
+      std::cout << "Facecube Error: " << tmp << "\n";
+      return 0;
+    }
+    tmp = check(cube);
+    if (tmp) {
+      std::cout << "Cubiecube Error: " << tmp << "\n";
+      return 0;
+    }
+    printSol(twophase(cube, std::stoi(argv[2]), std::stoi(argv[3])));
   }
 
   return 0;

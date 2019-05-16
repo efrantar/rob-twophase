@@ -3,15 +3,14 @@
 
 #include <string>
 #include <vector>
-
 #include "coord.h"
 #include "moves.h"
 
-#define N 23
+#define N 100
 
 extern bool skip_move[N_MOVES][N_MOVES];
 
-class Solver {
+class TwoPhaseSolver {
   
   private:
     int rot;
@@ -34,11 +33,12 @@ class Solver {
     void phase2(int depth, int dist, int limit);
 
   public:
-    Solver(int rot, bool inv);
+    TwoPhaseSolver(int rot, bool inv);
     void solve(const CubieCube &cube);
 
 };
 
-std::string solve(const CubieCube &cube, int max_depth, int timelimit);
+std::vector<int> twophase(const CubieCube &cube, int max_depth, int timelimit);
+void initTwophase();
 
 #endif

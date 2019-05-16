@@ -1,5 +1,6 @@
 #include "sym.h"
 
+#include <algorithm>
 #include <iostream>
 
 #define EMPTY 0xffff
@@ -25,19 +26,19 @@ static bool init() {
     copy(cube, sym_cubes[i]);
 
     mul(cube, kLR2Cube, tmp);
-    copy(tmp, cube);
+    std::swap(tmp, cube);
 
     if (i % 2 == 1) {
       mul(cube, kU4Cube, tmp);
-      copy(tmp, cube);
+      std::swap(tmp, cube);
     }
     if (i % 8 == 7) {
       mul(cube, kF2Cube, tmp);
-      copy(tmp, cube);
+      std::swap(tmp, cube);
     }
     if (i % 16 == 15) {
       mul(cube, kURF3Cube, tmp);
-      copy(tmp, cube);
+      std::swap(tmp, cube);
     }
   }
 

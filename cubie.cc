@@ -108,7 +108,7 @@ CubieCube invCube(const CubieCube &cube) {
     if (ori >= 3)
       inv.co[i] = ori;
     else
-      inv.co[i] = mod(ori, 3);
+      inv.co[i] = mod(-ori, 3);
   }
   for (int i = 0; i < N_EDGES; i++)
     inv.eo[i] = cube.eo[inv.ep[i]];
