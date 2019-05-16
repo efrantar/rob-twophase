@@ -324,7 +324,7 @@ int main() {
   solve(c, 20, 10000000);
   */
 
-  for (int i = 0; i < 100; i++) {
+  for (int i = 0; i < 1000; i++) {
     clock_t tick = clock();
     CubieCube c = randomCube();
     // std::cout << cubieToFace(c) << "\n";

@@ -195,21 +195,29 @@ void Solver::phase2(int depth, int dist, int limit) {
 }
 
 std::string solve(const CubieCube &cube, int max_depth1, int timelimit) {
+  endtime = clock() + clock_t(CLOCKS_PER_SEC / 1000. * timelimit);
+
   done = false;
   sol.clear();
-
   max_depth = max_depth1;
   len = max_depth > 0 ? max_depth + 1 : 23;
-  endtime = clock() + clock_t(CLOCKS_PER_SEC / 1000. * timelimit);
+
+  bool rotsym = false;
+  bool antisym = false;
+  checkSyms(cube, rotsym, antisym);
 
   std::vector<std::thread> threads;
   for (int rot = 0; rot < 3; rot++) {
+    if (rotsym && rot > 0)
+      break;
     for (int inv = 0; inv < 2; inv++) {
+      if (antisym && inv > 0)
+        break;
       Solver solver(rot, (bool) inv);
       threads.push_back(std::thread(&Solver::solve, solver, cube));
     }
   }
-  for (int i = 0; i < 6; i++)
+  for (int i = 0; i < threads.size(); i++)
     threads[i].join();
 
   std::string s;

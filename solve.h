@@ -7,7 +7,7 @@
 #include "coord.h"
 #include "moves.h"
 
-#define N 22
+#define N 23
 
 extern bool skip_move[N_MOVES][N_MOVES];
 

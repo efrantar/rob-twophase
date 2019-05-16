@@ -1,6 +1,7 @@
 #ifndef SYM_H_
 #define SYM_H_
 
+#include <bitset>
 #include <stdint.h>
 #include "coord.h"
 #include "cubie.h"
@@ -59,6 +60,8 @@ extern SymCoord *fslice_sym;
 extern RawFSlice *fslice_raw;
 extern SymCoord *corners_sym;
 extern RawCorners *corners_raw;
+
+void checkSyms(const CubieCube &cube, bool &rot, bool &anti);
 
 void initConjTwist();
 void initConjUDEdges();
