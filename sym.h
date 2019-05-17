@@ -10,8 +10,8 @@
 #define N_SYMS_DH4 16
 
 #define N_FSLICE_SYM 64430
-#define N_FSSLICE_SYM -1 // TODO:
 #define N_CORNERS_SYM 2768
+#define N_SSLICE_SYM 788
 
 #define SYMCOORD(coord, sym) (SymCoord(coord) * N_SYMS_DH4 + sym)
 #define SYM(scoord) (scoord % N_SYMS_DH4)
@@ -50,16 +50,14 @@ extern Coord (*conj_twist)[N_SYMS_DH4];
 extern Coord (*conj_udedges)[N_SYMS_DH4];
 
 extern SymCoord *fslice_sym;
-extern CoordL *fslice_raw;
-extern SelfSyms *fslice_selfs;
-
-extern SymCoord *fsslice_sym;
-extern CoordL *fsslice_raw;
-extern SelfSyms *fsslice_selfs;
-
 extern SymCoord *corners_sym;
+extern SymCoord *sslice_sym;
+extern CoordL *fslice_raw;
 extern CoordL *corners_raw;
+extern CoordL *sslice_raw;
+extern SelfSyms *fslice_selfs;
 extern SelfSyms *corners_selfs;
+extern SelfSyms *sslice_selfs;
 
 void checkSyms(const CubieCube &cube, bool &rot, bool &anti);
 
@@ -67,7 +65,7 @@ void initConjTwist();
 void initConjUDEdges();
 
 void initFlipSliceSym();
-void initFlipSSliceSym();
 void initCornersSym();
+void initSSliceSym();
 
 #endif

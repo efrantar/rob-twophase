@@ -15,9 +15,7 @@ int (*next_dist)[3];
 uint64_t *fstwist_prun3;
 uint64_t *cornud_prun3;
 uint8_t *cornslice_prun;
-
-uint64_t *fstwist_prun;
-uint64_t *cornud_prun;
+uint64_t *fsstwist_prun3;
 
 static bool init() {
  next_dist = new int[22][3];

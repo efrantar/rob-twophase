@@ -52,12 +52,12 @@ void benchTime(int count, int max_moves) {
     clock_t tick = clock();
     CubieCube cube = randomCube();
     std::vector<int> sol = twophase(cube, max_moves, MAX_BENCHTIME);
-    tick = tock(tick);
+    double tock1 = tock(tick);
 
     if (!checkSol(cube, sol) || sol.size() > max_moves)
       failed++;
     else
-      times[i] = tick;
+      times[i] = tock1;
   }
 
   std::cout
@@ -105,6 +105,7 @@ int main(int argc, char *argv[]) {
   initConjUDEdges();
   initFlipSliceSym();
   initCornersSym();
+  initSSliceSym();
   std::cout << tock(tick) << "\n";
 
   initFSTwistPrun3();

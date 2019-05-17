@@ -13,16 +13,14 @@ Coord (*conj_twist)[N_SYMS_DH4];
 Coord (*conj_udedges)[N_SYMS_DH4];
 
 SymCoord *fslice_sym;
-CoordL *fslice_raw;
-SelfSyms *fslice_selfs;
-
-SymCoord *fsslice_sym;
-CoordL *fsslice_raw;
-SelfSyms *fsslice_selfs;
-
 SymCoord *corners_sym;
+SymCoord *sslice_sym;
+CoordL *fslice_raw;
 CoordL *corners_raw;
+CoordL *sslice_raw;
+SelfSyms *fslice_selfs;
 SelfSyms *corners_selfs;
+SelfSyms *sslice_selfs;
 
 static bool init() {
   CubieCube cube;
@@ -179,25 +177,15 @@ void initSym(
   *coord_sym = coord_sym1;
   *coord_raw = coord_raw1;
   *coord_selfs = coord_selfs1;
+
+  std::cout << cls << "\n";
 }
 
-void initSym(
-  SymCoord **coord_sym,
-  CoordL **coord_raw,
-  SelfSyms **coord_selfs,
-  int n_sym,
-  int n_coord1,
-  int n_coord2,
-  Coord (*getCoord1)(CubieCube &),
-  Coord (*getCoord2)(CubieCube &),
-  void (*setCoord1)(CubieCube &, Coord),
-  void (*setCoord2)(CubieCube &, Coord),
-  void (*mul)(const CubieCube &, const CubieCube &, CubieCube &)
-) {
-  auto coord_sym1 = new SymCoord[n_coord1 * n_coord2];
-  auto coord_raw1 = new CoordL[n_sym];
-  auto coord_selfs1 = new SelfSyms[n_sym];
-  std::fill(coord_sym1, coord_sym1 + n_coord1 * n_coord2, EMPTY);
+void initFlipSliceSym() {
+  fslice_sym = new SymCoord[N_FSLICE];
+  fslice_raw = new CoordL[N_FSLICE_SYM];
+  fslice_selfs = new SelfSyms[N_FSLICE_SYM];
+  std::fill(fslice_sym, fslice_sym + N_FSLICE, EMPTY);
 
   CubieCube cube1;
   CubieCube cube2;
@@ -205,53 +193,31 @@ void initSym(
   int cls = 0;
 
   copy(kSolvedCube, cube1);
-  for (Coord coord1 = 0; coord1 < n_coord1; coord1++) {
-    setCoord1(cube1, coord1);
-    for (Coord coord2 = 0; coord2 < n_coord2; coord2++) {
-      setCoord2(cube1, coord2);
-      CoordL ccoord = coord2 * n_coord1 + coord1;
+  for (Coord slice = 0; slice < N_SLICE; slice++) {
+    setSlice(cube1, slice);
+    for (Coord flip = 0; flip < N_FLIP; flip++) {
+      setFlip(cube1, flip);
+      CoordL fslice = FSLICE(flip, slice);
 
-      if (coord_sym1[ccoord] != EMPTY)
+      if (fslice_sym[fslice] != EMPTY)
         continue;
 
-      coord_sym1[ccoord] = SYMCOORD(cls, 0);
-      coord_raw1[cls] = ccoord;
-      coord_selfs1[cls] = 1;
+      fslice_sym[fslice] = SYMCOORD(cls, 0);
+      fslice_raw[cls] = fslice;
+      fslice_selfs[cls] = 1;
 
       for (int s = 1; s < N_SYMS_DH4; s++) {
-        mul(sym_cubes[inv_sym[s]], cube1, tmp);
-        mul(tmp, sym_cubes[s], cube2);
-        CoordL ccoord1 = getCoord2(cube2) * n_coord1 + getCoord1(cube2);
-        if (coord_sym1[ccoord1] == EMPTY)
-          coord_sym1[ccoord1] = SYMCOORD(cls, s);
-        else if (ccoord1 == ccoord)
-          coord_selfs1[cls] |= 1 << s;
+        mulEdges(sym_cubes[inv_sym[s]], cube1, tmp);
+        mulEdges(tmp, sym_cubes[s], cube2);
+        CoordL fslice1 = FSLICE(getFlip(cube2), getSlice(cube2));
+        if (fslice_sym[fslice1] == EMPTY)
+          fslice_sym[fslice1] = SYMCOORD(cls, s);
+        else if (fslice1 == fslice)
+          fslice_selfs[cls] |= 1 << s;
       }
       cls++;
     }
   }
-
-  *coord_sym = coord_sym1;
-  *coord_raw = coord_raw1;
-  *coord_selfs = coord_selfs1;
-}
-
-void initFlipSliceSym() {
-  initSym(
-    &fslice_sym, &fslice_raw, &fslice_selfs,
-    N_FSLICE_SYM, N_FLIP, N_SLICE,
-    getFlip, getSlice, setFlip, setSlice,
-    mulEdges
-  );
-}
-
-void initFlipSSliceSym() {
-  initSym(
-    &fsslice_sym, &fsslice_raw, &fsslice_selfs,
-    N_FSSLICE_SYM, N_FLIP, N_SSLICE,
-    getFlip, getSSlice, setFlip, setSSlice,
-    mulEdges
-  );
 }
 
 void initCornersSym() {
@@ -260,5 +226,14 @@ void initCornersSym() {
     N_CORNERS_SYM, N_CORNERS_C,
     getCorners, setCorners,
     mulCorners
+  );
+}
+
+void initSSliceSym() {
+  initSym(
+    &sslice_sym, &sslice_raw, &sslice_selfs,
+    N_SSLICE_SYM, N_SSLICE,
+    getSSlice, setSSlice,
+    mulEdges
   );
 }
