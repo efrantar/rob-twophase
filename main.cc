@@ -90,6 +90,28 @@ void benchMoves(int count, int time) {
 }
 
 int main(int argc, char *argv[]) {
+  /*
+  initTwistMove();
+  initFlipMove();
+  initSSliceMove();
+  initUEdgesMove();
+  initDEdgesMove();
+  initUDEdgesMove();
+  initCornersMove();
+  initMergeUDEdges();
+
+  clock_t tick = clock();
+  initConjTwist();
+  initConjUDEdges();
+  initFlipSliceSym();
+  initCornersSym();
+  std::cout << tock(tick) << "\n";
+
+  initFSTwistPrun3();
+
+  std::cout << tock(tick) / 1000. << "\n";
+  */
+
   if (argc != 4) {
     std::cout << "Call:\n"
       << "./twophase FACECUBE MAX_MOVES TIME\n"

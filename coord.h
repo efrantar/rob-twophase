@@ -12,8 +12,7 @@
 
 #define N_UEDGES 11880
 #define N_DEDGES 11880
-#define N_UEDGES2 1680
-#define N_DEDGES2 1680
+#define N_4EDGES2 1680
 #define N_UDEDGES2 40320
 #define N_CORNERS_C 40320
 
@@ -28,6 +27,10 @@
 
 #define SSLICE(slice) (slice * N_SSLICE2)
 #define SS_SLICE(sslice) (sslice / N_SSLICE2)
+
+#define FSSLICE(flip, sslice) (CoordL(flip) * N_FLIP + CoordL(sslice))
+#define FSS_FLIP(fsslice) (fsslice % N_FLIP)
+#define FSS_SSLICE(fsslice) (fsslice % N_FLIP)
 
 typedef uint16_t Coord;
 typedef uint32_t CoordL;

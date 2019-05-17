@@ -311,7 +311,7 @@ void initCornersMove() {
 }
 
 void initMergeUDEdges() {
-  merge_udedges = new Coord[N_UEDGES2][24];
+  merge_udedges = new Coord[N_4EDGES2][24];
 
   CubieCube cube;
   for (Coord c = 0; c < N_UDEDGES2; c++) {

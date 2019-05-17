@@ -10,22 +10,15 @@
 #define N_SYMS_DH4 16
 
 #define N_FSLICE_SYM 64430
+#define N_FSSLICE_SYM -1 // TODO:
 #define N_CORNERS_SYM 2768
 
-typedef struct {
-  Coord coord;
-  uint8_t sym;
-} SymCoord;
+#define SYMCOORD(coord, sym) (SymCoord(coord) * N_SYMS_DH4 + sym)
+#define SYM(scoord) (scoord % N_SYMS_DH4)
+#define COORD(scoord) (scoord / N_SYMS_DH4)
 
-typedef struct {
-  CoordL coord;
-  uint16_t syms;
-} RawFSlice;
-
-typedef struct {
-  Coord coord;
-  uint16_t syms;
-} RawCorners;
+typedef uint32_t SymCoord;
+typedef uint16_t SelfSyms;
 
 const CubieCube kURF3Cube = {
   {URF, DFR, DLF, UFL, UBR, DRB, DBL, ULB},
@@ -57,9 +50,16 @@ extern Coord (*conj_twist)[N_SYMS_DH4];
 extern Coord (*conj_udedges)[N_SYMS_DH4];
 
 extern SymCoord *fslice_sym;
-extern RawFSlice *fslice_raw;
+extern CoordL *fslice_raw;
+extern SelfSyms *fslice_selfs;
+
+extern SymCoord *fsslice_sym;
+extern CoordL *fsslice_raw;
+extern SelfSyms *fsslice_selfs;
+
 extern SymCoord *corners_sym;
-extern RawCorners *corners_raw;
+extern CoordL *corners_raw;
+extern SelfSyms *corners_selfs;
 
 void checkSyms(const CubieCube &cube, bool &rot, bool &anti);
 
@@ -67,6 +67,7 @@ void initConjTwist();
 void initConjUDEdges();
 
 void initFlipSliceSym();
+void initFlipSSliceSym();
 void initCornersSym();
 
 #endif

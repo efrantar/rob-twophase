@@ -23,6 +23,10 @@ extern uint64_t *fstwist_prun3;
 extern uint64_t *cornud_prun3;
 extern uint8_t *cornslice_prun;
 
+extern uint64_t *fstwist_prun;
+extern uint64_t *cornud_prun;
+
+int getPrun(uint64_t *prun, CoordL c);
 int getPrun3(uint64_t *prun3, CoordL c);
 int getFSTwistDist(Coord flip, Coord sslice, Coord twist);
 int getCORNUDDist(Coord corners, Coord udedges);
@@ -30,5 +34,7 @@ int getCORNUDDist(Coord corners, Coord udedges);
 void initFSTwistPrun3();
 void initCornUDPrun3();
 void initCornSlicePrun();
+void initFSTwistPrun();
+void initCornUDPrun();
 
 #endif
