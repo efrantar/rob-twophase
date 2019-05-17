@@ -48,6 +48,7 @@ extern int conj_move[N_MOVES][N_SYMS];
 
 extern Coord (*conj_twist)[N_SYMS_DH4];
 extern Coord (*conj_udedges)[N_SYMS_DH4];
+extern Coord (*conj_flip)[N_SYMS_DH4];
 
 extern SymCoord *fslice_sym;
 extern SymCoord *corners_sym;
@@ -63,6 +64,7 @@ void checkSyms(const CubieCube &cube, bool &rot, bool &anti);
 
 void initConjTwist();
 void initConjUDEdges();
+void initConjFlip();
 
 void initFlipSliceSym();
 void initCornersSym();

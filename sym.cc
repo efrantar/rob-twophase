@@ -11,6 +11,7 @@ int conj_move[N_MOVES][N_SYMS];
 
 Coord (*conj_twist)[N_SYMS_DH4];
 Coord (*conj_udedges)[N_SYMS_DH4];
+Coord (*conj_flip)[N_SYMS_DH4];
 
 SymCoord *fslice_sym;
 SymCoord *corners_sym;
@@ -131,7 +132,11 @@ void initConjUDEdges() {
   initConjCoord(&conj_udedges, N_UDEDGES2, getUDEdges, setUDEdges, mulEdges);
 }
 
-void initSym(
+void initConjFlip() {
+  initConjCoord(&conj_flip, N_FLIP, getFlip, setFlip, mulEdges);
+}
+
+void initCoordSym(
   SymCoord **coord_sym,
   CoordL **coord_raw,
   SelfSyms **coord_selfs,
@@ -177,8 +182,6 @@ void initSym(
   *coord_sym = coord_sym1;
   *coord_raw = coord_raw1;
   *coord_selfs = coord_selfs1;
-
-  std::cout << cls << "\n";
 }
 
 void initFlipSliceSym() {
@@ -221,7 +224,7 @@ void initFlipSliceSym() {
 }
 
 void initCornersSym() {
-  initSym(
+  initCoordSym(
     &corners_sym, &corners_raw, &corners_selfs,
     N_CORNERS_SYM, N_CORNERS_C,
     getCorners, setCorners,
@@ -230,7 +233,7 @@ void initCornersSym() {
 }
 
 void initSSliceSym() {
-  initSym(
+  initCoordSym(
     &sslice_sym, &sslice_raw, &sslice_selfs,
     N_SSLICE_SYM, N_SSLICE,
     getSSlice, setSSlice,

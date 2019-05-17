@@ -90,28 +90,23 @@ void benchMoves(int count, int time) {
 }
 
 int main(int argc, char *argv[]) {
-  /*
   initTwistMove();
   initFlipMove();
   initSSliceMove();
-  initUEdgesMove();
-  initDEdgesMove();
-  initUDEdgesMove();
-  initCornersMove();
-  initMergeUDEdges();
 
-  clock_t tick = clock();
   initConjTwist();
-  initConjUDEdges();
-  initFlipSliceSym();
-  initCornersSym();
+  initConjFlip();
   initSSliceSym();
-  std::cout << tock(tick) << "\n";
 
-  initFSTwistPrun3();
+  for (Coord flip = 0; flip < N_FLIP; flip++) {
+    for (int m = 0; m < N_MOVES; m++) {
+      if (flip_move[flip][m] >= N_FLIP)
+        std::cout << flip_move[flip][m] << "\n";
+    }
+  }
+  std::cout << "ok\n";
 
-  std::cout << tock(tick) / 1000. << "\n";
-  */
+  initFSSTwistPrun3();
 
   if (argc != 4) {
     std::cout << "Call:\n"
