@@ -321,7 +321,7 @@ void initFSSTwistPrun3() {
   fsstwist_prun3 = new uint64_t[N_FSSTWIST / 32 + 1];
   std::fill(fsstwist_prun3, fsstwist_prun3 + N_FSSTWIST / 32 + 1, EMPTY_CELL);
 
-  int count = 1;
+  uint32_t count = 1;
   int depth = 0;
   auto *done = new std::bitset<N_FSSTWIST>();
   bool backsearch = false;
@@ -330,6 +330,7 @@ void initFSSTwistPrun3() {
   while (count < N_FSSTWIST) {
     CoordL c = 0;
     int depth3 = depth % 3;
+    std::cout << count << "\n";
 
     for (Coord sssym = 0; sssym < N_SSLICE_SYM; sssym++) {
       Coord sslice = sslice_raw[sssym];
@@ -357,7 +358,7 @@ void initFSSTwistPrun3() {
             Coord sssym1 = COORD(sslice_sym[sslice1]);
             flip1 = conj_flip[flip1][SYM(sslice_sym[sslice1])][sssym1];
             twist1 = conj_twist[twist1][SYM(sslice_sym[sslice1])];
-            CoordLL c1 = FSSTWIST(flip1, sssym1, twist1);
+            CoordL c1 = FSSTWIST(flip1, sssym1, twist1);
 
             if (backsearch) {
               if (getPrun3(fsstwist_prun3, c1) != depth3)
@@ -391,6 +392,8 @@ void initFSSTwistPrun3() {
     if (depth == BACKSEARCH_DEPTH)
       backsearch = true;
   }
+
+  std::cout << count << "\n";
 
   delete done;
 }

@@ -18,7 +18,7 @@
 #define CS_CORNERS(cornslice) (cornslice / N_SSLICE2)
 #define CS_SSLICE(cornslice) (cornslice % N_SSLICE2)
 
-#define FSSTWIST(flip, sssym, twist) ((CoordLL(sssym) * N_FLIP + flip) * N_TWIST + twist)
+#define FSSTWIST(flip, sssym, twist) ((CoordL(sssym) * N_FLIP + flip) * N_TWIST + twist)
 
 extern int (*next_dist)[3];
 

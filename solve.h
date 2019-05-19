@@ -39,6 +39,7 @@ class TwoPhaseSolver {
 };
 
 std::vector<int> twophase(const CubieCube &cube, int max_depth, int timelimit);
-void initTwophase(bool file = true);
+void initTwophase(bool file);
+void initOptimal(bool file);
 
 #endif

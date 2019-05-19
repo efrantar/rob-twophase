@@ -12,7 +12,8 @@
 #include "sym.h"
 #include "prun.h"
 
-#define FILENAME "twophase.tbl"
+#define FILE_TWOPHASE "twophase.tbl"
+#define FILE_OPTIMAL "optimal.tbl"
 
 bool skip_move[N_MOVES][N_MOVES];
 
@@ -226,7 +227,6 @@ std::vector<int> twophase(const CubieCube &cube, int max_depth1, int timelimit) 
   return sol;
 }
 
-/* TODO: very crude implementation of the file-loading, but sufficient for now */
 void initTwophase(bool file) {
   initTwistMove();
   initFlipMove();
@@ -249,22 +249,53 @@ void initTwophase(bool file) {
     return;
   }
 
-  FILE *f = fopen(FILENAME, "rb");
+  FILE *f = fopen(FILE_TWOPHASE, "rb");
+
   if (f == NULL) {
     initFSTwistPrun3();
     initCornUDPrun3();
     initCornSlicePrun();
-    f = fopen(FILENAME, "wb");
-    int tmp = fwrite(fstwist_prun3, 8, N_FSTWIST / 32 + 1, f);
-    tmp = fwrite(cornud_prun3, 8, N_CORNUD / 32 + 1, f);
-    tmp = fwrite(cornslice_prun, 1, N_CORNSLICE, f);
+
+    f = fopen(FILE_TWOPHASE, "wb");
+    int tmp = fwrite(fstwist_prun3, sizeof(uint64_t), N_FSTWIST / 32 + 1, f);
+    tmp = fwrite(cornud_prun3, sizeof(uint64_t), N_CORNUD / 32 + 1, f);
+    tmp = fwrite(cornslice_prun, sizeof(uint8_t), N_CORNSLICE, f);
   } else {
     fstwist_prun3 = new uint64_t[N_FSTWIST / 32 + 1];
     cornud_prun3 = new uint64_t[N_CORNUD / 32 + 1];
     cornslice_prun = new uint8_t[N_CORNSLICE];
-    int tmp = fread(fstwist_prun3, 8, N_FSTWIST / 32 + 1, f);
-    tmp = fread(cornud_prun3, 8, N_CORNUD / 32 + 1, f);
-    tmp = fread(cornslice_prun, 1, N_CORNSLICE, f);
+    int tmp = fread(fstwist_prun3, sizeof(uint64_t), N_FSTWIST / 32 + 1, f);
+    tmp = fread(cornud_prun3, sizeof(uint64_t), N_CORNUD / 32 + 1, f);
+    tmp = fread(cornslice_prun, sizeof(uint8_t), N_CORNSLICE, f);
   }
+
+  fclose(f);
+}
+
+void initOptimal(bool file) {
+  initTwistMove();
+  initFlipMove();
+  initSSliceMove();
+
+  initConjTwist();
+  initSSliceSym();
+  initConjFlip();
+
+  if (!file) {
+    initFSSTwistPrun3();
+    return;
+  }
+
+  FILE *f = fopen(FILE_OPTIMAL, "rb");
+
+  if (f == NULL) {
+    initFSSTwistPrun3();
+    f = fopen(FILE_OPTIMAL, "wb");
+    int tmp = fwrite(fsstwist_prun3, sizeof(uint64_t), N_FSSTWIST / 32 + 1, f);
+  } else {
+    fsstwist_prun3 = new uint64_t[N_FSSTWIST / 32 + 1];
+    int tmp = fread(fstwist_prun3, sizeof(uint64_t), N_FSSTWIST / 32 + 1, f);
+  }
+
   fclose(f);
 }

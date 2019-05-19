@@ -90,34 +90,7 @@ void benchMoves(int count, int time) {
 }
 
 int main(int argc, char *argv[]) {
-  /*
-  initTwistMove();
-  initFlipMove();
-  initSSliceMove();
-  initUEdgesMove();
-  initDEdgesMove();
-  initUDEdgesMove2();
-  initCornersMove();
-  initMergeUDEdges();
-
-  initConjTwist();
-  initConjUDEdges();
-  initFlipSliceSym();
-  initCornersSym();
-
-  initFSTwistPrun3();
-  initCornUDPrun3();
-
-  initTwistMove();
-  initFlipMove();
-  initSSliceMove();
-
-  initConjTwist();
-  initSSliceSym();
-  initConjFlip();
-
-  initFSSTwistPrun3();
-  */
+  initOptimal(true);
 
   if (argc != 4) {
     std::cout << "Call:\n"
@@ -128,7 +101,7 @@ int main(int argc, char *argv[]) {
   }
 
   std::cout << "Loading tables ...\n";
-  initTwophase();
+  initTwophase(true);
   std::cout << "Done.\n";
 
   std::string s = argv[1];
