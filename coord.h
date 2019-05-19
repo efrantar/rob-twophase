@@ -21,7 +21,7 @@
 
 #define N_EDGES_C 4790001600
 
-#define FSLICE(flip, slice) (CoordL(slice) * N_FLIP + CoordL(flip))
+#define FSLICE(flip, slice) (CoordL(slice) * N_FLIP + flip)
 #define FS_FLIP(fslice) (fslice % N_FLIP)
 #define FS_SLICE(fslice) (fslice / N_FLIP)
 
@@ -37,7 +37,7 @@ extern Coord (*flip_move)[N_MOVES];
 extern Coord (*sslice_move)[N_MOVES];
 extern Coord (*uedges_move)[N_MOVES];
 extern Coord (*dedges_move)[N_MOVES];
-extern Coord (*udedges_move)[N_MOVES2];
+extern Coord (*udedges_move2)[N_MOVES2];
 extern Coord (*corners_move)[N_MOVES];
 
 extern Coord (*merge_udedges)[N_SSLICE2];
@@ -66,7 +66,7 @@ void initFlipMove();
 void initSSliceMove();
 void initUEdgesMove();
 void initDEdgesMove();
-void initUDEdgesMove();
+void initUDEdgesMove2();
 void initCornersMove();
 
 void initMergeUDEdges();

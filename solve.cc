@@ -179,7 +179,7 @@ void TwoPhaseSolver::phase2(int depth, int dist, int limit) {
 
     sslice[depth + 1] = sslice_move[sslice[depth]][kPhase2Moves[m]];
     corners[depth + 1] = corners_move[corners[depth]][kPhase2Moves[m]];
-    udedges[depth + 1] = udedges_move[udedges[depth]][m];
+    udedges[depth + 1] = udedges_move2[udedges[depth]][m];
 
     CoordL cornud = CORNUD(
       COORD(corners_sym[corners[depth + 1]]),
@@ -233,7 +233,7 @@ void initTwophase(bool file) {
   initSSliceMove();
   initUEdgesMove();
   initDEdgesMove();
-  initUDEdgesMove();
+  initUDEdgesMove2();
   initCornersMove();
   initMergeUDEdges();
 

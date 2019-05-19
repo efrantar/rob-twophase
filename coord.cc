@@ -14,7 +14,7 @@ Coord (*flip_move)[N_MOVES];
 Coord (*sslice_move)[N_MOVES];
 Coord (*uedges_move)[N_MOVES];
 Coord (*dedges_move)[N_MOVES];
-Coord (*udedges_move)[N_MOVES2];
+Coord (*udedges_move2)[N_MOVES2];
 Coord (*corners_move)[N_MOVES];
 
 Coord (*merge_udedges)[N_SSLICE2];
@@ -288,8 +288,8 @@ void initDEdgesMove() {
   );
 }
 
-void initUDEdgesMove() { 
-  udedges_move = new Coord[N_UDEDGES2][N_MOVES2];
+void initUDEdgesMove2() {
+  udedges_move2 = new Coord[N_UDEDGES2][N_MOVES2];
 
   CubieCube cube1;
   CubieCube cube2;
@@ -299,7 +299,7 @@ void initUDEdgesMove() {
     setUDEdges(cube1, c);
     for (int m = 0; m < N_MOVES2; m++) {
       mulEdges(cube1, move_cubes[kPhase2Moves[m]], cube2);
-      udedges_move[c][m] = getUDEdges(cube2);
+      udedges_move2[c][m] = getUDEdges(cube2);
     }
   }
 }
