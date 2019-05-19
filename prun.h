@@ -29,7 +29,8 @@ extern uint64_t *fsstwist_prun3;
 
 int getPrun3(uint64_t *prun3, CoordL c);
 int getFSTwistDist(Coord flip, Coord sslice, Coord twist);
-int getCORNUDDist(Coord corners, Coord udedges);
+int getCornUDDist(Coord corners, Coord udedges);
+int getFSSTwistDist(Coord flip, Coord sslice, Coord twist);
 
 void initFSTwistPrun3();
 void initCornUDPrun3();

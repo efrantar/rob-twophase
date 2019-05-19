@@ -78,7 +78,7 @@ int getFSTwistDist(Coord flip, Coord sslice, Coord twist) {
   return depth;
 }
 
-int getCORNUDDist(Coord corners, Coord udedges) {
+int getCornUDDist(Coord corners, Coord udedges) {
   CoordL cornud = CORNUD(
     COORD(corners_sym[corners]), conj_udedges[udedges][SYM(corners_sym[corners])]
   );
@@ -103,6 +103,47 @@ int getCORNUDDist(Coord corners, Coord udedges) {
         corners = corners1;
         udedges = udedges1;
         cornud = cornud1;
+        break;
+      }
+    }
+
+    depth3--;
+    depth++;
+  }
+
+  return depth;
+}
+
+int getFSSTwistDist(Coord flip, Coord sslice, Coord twist) {
+  CoordL fsstwist = FSSTWIST(
+    conj_flip[flip][COORD(sslice_sym[sslice])][SYM(sslice_sym[sslice])],
+    COORD(sslice_sym[sslice]),
+    conj_twist[twist][SYM(sslice_sym[sslice])]
+  );
+
+  int depth3 = getPrun3(fsstwist_prun3, fsstwist);
+  int depth = 0;
+
+  while (fsstwist != 0) {
+    if (depth3 == 0)
+      depth3 = 3;
+
+    for (int m = 0; m < N_MOVES; m++) {
+      Coord flip1 = flip_move[flip][m];
+      Coord sslice1 = sslice_move[sslice][m];
+      Coord twist1 = twist_move[twist][m];
+
+      CoordL fsstwist1 = FSSTWIST(
+        conj_flip[flip1][COORD(sslice_sym[sslice1])][SYM(sslice_sym[sslice1])],
+        COORD(sslice_sym[sslice1]),
+        conj_twist[twist1][SYM(sslice_sym[sslice1])]
+      );
+
+      if (getPrun3(fsstwist_prun3, fsstwist1) == depth3 - 1) {
+        flip = flip1;
+        sslice = sslice1;
+        twist = twist1;
+        fsstwist = fsstwist1;
         break;
       }
     }

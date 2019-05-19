@@ -98,7 +98,7 @@ void TwoPhaseSolver::phase1(int depth, int dist, int limit) {
       udedges_depth = depth - 1;
     udedges[depth] = merge_udedges[uedges[depth]][dedges[depth] % 24];
 
-    int dist1 = getCORNUDDist(corners[depth], udedges[depth]);
+    int dist1 = getCornUDDist(corners[depth], udedges[depth]);
     for (int limit1 = depth + dist1; limit1 <= max_limit; limit1++)
       phase2(depth, dist1, limit1);
 
