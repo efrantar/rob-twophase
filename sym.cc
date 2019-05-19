@@ -11,14 +11,14 @@ int conj_move[N_MOVES][N_SYMS];
 
 Coord (*conj_twist)[N_SYMS_DH4];
 Coord (*conj_udedges)[N_SYMS_DH4];
-Coord (*conj_flip)[N_SYMS_DH4];
+Coord (*conj_flip)[N_SYMS_DH4][N_SSLICE_SYM];
 
 SymCoord *fslice_sym;
 SymCoord *corners_sym;
 SymCoord *sslice_sym;
 CoordL *fslice_raw;
-CoordL *corners_raw;
-CoordL *sslice_raw;
+Coord *corners_raw;
+Coord *sslice_raw;
 SelfSyms *fslice_selfs;
 SelfSyms *corners_selfs;
 SelfSyms *sslice_selfs;
@@ -133,12 +133,40 @@ void initConjUDEdges() {
 }
 
 void initConjFlip() {
-  initConjCoord(&conj_flip, N_FLIP, getFlip, setFlip, mulEdges);
+  conj_flip = new Coord[N_FLIP][N_SYMS_DH4][N_SSLICE_SYM];
+
+  CubieCube cube1;
+  CubieCube cube2;
+  CubieCube cube3;
+  CubieCube tmp;
+
+  for (Coord sssym = 0; sssym < N_SSLICE_SYM; sssym++) {
+    for (Coord flip = 0; flip < N_FLIP; flip++) {
+      conj_flip[flip][0][sssym] = flip;
+    }
+  }
+
+  copy(kSolvedCube, cube1);
+  for (Coord sssym = 0; sssym < N_SSLICE_SYM; sssym++) {
+    setSSlice(cube1, sslice_raw[sssym]);
+
+    for (int s = 1; s < N_SYMS_DH4; s++) {
+      mulEdges(sym_cubes[inv_sym[s]], cube1, tmp);
+      mulEdges(tmp, sym_cubes[s], cube2);
+
+      for (Coord flip = 0; flip < N_FLIP; flip++) {
+        setFlip(cube2, flip);
+        mulEdges(sym_cubes[s], cube2, tmp);
+        mulEdges(tmp, sym_cubes[inv_sym[s]], cube3);
+        conj_flip[flip][s][sssym] = getFlip(cube3);
+      }
+    }
+  }
 }
 
 void initCoordSym(
   SymCoord **coord_sym,
-  CoordL **coord_raw,
+  Coord **coord_raw,
   SelfSyms **coord_selfs,
   int n_sym,
   int n_coord,
@@ -147,7 +175,7 @@ void initCoordSym(
   void (*mul)(const CubieCube &, const CubieCube &, CubieCube &)
 ) {
   auto coord_sym1 = new SymCoord[n_coord];
-  auto coord_raw1 = new CoordL[n_sym];
+  auto coord_raw1 = new Coord[n_sym];
   auto coord_selfs1 = new SelfSyms[n_sym];
   std::fill(coord_sym1, coord_sym1 + n_coord, EMPTY);
 

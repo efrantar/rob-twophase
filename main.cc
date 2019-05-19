@@ -95,16 +95,8 @@ int main(int argc, char *argv[]) {
   initSSliceMove();
 
   initConjTwist();
-  initConjFlip();
   initSSliceSym();
-
-  for (Coord flip = 0; flip < N_FLIP; flip++) {
-    for (int m = 0; m < N_MOVES; m++) {
-      if (flip_move[flip][m] >= N_FLIP)
-        std::cout << flip_move[flip][m] << "\n";
-    }
-  }
-  std::cout << "ok\n";
+  initConjFlip();
 
   initFSSTwistPrun3();
 

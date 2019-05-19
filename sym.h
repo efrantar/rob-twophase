@@ -48,14 +48,14 @@ extern int conj_move[N_MOVES][N_SYMS];
 
 extern Coord (*conj_twist)[N_SYMS_DH4];
 extern Coord (*conj_udedges)[N_SYMS_DH4];
-extern Coord (*conj_flip)[N_SYMS_DH4];
+extern Coord (*conj_flip)[N_SYMS_DH4][N_SSLICE_SYM];
 
 extern SymCoord *fslice_sym;
 extern SymCoord *corners_sym;
 extern SymCoord *sslice_sym;
 extern CoordL *fslice_raw;
-extern CoordL *corners_raw;
-extern CoordL *sslice_raw;
+extern Coord *corners_raw;
+extern Coord *sslice_raw;
 extern SelfSyms *fslice_selfs;
 extern SelfSyms *corners_selfs;
 extern SelfSyms *sslice_selfs;

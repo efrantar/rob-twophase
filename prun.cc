@@ -297,10 +297,10 @@ void initFSSTwistPrun3() {
     int depth3 = depth % 3;
     std::cout << filled << "\n";
 
-    for (Coord flip = 0; flip < N_FLIP; flip++) {
-      for (Coord sssym = 0; sssym < N_SSLICE_SYM; sssym++) {
-        Coord sslice = sslice_raw[sssym];
+    for (Coord sssym = 0; sssym < N_SSLICE_SYM; sssym++) {
+      Coord sslice = sslice_raw[sssym];
 
+      for (Coord flip = 0; flip < N_FLIP; flip++) {
         for (Coord twist = 0; twist < N_TWIST; twist++, c++) {
           if (!backsearch) {
             if (
@@ -323,8 +323,8 @@ void initFSSTwistPrun3() {
             Coord sslice1 = sslice_move[sslice][m];
             Coord twist1 = twist_move[twist][m];
 
-            flip1 = conj_flip[flip1][SYM(sslice_sym[sslice1])];
             Coord sssym1 = COORD(sslice_sym[sslice1]);
+            flip1 = conj_flip[flip1][SYM(sslice_sym[sslice1])][sssym1];
             twist1 = conj_twist[twist1][SYM(sslice_sym[sslice1])];
             CoordLL c1 = FSSTWIST(flip1, sssym1, twist1);
 
@@ -343,7 +343,7 @@ void initFSSTwistPrun3() {
             int selfs = sslice_selfs[sssym1] >> 1;
             for (int s = 1; selfs > 0; selfs >>= 1, s++) {
               if (selfs & 1) {
-                CoordLL c2 = FSSTWIST(conj_flip[flip1][s], sssym1, conj_twist[twist1][s]);
+                CoordLL c2 = FSSTWIST(conj_flip[flip1][s][sssym1], sssym1, conj_twist[twist1][s]);
                 if (getPrun3(fsstwist_prun3, c2) == EMPTY) {
                   setPrun3(fsstwist_prun3, c2, depth + 1);
                   bits->set(c2);
