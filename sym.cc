@@ -100,7 +100,7 @@ void checkSyms(const CubieCube &cube, bool &rot, bool &anti) {
 void initConjCoord(
   Coord (**conj_coord)[N_SYMS_DH4],
   int n_coords,
-  Coord (*getCoord)(CubieCube &),
+  Coord (*getCoord)(const CubieCube &),
   void (*setCoord)(CubieCube &, Coord),
   void (*mul)(const CubieCube &, const CubieCube &, CubieCube &)
 ) {
@@ -170,7 +170,7 @@ void initCoordSym(
   SelfSyms **coord_selfs,
   int n_sym,
   int n_coord,
-  Coord (*getCoord)(CubieCube &),
+  Coord (*getCoord)(const CubieCube &),
   void (*setCoord)(CubieCube &, Coord),
   void (*mul)(const CubieCube &, const CubieCube &, CubieCube &)
 ) {

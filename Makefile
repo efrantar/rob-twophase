@@ -1,7 +1,7 @@
 C=gcc
 CXX=g++
 RM=rm -f
-CPPFLAGS=-std=c++14 -lpthread -O
+CPPFLAGS=-std=c++14 -lpthread -O3
 LDFLAGS=
 LDLIBS=-lpthread
 

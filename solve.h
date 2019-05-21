@@ -7,6 +7,8 @@
 #include "moves.h"
 
 #define N 100
+#define FILE_TWOPHASE "twophase.tbl"
+#define FILE_OPTIM "/home/elias/projects/twophase/optim.tbl"
 
 extern bool skip_move[N_MOVES][N_MOVES];
 
@@ -39,7 +41,8 @@ class TwoPhaseSolver {
 };
 
 std::vector<int> twophase(const CubieCube &cube, int max_depth, int timelimit);
+std::vector<int> optim(const CubieCube &cube);
 void initTwophase(bool file);
-void initOptimal(bool file);
+void initOptim(bool file);
 
 #endif

@@ -1,10 +1,11 @@
 #include <algorithm>
-#include <ctime>
+#include <chrono>
 #include <iostream>
 #include <numeric>
 #include <stdlib.h>
 #include <string>
 #include <vector>
+#include <thread>
 
 #include "cubie.h"
 #include "coord.h"
@@ -17,10 +18,6 @@
 
 #define MAX_BENCHTIME 10000
 #define PRINT_EVERY 1000
-
-double tock(clock_t tick) {
-  return double(clock() - tick) / CLOCKS_PER_SEC * 1000;
-}
 
 void printSol(const std::vector<int> &sol) {
   for (int i = 0; i < sol.size(); i++)
@@ -49,15 +46,15 @@ void benchTime(int count, int max_moves) {
     if (i % PRINT_EVERY == 0)
       std::cout << "Benchmarking ...\n";
 
-    clock_t tick = clock();
+    auto tick = std::chrono::high_resolution_clock::now();
     CubieCube cube = randomCube();
     std::vector<int> sol = twophase(cube, max_moves, MAX_BENCHTIME);
-    double tock1 = tock(tick);
+    auto tock = std::chrono::high_resolution_clock::now() - tick;
 
     if (!checkSol(cube, sol) || sol.size() > max_moves)
       failed++;
     else
-      times[i] = tock1;
+      times[i] = std::chrono::duration_cast<std::chrono::microseconds>(tock).count() / 1000.;
   }
 
   std::cout
@@ -90,9 +87,23 @@ void benchMoves(int count, int time) {
 }
 
 int main(int argc, char *argv[]) {
-  initOptimal(true);
+  /*
+  initOptim(true);
 
-  if (argc != 4) {
+  auto tick = std::chrono::high_resolution_clock::now();
+  CubieCube cube = randomCube();
+  std::cout << "Started solving ...\n";
+  std::vector<int> sol = optim(cube);
+  auto tock = std::chrono::high_resolution_clock::now() - tick;
+  std::cout << std::chrono::duration_cast<std::chrono::microseconds>(tock).count() / 1000. << "\n";
+
+  if (checkSol(cube, sol))
+    std::cout << sol.size() << "\n";
+  else
+    std::cout << "error\n";
+    */
+
+  if (argc == 1) {
     std::cout << "Call:\n"
       << "./twophase FACECUBE MAX_MOVES TIME\n"
       << "./twophase benchtime COUNT MAX_MOVES\n"

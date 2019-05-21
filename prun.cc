@@ -116,7 +116,7 @@ int getCornUDDist(Coord corners, Coord udedges) {
 
 int getFSSTwistDist(Coord flip, Coord sslice, Coord twist) {
   CoordL fsstwist = FSSTWIST(
-    conj_flip[flip][COORD(sslice_sym[sslice])][SYM(sslice_sym[sslice])],
+    conj_flip[flip][SYM(sslice_sym[sslice])][COORD(sslice_sym[sslice])],
     COORD(sslice_sym[sslice]),
     conj_twist[twist][SYM(sslice_sym[sslice])]
   );
@@ -134,7 +134,7 @@ int getFSSTwistDist(Coord flip, Coord sslice, Coord twist) {
       Coord twist1 = twist_move[twist][m];
 
       CoordL fsstwist1 = FSSTWIST(
-        conj_flip[flip1][COORD(sslice_sym[sslice1])][SYM(sslice_sym[sslice1])],
+        conj_flip[flip1][SYM(sslice_sym[sslice1])][COORD(sslice_sym[sslice1])],
         COORD(sslice_sym[sslice1]),
         conj_twist[twist1][SYM(sslice_sym[sslice1])]
       );
@@ -330,7 +330,6 @@ void initFSSTwistPrun3() {
   while (count < N_FSSTWIST) {
     CoordL c = 0;
     int depth3 = depth % 3;
-    std::cout << count << "\n";
 
     for (Coord sssym = 0; sssym < N_SSLICE_SYM; sssym++) {
       Coord sslice = sslice_raw[sssym];
@@ -392,8 +391,6 @@ void initFSSTwistPrun3() {
     if (depth == BACKSEARCH_DEPTH)
       backsearch = true;
   }
-
-  std::cout << count << "\n";
 
   delete done;
 }

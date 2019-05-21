@@ -148,7 +148,7 @@ void setPosPermCoord(
 void initMoveCoord(
   Coord (**coord_move)[N_MOVES], 
   int n_coords,
-  Coord (*getCoord)(CubieCube &),
+  Coord (*getCoord)(const CubieCube &),
   void (*setCoord)(CubieCube &, Coord),
   void (*mul)(const CubieCube &, const CubieCube &, CubieCube &)
 ) {
@@ -169,35 +169,35 @@ void initMoveCoord(
   *coord_move = coord_move1;
 }
 
-Coord getTwist(CubieCube &cube) {
+Coord getTwist(const CubieCube &cube) {
   return getOriCoord(cube.co, N_CORNERS, 3);
 }
 
-Coord getFlip(CubieCube &cube) {
+Coord getFlip(const CubieCube &cube) {
   return getOriCoord(cube.eo, N_EDGES, 2);
 }
 
-Coord getSSlice(CubieCube &cube) {
+Coord getSSlice(const CubieCube &cube) {
   return getPosPermCoord(cube.ep, N_EDGES, FR, BR, false);
 }
 
-Coord getUEdges(CubieCube &cube) {
+Coord getUEdges(const CubieCube &cube) {
   return getPosPermCoord(cube.ep, N_EDGES, UR, UB, true);
 }
 
-Coord getDEdges(CubieCube &cube) {
+Coord getDEdges(const CubieCube &cube) {
   return getPosPermCoord(cube.ep, N_EDGES, DR, DB, true);
 }
 
-Coord getUDEdges(CubieCube &cube) {
+Coord getUDEdges(const CubieCube &cube) {
   return getPermCoord(cube.ep, N_EDGES - 4, DB);
 }
 
-Coord getCorners(CubieCube &cube) {
+Coord getCorners(const CubieCube &cube) {
   return getPermCoord(cube.cp, N_CORNERS, N_CORNERS - 1);
 }
 
-Coord getSlice(CubieCube &cube) {
+Coord getSlice(const CubieCube &cube) {
   Coord val = 0;
 
   int j = 3;

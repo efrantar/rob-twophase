@@ -28,6 +28,8 @@
 #define SSLICE(slice) (slice * N_SSLICE2)
 #define SS_SLICE(sslice) (sslice / N_SSLICE2)
 
+#define DEDGES_SOLVED 1656
+
 typedef uint16_t Coord;
 typedef uint32_t CoordL;
 typedef uint64_t CoordLL;
@@ -42,14 +44,14 @@ extern Coord (*corners_move)[N_MOVES];
 
 extern Coord (*merge_udedges)[N_SSLICE2];
 
-Coord getTwist(CubieCube &cube);
-Coord getFlip(CubieCube &cube);
-Coord getSSlice(CubieCube &cube);
-Coord getUEdges(CubieCube &cube);
-Coord getDEdges(CubieCube &cube);
-Coord getUDEdges(CubieCube &cube);
-Coord getSlice(CubieCube &cube);
-Coord getCorners(CubieCube &cube);
+Coord getTwist(const CubieCube &cube);
+Coord getFlip(const CubieCube &cube);
+Coord getSSlice(const CubieCube &cube);
+Coord getUEdges(const CubieCube &cube);
+Coord getDEdges(const CubieCube &cube);
+Coord getUDEdges(const CubieCube &cube);
+Coord getSlice(const CubieCube &cube);
+Coord getCorners(const CubieCube &cube);
 
 void setTwist(CubieCube &cube, Coord twist);
 void setFlip(CubieCube &cube, Coord flip);

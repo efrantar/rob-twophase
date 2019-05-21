@@ -12,9 +12,6 @@
 #include "sym.h"
 #include "prun.h"
 
-#define FILE_TWOPHASE "twophase.tbl"
-#define FILE_OPTIMAL "optimal.tbl"
-
 bool skip_move[N_MOVES][N_MOVES];
 
 static bool init() {
@@ -35,6 +32,15 @@ std::vector<int> sol;
 int len;
 int max_depth;
 clock_t endtime;
+
+int moves[N];
+Coord flip[3][N];
+Coord sslice[3][N];
+Coord twist[3][N];
+Coord uedges[N];
+Coord dedges[N];
+Coord corners1[N];
+int cud_depth;
 
 TwoPhaseSolver::TwoPhaseSolver(int rot1, bool inv1) {
   rot = rot1;
@@ -198,6 +204,87 @@ void TwoPhaseSolver::phase2(int depth, int dist, int limit) {
   }
 }
 
+int moveAndPrun(int m, int rot, int depth, int dist) {
+  flip[rot][depth + 1] = flip_move[flip[rot][depth]][m];
+  sslice[rot][depth + 1] = sslice_move[sslice[rot][depth]][m];
+  twist[rot][depth + 1] = twist_move[sslice[rot][depth]][m];
+
+  int tmp = sslice[rot][depth + 1];
+  CoordL fsstwist = FSSTWIST(
+    conj_flip[flip[rot][depth + 1]][COORD(sslice_sym[tmp])][SYM(sslice_sym[tmp])],
+    COORD(sslice_sym[tmp]),
+    conj_twist[twist[rot][depth + 1]][SYM(sslice_sym[tmp])]
+  );
+
+  return next_dist[dist][getPrun3(fsstwist_prun3, fsstwist)];
+}
+
+void optim(int depth, int dist, int limit) {
+  if (done)
+    return;
+
+  if (dist == 0) {
+    for (int i = cud_depth + 1; i <= depth; i++) {
+      corners1[i] = corners_move[corners1[i - 1]][moves[i - 1]];
+      uedges[i] = uedges_move[uedges[i - 1]][moves[i - 1]];
+      dedges[i] = dedges_move[dedges[i - 1]][moves[i - 1]];
+    }
+    if (depth > 0)
+      cud_depth = depth - 1;
+
+    if (corners1[depth] == 0 && uedges[depth] == 0 && dedges[depth] == DEDGES_SOLVED) {
+      sol.resize(depth);
+      for (int i = 0; i < depth; i++)
+        sol[i] = moves[i];
+      done = true;
+    }
+
+    return;
+  }
+
+  for (int m = 0; m < N_MOVES2; m++) {
+    if (depth > 0 && skip_move[moves[depth - 1]][m])
+      continue;
+
+    int prun[3];
+    bool next = false;
+
+    for (int rot = 0; rot < 3; rot++) {
+      flip[rot][depth + 1] = flip_move[flip[rot][depth]][m];
+      sslice[rot][depth + 1] = sslice_move[sslice[rot][depth]][m];
+      twist[rot][depth + 1] = twist_move[sslice[rot][depth]][m];
+
+      int tmp = sslice[rot][depth + 1];
+      CoordL fsstwist = FSSTWIST(
+        conj_flip[flip[rot][depth + 1]][COORD(sslice_sym[tmp])][SYM(sslice_sym[tmp])],
+        COORD(sslice_sym[tmp]),
+        conj_twist[twist[rot][depth + 1]][SYM(sslice_sym[tmp])]
+      );
+
+      prun[rot] = next_dist[dist][getPrun3(fsstwist_prun3, fsstwist)];
+      if (depth + prun[rot] < limit) {
+        next = true;
+        break;
+      }
+    }
+    if (next)
+      continue;
+
+    int dist1;
+    if (prun[0] == prun[1] && prun[1] == prun[2])
+      dist1 = prun[0] + 1;
+    else
+      dist1 = std::max(prun[0], std::max(prun[1], prun[2]));
+
+    if (depth + dist1 < limit) {
+      moves[depth] = m;
+      optim(depth + 1, dist1, limit);
+      if (done)
+        return;
+    }
+  }
+}
+
 std::vector<int> twophase(const CubieCube &cube, int max_depth1, int timelimit) {
   endtime = clock() + clock_t(CLOCKS_PER_SEC / 1000. * timelimit);
 
@@ -223,6 +310,39 @@ std::vector<int> twophase(const CubieCube &cube, int max_depth1, int timelimit) 
   }
   for (int i = 0; i < threads.size(); i++)
     threads[i].join();
+
+  return sol;
+}
+
+std::vector<int> optim(const CubieCube &cube) {
+  CubieCube cube1;
+
+  int prun[3];
+  for (int rot = 0; rot < 3; rot++) {
+    CubieCube tmp;
+    mul(sym_cubes[inv_sym[16 * rot]], cube, tmp);
+    mul(tmp, sym_cubes[16 * rot], cube1);
+
+    flip[rot][0] = getFlip(cube1);
+    sslice[rot][0] = getSSlice(cube1);
+    twist[rot][0] = getTwist(cube1);
+
+    prun[rot] = getFSSTwistDist(flip[rot][0], sslice[rot][0], twist[rot][0]);
+  }
+
+  uedges[0] = getUEdges(cube);
+  dedges[0] = getDEdges(cube);
+  corners1[0] = getCorners(cube);
+  cud_depth = 0;
+
+  int dist;
+  if (prun[0] == prun[1] && prun[1] == prun[2])
+    dist = prun[0] + 1;
+  else
+    dist = std::max(prun[0], std::max(prun[1], prun[2]));
+
+  for (int limit = dist; limit <= 20; limit++)
+    optim(0, dist, limit);
 
   return sol;
 }
@@ -272,7 +392,7 @@ void initTwophase(bool file) {
   fclose(f);
 }
 
-void initOptimal(bool file) {
+void initOptim(bool file) {
   initTwistMove();
   initFlipMove();
   initSSliceMove();
@@ -286,11 +406,11 @@ void initOptimal(bool file) {
     return;
   }
 
-  FILE *f = fopen(FILE_OPTIMAL, "rb");
+  FILE *f = fopen(FILE_OPTIM, "rb");
 
   if (f == NULL) {
     initFSSTwistPrun3();
-    f = fopen(FILE_OPTIMAL, "wb");
+    f = fopen(FILE_OPTIM, "wb");
     int tmp = fwrite(fsstwist_prun3, sizeof(uint64_t), N_FSSTWIST / 32 + 1, f);
   } else {
     fsstwist_prun3 = new uint64_t[N_FSSTWIST / 32 + 1];
