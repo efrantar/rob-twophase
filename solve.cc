@@ -34,6 +34,7 @@ int max_depth;
 clock_t endtime;
 
 int moves[N];
+int prun[3][N];
 Coord flip[3][N];
 Coord sslice[3][N];
 Coord twist[3][N];
@@ -204,21 +205,6 @@ void TwoPhaseSolver::phase2(int depth, int dist, int limit) {
   }
 }
 
-int moveAndPrun(int m, int rot, int depth, int dist) {
-  flip[rot][depth + 1] = flip_move[flip[rot][depth]][m];
-  sslice[rot][depth + 1] = sslice_move[sslice[rot][depth]][m];
-  twist[rot][depth + 1] = twist_move[sslice[rot][depth]][m];
-
-  int tmp = sslice[rot][depth + 1];
-  CoordL fsstwist = FSSTWIST(
-    conj_flip[flip[rot][depth + 1]][COORD(sslice_sym[tmp])][SYM(sslice_sym[tmp])],
-    COORD(sslice_sym[tmp]),
-    conj_twist[twist[rot][depth + 1]][SYM(sslice_sym[tmp])]
-  );
-
-  return next_dist[dist][getPrun3(fsstwist_prun3, fsstwist)];
-}
-
 void optim(int depth, int dist, int limit) {
   if (done)
     return;
@@ -242,27 +228,25 @@ void optim(int depth, int dist, int limit) {
     return;
   }
 
-  for (int m = 0; m < N_MOVES2; m++) {
+  for (int m = 0; m < N_MOVES; m++) {
     if (depth > 0 && skip_move[moves[depth - 1]][m])
       continue;
 
-    int prun[3];
     bool next = false;
-
     for (int rot = 0; rot < 3; rot++) {
-      flip[rot][depth + 1] = flip_move[flip[rot][depth]][m];
-      sslice[rot][depth + 1] = sslice_move[sslice[rot][depth]][m];
-      twist[rot][depth + 1] = twist_move[sslice[rot][depth]][m];
+      flip[rot][depth + 1] = flip_move[flip[rot][depth]][conj_move[m][16 * rot]];
+      sslice[rot][depth + 1] = sslice_move[sslice[rot][depth]][conj_move[m][16 * rot]];
+      twist[rot][depth + 1] = twist_move[twist[rot][depth]][conj_move[m][16 * rot]];
 
       int tmp = sslice[rot][depth + 1];
       CoordL fsstwist = FSSTWIST(
-        conj_flip[flip[rot][depth + 1]][COORD(sslice_sym[tmp])][SYM(sslice_sym[tmp])],
+        conj_flip[flip[rot][depth + 1]][SYM(sslice_sym[tmp])][COORD(sslice_sym[tmp])],
         COORD(sslice_sym[tmp]),
         conj_twist[twist[rot][depth + 1]][SYM(sslice_sym[tmp])]
       );
 
-      prun[rot] = next_dist[dist][getPrun3(fsstwist_prun3, fsstwist)];
-      if (depth + prun[rot] < limit) {
+      prun[rot][depth + 1] = next_dist[prun[rot][depth]][getPrun3(fsstwist_prun3, fsstwist)];
+      if (depth + prun[rot][depth + 1] > limit) {
         next = true;
         break;
       }
@@ -271,10 +255,14 @@ void optim(int depth, int dist, int limit) {
       continue;
 
     int dist1;
-    if (prun[0] == prun[1] && prun[1] == prun[2])
-      dist1 = prun[0] + 1;
+    if (
+      prun[0][depth + 1] != 0 &&
+      prun[0][depth + 1] == prun[1][depth + 1] && prun[1][depth + 1] == prun[2][depth + 1]
+    ) {
+      dist1 = prun[0][depth + 1] + 1;
+    }
     else
-      dist1 = std::max(prun[0], std::max(prun[1], prun[2]));
+      dist1 = std::max(prun[0][depth + 1], std::max(prun[1][depth + 1], prun[2][depth + 1]));
 
     if (depth + dist1 < limit) {
       moves[depth] = m;
@@ -283,6 +271,9 @@ void optim(int depth, int dist, int limit) {
         return;
     }
   }
+
+  if (depth > 0 && cud_depth == depth)
+    cud_depth--;
 }
 
 std::vector<int> twophase(const CubieCube &cube, int max_depth1, int timelimit) {
@@ -315,19 +306,19 @@ std::vector<int> twophase(const CubieCube &cube, int max_depth1, int timelimit) 
 }
 
 std::vector<int> optim(const CubieCube &cube) {
-  CubieCube cube1;
+  done = false;
 
-  int prun[3];
   for (int rot = 0; rot < 3; rot++) {
+    CubieCube cube1;
     CubieCube tmp;
-    mul(sym_cubes[inv_sym[16 * rot]], cube, tmp);
-    mul(tmp, sym_cubes[16 * rot], cube1);
+    mul(sym_cubes[16 * rot], cube, tmp);
+    mul(tmp, sym_cubes[inv_sym[16 * rot]], cube1);
 
     flip[rot][0] = getFlip(cube1);
     sslice[rot][0] = getSSlice(cube1);
     twist[rot][0] = getTwist(cube1);
 
-    prun[rot] = getFSSTwistDist(flip[rot][0], sslice[rot][0], twist[rot][0]);
+    prun[rot][0] = getFSSTwistDist(flip[rot][0], sslice[rot][0], twist[rot][0]);
   }
 
   uedges[0] = getUEdges(cube);
@@ -336,13 +327,15 @@ std::vector<int> optim(const CubieCube &cube) {
   cud_depth = 0;
 
   int dist;
-  if (prun[0] == prun[1] && prun[1] == prun[2])
-    dist = prun[0] + 1;
+  if (prun[0][0] != 0 && prun[0][0] == prun[1][0] && prun[1][0] == prun[2][0])
+    dist = prun[0][0] + 1;
   else
-    dist = std::max(prun[0], std::max(prun[1], prun[2]));
+    dist = std::max(prun[0][0], std::max(prun[1][0], prun[2][0]));
 
-  for (int limit = dist; limit <= 20; limit++)
+  for (int limit = dist; limit <= 20; limit++) {
+    std::cout << limit << "\n";
     optim(0, dist, limit);
+  }
 
   return sol;
 }
@@ -396,6 +389,9 @@ void initOptim(bool file) {
   initTwistMove();
   initFlipMove();
   initSSliceMove();
+  initUEdgesMove();
+  initDEdgesMove();
+  initCornersMove();
 
   initConjTwist();
   initSSliceSym();
@@ -414,7 +410,7 @@ void initOptim(bool file) {
     int tmp = fwrite(fsstwist_prun3, sizeof(uint64_t), N_FSSTWIST / 32 + 1, f);
   } else {
     fsstwist_prun3 = new uint64_t[N_FSSTWIST / 32 + 1];
-    int tmp = fread(fstwist_prun3, sizeof(uint64_t), N_FSSTWIST / 32 + 1, f);
+    int tmp = fread(fsstwist_prun3, sizeof(uint64_t), N_FSSTWIST / 32 + 1, f);
   }
 
   fclose(f);

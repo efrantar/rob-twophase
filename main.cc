@@ -87,12 +87,39 @@ void benchMoves(int count, int time) {
 }
 
 int main(int argc, char *argv[]) {
-  /*
   initOptim(true);
 
-  auto tick = std::chrono::high_resolution_clock::now();
   CubieCube cube = randomCube();
+
+  /*
+  CubieCube cube1;
+  CubieCube cube2;
+  CubieCube cube3;
+  CubieCube tmp;
+
+  srand(3);
+  copy(kSolvedCube, cube1);
+  for (int m = 0; m < 19; m++) {
+    mul(cube1, move_cubes[rand() % 18], tmp);
+    copy(tmp, cube1);
+  }
+  for (int m : optim(cube1))
+    std::cout << m << " ";
+  std::cout << "\n";
+
+  for (int m = 0; m < N_MOVES; m++) {
+    mul(cube1, move_cubes[m], cube2);
+    std::vector<int> sol = optim(cube2);
+    if (!checkSol(cube2, sol))
+      std::cout << "error\n";
+    std::cout << "Done: " << m << "\n";
+  }
+
+  mul(cube1, move_cubes[U2], cube2);
+  */
+
   std::cout << "Started solving ...\n";
+  auto tick = std::chrono::high_resolution_clock::now();
   std::vector<int> sol = optim(cube);
   auto tock = std::chrono::high_resolution_clock::now() - tick;
   std::cout << std::chrono::duration_cast<std::chrono::microseconds>(tock).count() / 1000. << "\n";
@@ -101,7 +128,6 @@ int main(int argc, char *argv[]) {
     std::cout << sol.size() << "\n";
   else
     std::cout << "error\n";
-    */
 
   if (argc == 1) {
     std::cout << "Call:\n"
