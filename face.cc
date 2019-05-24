@@ -15,18 +15,14 @@ std::unordered_map<int, std::pair<int, int>> corners;
 std::unordered_map<int, std::pair<int, int>> edges;
 
 static bool init() {
-  std::unordered_map<int, std::pair<int, int>> corners;
   for (int corner = 0; corner < N_CORNERS; corner++) {
     for (int ori = 0; ori < 3; ori++)
       corners[encode(kCornerNames[corner], ori)] = std::make_pair(corner, ori);
   }
-
-  std::unordered_map<int, std::pair<int, int>> edges;
   for (int edge = 0; edge < N_EDGES; edge++) {
     for (int ori = 0; ori < 2; ori++)
       edges[encode(kEdgeNames[edge], ori)] = std::make_pair(edge, ori);
   }
-
   return true;
 }
 static bool inited = init();
