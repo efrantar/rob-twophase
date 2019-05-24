@@ -13,14 +13,6 @@
 #include "prun.h"
 
 bool skip_move[N_MOVES][N_MOVES];
-const int axis_end[] = {
-  U3, U3, U3,
-  R3, R3, R3,
-  F3, F3, F3,
-  D3, D3, D3,
-  L3, L3, L3,
-  B3, B3, B3
-};
 
 static bool init() {
   for (int m1 = 0; m1 < N_MOVES; m1++) {
@@ -150,7 +142,7 @@ int TwoPhaseSolver::phase1(int depth, int dist, int togo) {
     if (dist1 < togo) {
       moves[depth] = m;
       if (phase1(depth + 1, dist1, togo - 1) == 1)
-        m = axis_end[m];
+        m = kAxisEnd[m];
       if (done)
         return 0;
     }
@@ -266,7 +258,7 @@ void optim(int depth, int dist, int togo) {
       prun[rot][depth + 1] = next_dist[prun[rot][depth]][getPrun3(fsstwist_prun3, fsstwist)];
       if (prun[rot][depth + 1] >= togo) {
         if (prun[rot][depth + 1] > togo)
-          m = axis_end[m];
+          m = kAxisEnd[m];
         next = true;
         break;
       }
@@ -290,7 +282,7 @@ void optim(int depth, int dist, int togo) {
       if (done)
         return;
     } else if (dist1 > togo)
-      m = axis_end[m];
+      m = kAxisEnd[m];
   }
 
   if (depth > 0 && cud_depth == depth)

@@ -107,11 +107,13 @@ int main(int argc, char *argv[]) {
   std::string mode(argv[1]);
 
   std::cout << "Loading tables ...\n";
+  auto tick = std::chrono::high_resolution_clock::now();
   if (mode == "optim")
     initOptim(true);
   else
     initTwophase(true);
-  std::cout << "Done.\n";
+  auto tock = std::chrono::high_resolution_clock::now() - tick;
+  std::cout << "Done. " << std::chrono::duration_cast<std::chrono::milliseconds>(tock).count() / 1000. << "s\n";
 
   if (mode == "twophase") {
     CubieCube cube;

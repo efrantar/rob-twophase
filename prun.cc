@@ -204,7 +204,7 @@ void initFSTwistPrun3() {
             count++;
             break;
           } else if (getPrun3(fstwist_prun3, c1) != EMPTY)
-              continue;
+            continue;
      
           setPrun3(fstwist_prun3, c1, depth + 1);
           count++;

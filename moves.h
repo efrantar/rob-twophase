@@ -56,6 +56,15 @@ const int kInvMove[] = {
   B3, B2, B1
 };
 
+const int kAxisEnd[] = {
+  U3, U3, U3,
+  R3, R3, R3,
+  F3, F3, F3,
+  D3, D3, D3,
+  L3, L3, L3,
+  B3, B3, B3
+};
+
 const CubieCube kUCube = { 
   {UBR, URF, UFL, ULB, DFR, DLF, DBL, DRB},
   {UB, UR, UF, UL, DR, DF, DL, DB, FR, FL, BL, BR},
