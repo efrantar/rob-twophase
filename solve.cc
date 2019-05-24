@@ -1,6 +1,7 @@
 #include "solve.h"
 
 #include <algorithm>
+#include <condition_variable>
 #include <ctime>
 #include <mutex>
 #include <thread>
@@ -31,7 +32,6 @@ std::vector<int> sol;
 
 int len;
 int max_depth;
-clock_t endtime;
 
 int moves[N];
 int prun[3][N];
@@ -85,14 +85,8 @@ void TwoPhaseSolver::solve(const CubieCube &cube) {
 }
 
 int TwoPhaseSolver::phase1(int depth, int dist, int togo) {
-  count1++;
-
   if (done)
     return 0;
-  else if (clock() > endtime) {
-    done = true;
-    return 0;
-  }
 
   if (togo == 0) {
     for (int i = corners_depth + 1; i <= depth; i++)
@@ -157,14 +151,8 @@ int TwoPhaseSolver::phase1(int depth, int dist, int togo) {
 }
 
 void TwoPhaseSolver::phase2(int depth, int dist, int togo) {
-  count2++;
-
   if (done)
     return;
-  else if (clock() > endtime) {
-    done = true;
-    return;
-  }
 
   if (togo == 0) {
     mutex.lock();
@@ -306,8 +294,6 @@ void optim(int depth, int dist, int togo) {
 }
 
 std::vector<int> twophase(const CubieCube &cube, int max_depth1, int timelimit) {
-  endtime = clock() + clock_t(CLOCKS_PER_SEC / 1000. * timelimit);
-
   done = false;
   sol.clear();
   max_depth = max_depth1;
