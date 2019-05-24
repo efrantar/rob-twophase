@@ -15,6 +15,8 @@
 #define L 4
 #define B 5
 
+#define SUPERFLIP "UBULURUFURURFRBRDRFUFLFRFDFDFDLDRDBDLULBLFLDLBUBRBLBDB"
+
 const char kColorNames[] = {'U', 'R', 'F', 'D', 'L', 'B'};
 
 const std::unordered_map<char, int> kNameToColor = {

@@ -41,7 +41,9 @@ Coord twist[3][N];
 Coord uedges[N];
 Coord dedges[N];
 Coord corners1[N];
-int cud_depth;
+int corners1_depth;
+int uedges_depth;
+int dedges_depth;
 
 TwoPhaseSolver::TwoPhaseSolver(int rot1, bool inv1) {
   rot = rot1;
@@ -220,21 +222,31 @@ void optim(int depth, int dist, int togo) {
     return;
 
   if (dist == 0) {
-    for (int i = cud_depth + 1; i <= depth; i++) {
+    for (int i = corners1_depth + 1; i <= depth; i++)
       corners1[i] = corners_move[corners1[i - 1]][moves[i - 1]];
-      uedges[i] = uedges_move[uedges[i - 1]][moves[i - 1]];
-      dedges[i] = dedges_move[dedges[i - 1]][moves[i - 1]];
-    }
     if (depth > 0)
-      cud_depth = depth - 1;
+      corners1_depth = depth - 1;
+    if (corners1[depth] != 0)
+      return;
 
-    if (corners1[depth] == 0 && uedges[depth] == 0 && dedges[depth] == DEDGES_SOLVED) {
-      sol.resize(depth);
-      for (int i = 0; i < depth; i++)
-        sol[i] = moves[i];
-      done = true;
-    }
+    for (int i = uedges_depth + 1; i <= depth; i++)
+      uedges[i] = uedges_move[uedges[i - 1]][moves[i - 1]];
+    if (depth > 0)
+      uedges_depth = depth - 1;
+    if (uedges[depth] != 0)
+      return;
 
+    for (int i = dedges_depth + 1; i <= depth; i++)
+      dedges[i] = dedges_move[dedges[i - 1]][moves[i - 1]];
+    if (depth > 0)
+      dedges_depth = depth - 1;
+    if (dedges[depth] != DEDGES_SOLVED)
+      return;
+
+    sol.resize(depth);
+    for (int i = 0; i < depth; i++)
+      sol[i] = moves[i];
+    done = true;
     return;
   }
 
@@ -285,8 +297,12 @@ void optim(int depth, int dist, int togo) {
       m = kAxisEnd[m];
   }
 
-  if (depth > 0 && cud_depth == depth)
-    cud_depth--;
+  if (depth > 0 && corners1_depth == depth)
+    corners1_depth--;
+  if (depth > 0 && uedges_depth == depth)
+    uedges_depth--;
+  if (depth > 0 && dedges_depth == depth)
+    dedges_depth--;
 }
 
 std::vector<int> twophase(const CubieCube &cube, int max_depth1, int timelimit) {
@@ -337,7 +353,9 @@ std::vector<int> optim(const CubieCube &cube) {
   uedges[0] = getUEdges(cube);
   dedges[0] = getDEdges(cube);
   corners1[0] = getCorners(cube);
-  cud_depth = 0;
+  corners1_depth = 0;
+  uedges_depth = 0;
+  dedges_depth = 0;
 
   int dist;
   if (prun[0][0] != 0 && prun[0][0] == prun[1][0] && prun[1][0] == prun[2][0])
@@ -345,11 +363,8 @@ std::vector<int> optim(const CubieCube &cube) {
   else
     dist = std::max(prun[0][0], std::max(prun[1][0], prun[2][0]));
 
-  for (int togo = dist; togo <= 20; togo++) {
-    std::cout << togo << "\n";
+  for (int togo = dist; togo <= 20; togo++)
     optim(0, dist, togo);
-  }
-
   return sol;
 }
 
