@@ -13,6 +13,14 @@
 #include "prun.h"
 
 bool skip_move[N_MOVES][N_MOVES];
+const int axis_end[] = {
+  U3, U3, U3,
+  R3, R3, R3,
+  F3, F3, F3,
+  D3, D3, D3,
+  L3, L3, L3,
+  B3, B3, B3
+};
 
 static bool init() {
   for (int m1 = 0; m1 < N_MOVES; m1++) {
@@ -49,6 +57,9 @@ TwoPhaseSolver::TwoPhaseSolver(int rot1, bool inv1) {
 }
 
 void TwoPhaseSolver::solve(const CubieCube &cube) {
+  count1 = 0;
+  count2 = 0;
+
   CubieCube cube1;
 
   if (rot == 1) {
@@ -75,28 +86,29 @@ void TwoPhaseSolver::solve(const CubieCube &cube) {
   udedges_depth = 0;
 
   int dist = getFSTwistDist(flip[0], sslice[0], twist[0]);
-  for (int limit = dist; limit < len; limit++)
-    phase1(0, dist, limit);
+  for (int togo = dist; togo < len; togo++)
+    phase1(0, dist, togo);
 }
 
-void TwoPhaseSolver::phase1(int depth, int dist, int limit) {
+int TwoPhaseSolver::phase1(int depth, int dist, int togo) {
+  count1++;
+
   if (done)
-    return;
+    return 0;
   else if (clock() > endtime) {
     done = true;
-    return;
+    return 0;
   }
 
-  if (depth == limit) {
+  if (togo == 0) {
     for (int i = corners_depth + 1; i <= depth; i++)
       corners[i] = corners_move[corners[i - 1]][moves[i - 1]];
     if (depth > 0)
       corners_depth = depth - 1;
 
-    int max_limit = std::min(len - 1 - depth, 10);
-    if (cornslice_prun[CORNSLICE(corners[depth], sslice[depth])] > max_limit)
-      return;
-    max_limit += depth;
+    int max_togo = std::min(len - 1 - depth, 10);
+    if (cornslice_prun[CORNSLICE(corners[depth], sslice[depth])] > max_togo)
+      return cornslice_prun[CORNSLICE(corners[depth], sslice[depth])] > max_togo + 1;
 
     for (int i = udedges_depth + 1; i <= depth; i++) {
       uedges[i] = uedges_move[uedges[i - 1]][moves[i - 1]];
@@ -107,16 +119,19 @@ void TwoPhaseSolver::phase1(int depth, int dist, int limit) {
     udedges[depth] = merge_udedges[uedges[depth]][dedges[depth] % 24];
 
     int dist1 = getCornUDDist(corners[depth], udedges[depth]);
-    for (int limit1 = depth + dist1; limit1 <= max_limit; limit1++)
-      phase2(depth, dist1, limit1);
 
-    return;
+    if (dist1 > max_togo + 1)
+      return 1;
+    for (int togo1 = dist1; togo1 <= max_togo; togo1++)
+      phase2(depth, dist1, togo1);
+
+    return 0;
   }
 
   for (int m = 0; m < N_MOVES; m++) {
     if (depth > 0 && skip_move[moves[depth - 1]][m])
       continue;
-    if (dist == 0 && depth > limit - 5 && kIsPhase2Move[m])
+    if (dist == 0 && kIsPhase2Move[m])
       continue;
 
     flip[depth + 1] = flip_move[flip[depth]][m];
@@ -132,11 +147,12 @@ void TwoPhaseSolver::phase1(int depth, int dist, int limit) {
     );
     int dist1 = next_dist[dist][getPrun3(fstwist_prun3, fstwist)];
 
-    if (depth + dist1 < limit) {
+    if (dist1 < togo) {
       moves[depth] = m;
-      phase1(depth + 1, dist1, limit);
+      if (phase1(depth + 1, dist1, togo - 1) == 1)
+        m = axis_end[m];
       if (done)
-        return;
+        return 0;
     }
   }
 
@@ -146,7 +162,9 @@ void TwoPhaseSolver::phase1(int depth, int dist, int limit) {
     udedges_depth--;
 }
 
-void TwoPhaseSolver::phase2(int depth, int dist, int limit) {
+void TwoPhaseSolver::phase2(int depth, int dist, int togo) {
+  count2++;
+
   if (done)
     return;
   else if (clock() > endtime) {
@@ -154,7 +172,7 @@ void TwoPhaseSolver::phase2(int depth, int dist, int limit) {
     return;
   }
 
-  if (depth == limit) {
+  if (togo == 0) {
     mutex.lock();
 
     if (depth < len) {
@@ -196,16 +214,16 @@ void TwoPhaseSolver::phase2(int depth, int dist, int limit) {
     int dist1 = next_dist[dist][getPrun3(cornud_prun3, cornud)];
 
     int tmp = cornslice_prun[CORNSLICE(corners[depth + 1], sslice[depth + 1])];
-    if (depth + std::max(dist1, tmp) < limit) {
+    if (std::max(dist1, tmp) < togo) {
       moves[depth] = kPhase2Moves[m];
-      phase2(depth + 1, dist1, limit);
+      phase2(depth + 1, dist1, togo - 1);
       if (done)
         return;
     }
   }
 }
 
-void optim(int depth, int dist, int limit) {
+void optim(int depth, int dist, int togo) {
   if (done)
     return;
 
@@ -246,7 +264,9 @@ void optim(int depth, int dist, int limit) {
       );
 
       prun[rot][depth + 1] = next_dist[prun[rot][depth]][getPrun3(fsstwist_prun3, fsstwist)];
-      if (depth + prun[rot][depth + 1] > limit) {
+      if (prun[rot][depth + 1] >= togo) {
+        if (prun[rot][depth + 1] > togo)
+          m = axis_end[m];
         next = true;
         break;
       }
@@ -264,12 +284,13 @@ void optim(int depth, int dist, int limit) {
     else
       dist1 = std::max(prun[0][depth + 1], std::max(prun[1][depth + 1], prun[2][depth + 1]));
 
-    if (depth + dist1 < limit) {
+    if (dist1 < togo) {
       moves[depth] = m;
-      optim(depth + 1, dist1, limit);
+      optim(depth + 1, dist1, togo - 1);
       if (done)
         return;
-    }
+    } else if (dist1 > togo)
+      m = axis_end[m];
   }
 
   if (depth > 0 && cud_depth == depth)
@@ -332,9 +353,9 @@ std::vector<int> optim(const CubieCube &cube) {
   else
     dist = std::max(prun[0][0], std::max(prun[1][0], prun[2][0]));
 
-  for (int limit = dist; limit <= 20; limit++) {
-    std::cout << limit << "\n";
-    optim(0, dist, limit);
+  for (int togo = dist; togo <= 20; togo++) {
+    std::cout << togo << "\n";
+    optim(0, dist, togo);
   }
 
   return sol;

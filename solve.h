@@ -6,7 +6,7 @@
 #include "coord.h"
 #include "moves.h"
 
-#define N 100
+#define N 31
 #define FILE_TWOPHASE "twophase.tbl"
 #define FILE_OPTIM "/home/elias/projects/twophase/optim.tbl"
 
@@ -31,8 +31,11 @@ class TwoPhaseSolver {
     int udedges_depth;
     int moves[N];
 
-    void phase1(int depth, int dist, int limit);
-    void phase2(int depth, int dist, int limit);
+    int count1;
+    int count2;
+
+    int phase1(int depth, int dist, int togo);
+    void phase2(int depth, int dist, int togo);
 
   public:
     TwoPhaseSolver(int rot, bool inv);
