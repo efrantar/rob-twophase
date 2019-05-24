@@ -48,4 +48,6 @@ std::vector<int> optim(const CubieCube &cube);
 void initTwophase(bool file);
 void initOptim(bool file);
 
+std::vector<int> scramble(int timelimit);
+
 #endif

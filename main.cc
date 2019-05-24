@@ -19,6 +19,7 @@
 
 #define BENCHFILE "bench.cubes"
 #define MAX_BENCHTIME 10000
+#define MAX_SCRAMBLETIME 100
 #define PRINT_EVERY 1000
 
 void printSol(const std::vector<int> &sol) {
@@ -101,7 +102,8 @@ int main(int argc, char *argv[]) {
       << "./twophase twophase FACECUBE MAX_MOVES TIME\n"
       << "./twophase optim FACECUBE\n"
       << "./twophase benchtime MAX_MOVES\n"
-      << "./twophase benchmoves TIME\n";
+      << "./twophase benchmoves TIME\n"
+      << "./twophase scramble COUNT\n";
     return 0;
   }
   std::string mode(argv[1]);
@@ -115,7 +117,11 @@ int main(int argc, char *argv[]) {
   auto tock = std::chrono::high_resolution_clock::now() - tick;
   std::cout << "Done. " << std::chrono::duration_cast<std::chrono::milliseconds>(tock).count() / 1000. << "s\n";
 
-  if (mode == "twophase") {
+  if (mode == "scramble") {
+    int count = std::stoi(argv[2]);
+    while (count-- > 0)
+      printSol(scramble(MAX_SCRAMBLETIME));
+  } else if (mode == "twophase") {
     CubieCube cube;
     int tmp = faceToCubie(std::string(argv[1]), cube);
     if (tmp) {

@@ -428,3 +428,11 @@ void initOptim(bool file) {
 
   fclose(f);
 }
+
+std::vector<int> scramble(int timelimit) {
+  std::vector<int> scramble = twophase(randomCube(), -1, timelimit);
+  std::reverse(scramble.begin(), scramble.end());
+  for (int i = 0; i < scramble.size(); i++)
+    scramble[i] = kInvMove[scramble[i]];
+  return scramble;
+}
