@@ -18,13 +18,13 @@ uint64_t *fsstwist_prun3;
 
 static bool init() {
  next_dist = new int[22][3];
-
  for (int i = 0; i < 22; i++) {
    if (i > 0)
      next_dist[i][(i - 1) % 3] = i - 1;
    next_dist[i][i % 3] = i;
    next_dist[i][(i + 1) % 3] = i + 1;
  }
+ return true;
 }
 static bool inited = init();
 

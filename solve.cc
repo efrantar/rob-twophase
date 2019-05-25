@@ -152,6 +152,8 @@ int TwoPhaseSolver::phase1(int depth, int dist, int togo) {
     corners_depth--;
   if (depth > 0 && udedges_depth == depth)
     udedges_depth--;
+
+  return 0;
 }
 
 void TwoPhaseSolver::phase2(int depth, int dist, int togo) {
