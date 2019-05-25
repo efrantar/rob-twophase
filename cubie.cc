@@ -152,10 +152,10 @@ bool operator!=(const CubieCube &cube1, const CubieCube &cube2) {
 std::ostream& operator<<(std::ostream &os, const CubieCube &cube) {
   for (int i = 0; i < N_CORNERS; i++)
     os << kCornerNames[cube.cp[i]] << "(" << cube.co[i] << ") ";
-  os << "\n";
+  os << std::endl;
   for (int i = 0; i < N_EDGES; i++)
     os << kEdgeNames[cube.ep[i]] << "(" << cube.eo[i] << ") ";
-  os << "\n";
+  os << std::endl;
 
   return os;
 }

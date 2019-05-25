@@ -60,8 +60,6 @@ extern SelfSyms *fslice_selfs;
 extern SelfSyms *corners_selfs;
 extern SelfSyms *sslice_selfs;
 
-void checkSyms(const CubieCube &cube, bool &rot, bool &anti);
-
 void initConjTwist();
 void initConjUDEdges();
 void initConjFlip();

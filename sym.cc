@@ -75,28 +75,6 @@ static bool init() {
 }
 static bool inited = init();
 
-void checkSyms(const CubieCube &cube, bool &rot, bool &anti) {
-  CubieCube cube1;
-  CubieCube tmp;
-
-  for (int s : {16, 20, 24, 28}) {
-    mul(sym_cubes[s], cube, tmp);
-    mul(tmp, sym_cubes[inv_sym[s]], cube1);
-    if (cube1 == cube) {
-      rot = true;
-      break;
-    }
-  }
-  for (int s = 0; s < N_SYMS; s++) {
-    mul(sym_cubes[s], cube, tmp);
-    mul(tmp, sym_cubes[inv_sym[s]], cube1);
-    if (invCube(cube1) == cube) {
-      anti = true;
-      break;
-    }
-  }
-}
-
 void initConjCoord(
   Coord (**conj_coord)[N_SYMS_DH4],
   int n_coords,

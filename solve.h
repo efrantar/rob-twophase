@@ -31,9 +31,6 @@ class TwoPhaseSolver {
     int udedges_depth;
     int moves[N];
 
-    int count1;
-    int count2;
-
     int phase1(int depth, int dist, int togo);
     void phase2(int depth, int dist, int togo);
 
@@ -43,11 +40,14 @@ class TwoPhaseSolver {
 
 };
 
-std::vector<int> twophase(const CubieCube &cube, int max_depth, int timelimit);
-std::vector<int> optim(const CubieCube &cube);
-void initTwophase(bool file);
-void initOptim(bool file);
-
+int twophase(const CubieCube &cube, int max_depth, int timelimit, std::vector<int> &sol);
+int optim(const CubieCube &cube, int max_depth, int timelimit, std::vector<int> &sol);
 std::vector<int> scramble(int timelimit);
+void initTwophase(bool file = true);
+void initOptim(bool file = true);
+
+std::string twophaseStr(std::string cube, int max_depth = -1, int timelimit = 10);
+std::string optimStr(std::string cube, int max_depth = 20, int timelimit = 3600);
+std::string scrambleStr(int timelimit = 10);
 
 #endif

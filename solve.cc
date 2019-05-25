@@ -4,11 +4,13 @@
 #include <condition_variable>
 #include <ctime>
 #include <mutex>
-#include <thread>
 #include <vector>
+#include <sstream>
+#include <thread>
 
 #include "coord.h"
 #include "cubie.h"
+#include "face.h"
 #include "moves.h"
 #include "sym.h"
 #include "prun.h"
@@ -33,6 +35,7 @@ std::vector<int> sol;
 std::mutex wait;
 std::condition_variable notify;
 bool cont;
+int ret;
 
 int len;
 int max_depth;
@@ -55,9 +58,6 @@ TwoPhaseSolver::TwoPhaseSolver(int rot1, bool inv1) {
 }
 
 void TwoPhaseSolver::solve(const CubieCube &cube) {
-  count1 = 0;
-  count2 = 0;
-
   CubieCube cube1;
 
   if (rot == 1) {
@@ -238,7 +238,9 @@ void optim(int depth, int dist, int togo) {
     sol.resize(depth);
     for (int i = 0; i < depth; i++)
       sol[i] = moves[i];
+    len = depth;
     done = true;
+
     return;
   }
 
@@ -297,30 +299,25 @@ void optim(int depth, int dist, int togo) {
     dedges_depth--;
 }
 
-std::vector<int> twophase(const CubieCube &cube, int max_depth1, int timelimit) {
+int twophase(const CubieCube &cube, int max_depth1, int timelimit, std::vector<int> &sol1) {
+  done = false;
+
   cont = false;
-  std::thread timeout([timelimit](){
+  ret = 0;
+  std::thread timeout([timelimit]() {
     std::unique_lock<std::mutex> lock(wait);
     notify.wait_for(lock, std::chrono::milliseconds(timelimit), []{ return cont; });
     done = true;
+    ret++;
   });
 
-  done = false;
   sol.clear();
   max_depth = max_depth1;
-  len = max_depth > 0 ? max_depth + 1 : 100;
-
-  bool rotsym = false;
-  bool antisym = false;
-  checkSyms(cube, rotsym, antisym);
+  len = max_depth > 0 ? max_depth + 1 : 31;
 
   std::vector<std::thread> threads;
   for (int rot = 0; rot < 3; rot++) {
-    if (rotsym && rot > 0)
-      break;
     for (int inv = 0; inv < 2; inv++) {
-      if (antisym && inv > 0)
-        break;
       TwoPhaseSolver solver(rot, (bool) inv);
       threads.push_back(std::thread(&TwoPhaseSolver::solve, solver, cube));
     }
@@ -331,15 +328,33 @@ std::vector<int> twophase(const CubieCube &cube, int max_depth1, int timelimit) 
   {
     std::lock_guard<std::mutex> lock(wait);
     cont = true;
+    if (ret == 0)
+      ret--;
   }
   notify.notify_one();
   timeout.join();
 
-  return sol;
+  if (sol.size() == len) {
+    sol1.resize(len);
+    for (int i = 0; i < len; i++)
+      sol1[i] = sol[i];
+    return ret;
+  }
+  return 2;
 }
 
-std::vector<int> optim(const CubieCube &cube) {
+int optim(const CubieCube &cube, int max_depth, int timelimit, std::vector<int> &sol1) {
   done = false;
+  len = 21;
+
+  cont = false;
+  ret = 0;
+  std::thread timeout([timelimit]() {
+    std::unique_lock<std::mutex> lock(wait);
+    notify.wait_for(lock, std::chrono::seconds(timelimit), []{ return cont; });
+    done = true;
+    ret++;
+  });
 
   for (int rot = 0; rot < 3; rot++) {
     CubieCube cube1;
@@ -367,9 +382,34 @@ std::vector<int> optim(const CubieCube &cube) {
   else
     dist = std::max(prun[0][0], std::max(prun[1][0], prun[2][0]));
 
-  for (int togo = dist; togo <= 20; togo++)
+  for (int togo = dist; togo <= max_depth; togo++)
     optim(0, dist, togo);
-  return sol;
+
+  {
+    std::lock_guard<std::mutex> lock(wait);
+    cont = true;
+    if (ret == 0)
+      ret--;
+  }
+  notify.notify_one();
+  timeout.join();
+
+  if (sol.size() == len) {
+    sol1.resize(len);
+    for (int i = 0; i < len; i++)
+      sol1[i] = sol[i];
+    return 0;
+  }
+  return 2 - ret;
+}
+
+std::vector<int> scramble(int timelimit) {
+  std::vector<int> scramble;
+  twophase(randomCube(), -1, timelimit, scramble);
+  std::reverse(scramble.begin(), scramble.end());
+  for (int i = 0; i < scramble.size(); i++)
+    scramble[i] = kInvMove[scramble[i]];
+  return scramble;
 }
 
 void initTwophase(bool file) {
@@ -448,10 +488,42 @@ void initOptim(bool file) {
   fclose(f);
 }
 
-std::vector<int> scramble(int timelimit) {
-  std::vector<int> scramble = twophase(randomCube(), -1, timelimit);
-  std::reverse(scramble.begin(), scramble.end());
-  for (int i = 0; i < scramble.size(); i++)
-    scramble[i] = kInvMove[scramble[i]];
-  return scramble;
+std::string solToStr(const std::vector<int> &sol) {
+  std::ostringstream ss;
+  for (int i = 0; i < sol.size(); i++) {
+    ss << kMoveNames[sol[i]];
+    if (i != sol.size() - 1)
+      ss << " ";
+  }
+  return ss.str();
+}
+
+std::string twophaseStr(std::string s, int max_depth, int timelimit) {
+  CubieCube cube;
+  int err = faceToCubie(s, cube);
+  if (err)
+    return "FaceError " + std::to_string(err);
+  if ((err = check(cube)))
+    return "CubieError " + std::to_string(err);
+
+  std::vector<int> sol;
+  int ret = twophase(cube, max_depth, timelimit, sol);
+  return ret == 0 ? solToStr(sol) : "SolveError " + std::to_string(ret);
+}
+
+std::string optimStr(std::string s, int max_depth, int timelimit) {
+  CubieCube cube;
+  int err = faceToCubie(s, cube);
+  if (err)
+    return "FaceError " + std::to_string(err);
+  if ((err = check(cube)))
+    return "CubieError " + std::to_string(err);
+
+  std::vector<int> sol;
+  int ret = optim(cube, max_depth, timelimit, sol);
+  return ret == 0 ? solToStr(sol) : "SolveError " + std::to_string(ret);
+}
+
+std::string scrambleStr(int timelimit) {
+  return solToStr(scramble(timelimit));
 }
