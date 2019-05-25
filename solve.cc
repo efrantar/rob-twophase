@@ -30,6 +30,10 @@ std::mutex mutex;
 bool done;
 std::vector<int> sol;
 
+std::mutex wait;
+std::condition_variable notify;
+bool cont;
+
 int len;
 int max_depth;
 
@@ -294,6 +298,13 @@ void optim(int depth, int dist, int togo) {
 }
 
 std::vector<int> twophase(const CubieCube &cube, int max_depth1, int timelimit) {
+  cont = false;
+  std::thread timeout([timelimit](){
+    std::unique_lock<std::mutex> lock(wait);
+    notify.wait_for(lock, std::chrono::milliseconds(timelimit), []{ return cont; });
+    done = true;
+  });
+
   done = false;
   sol.clear();
   max_depth = max_depth1;
@@ -314,8 +325,13 @@ std::vector<int> twophase(const CubieCube &cube, int max_depth1, int timelimit) 
       threads.push_back(std::thread(&TwoPhaseSolver::solve, solver, cube));
     }
   }
+
   for (int i = 0; i < threads.size(); i++)
     threads[i].join();
+  std::lock_guard<std::mutex> lock(wait);
+  cont = true;
+  notify.notify_one();
+  timeout.join();
 
   return sol;
 }
