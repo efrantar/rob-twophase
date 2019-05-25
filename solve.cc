@@ -328,8 +328,10 @@ std::vector<int> twophase(const CubieCube &cube, int max_depth1, int timelimit) 
 
   for (int i = 0; i < threads.size(); i++)
     threads[i].join();
-  std::lock_guard<std::mutex> lock(wait);
-  cont = true;
+  {
+    std::lock_guard<std::mutex> lock(wait);
+    cont = true;
+  }
   notify.notify_one();
   timeout.join();
 
