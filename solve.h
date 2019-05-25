@@ -10,8 +10,6 @@
 #define FILE_TWOPHASE "twophase.tbl"
 #define FILE_OPTIM "/home/elias/projects/twophase/optim.tbl"
 
-extern bool skip_move[N_MOVES][N_MOVES];
-
 class TwoPhaseSolver {
   
   private:
