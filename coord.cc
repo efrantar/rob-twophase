@@ -21,19 +21,21 @@ Coord (*merge_udedges)[N_SSLICE2];
 
 Coord getOriCoord(const int oris[], int len, int n_oris) {
   Coord val = 0;
-  for (int i = 0; i < len - 1; i++)
+  for (int i = 0; i < len - 1; i++) // last value can be reconstructed by parity
     val = n_oris * val + oris[i];
   return val;
 }
 
+// `cubies` contains values `max_cubie` - `len` + 1 ... `max_cubie`
 Coord getPermCoord(const int cubies[], int len, int max_cubie) {
   Coord val = 0;
 
   int cubies1[len];
-  std::copy(cubies, cubies + len, cubies1);
-  for (int i = len - 1; i > 0; i--) {
+  std::copy(cubies, cubies + len, cubies1); // we don't want to modify the cube we are encoding
+  for (int i = len - 1; i > 0; i--) { // already sorted when i == 0
     int n_rots = 0;
     while (cubies1[i] != max_cubie) {
+      // Left rotate 0 ... i
       int first = cubies1[0];
       for (int j = 0; j < i; j++)
         cubies1[j] = cubies1[j + 1];
@@ -47,6 +49,7 @@ Coord getPermCoord(const int cubies[], int len, int max_cubie) {
   return val;
 }
 
+// `cubies` contains values `min_cubie` ... `max_cubie`
 Coord getPosPermCoord(
   const int cubies[], int len, int min_cubie, int max_cubie, bool from_left
 ) {
@@ -54,7 +57,7 @@ Coord getPosPermCoord(
   int cubies1[len1];
 
   Coord val = 0;
-  if (from_left) {
+  if (from_left) { // UEDGES should be 0 in phase 2
     int j = 0;
     for (int i = 0; i < len; i++) {
       if (min_cubie <= cubies[i] && cubies[i] <= max_cubie) {
@@ -63,7 +66,7 @@ Coord getPosPermCoord(
         j++;
       }
     }
-  } else {
+  } else { // SSLICE should be 0 in phase 2
     int j = len1 - 1;
     for (int i = 0; i < len; i++) {
       if (min_cubie <= cubies[i] && cubies[i] <= max_cubie) {
@@ -93,9 +96,10 @@ void setPermCoord(CoordLL val, int cubies[], int len, int max_cubie) {
     max_cubie--;
   }
 
-  for (int i = 1; i < len; i++) {
+  for (int i = 1; i < len; i++) { // rotating i ... i is redundant
     int n_rots = val % (i + 1);
     while (n_rots-- > 0) {
+      // Right rotate 0 ... i
       int last = cubies[i];
       for (int j = i; j > 0; j--)
         cubies[j] = cubies[j - 1];
@@ -122,7 +126,7 @@ void setPosPermCoord(
         val -= tmp;
         j--;
       } else
-        cubies[i] = -1;
+        cubies[i] = -1; // result must not contain any duplicate cubies
     }
   } else {
     for (int i = 0; i < len; i++) {
@@ -136,6 +140,7 @@ void setPosPermCoord(
     }
   }
 
+  // Result should always be a valid cube (with no -1 cubies)
   int cubie = 0;
   for (int i = 0; i < len; i++) {
     if (cubie == min_cubie)
@@ -186,17 +191,18 @@ Coord getUEdges(const CubieCube &cube) {
 }
 
 Coord getDEdges(const CubieCube &cube) {
-  return getPosPermCoord(cube.ep, N_EDGES, DR, DB, true);
+  return getPosPermCoord(cube.ep, N_EDGES, DR, DB, true); // direction does not matter here -> we choose left
 }
 
 Coord getUDEdges(const CubieCube &cube) {
-  return getPermCoord(cube.ep, N_EDGES - 4, DB);
+  return getPermCoord(cube.ep, N_EDGES - 4, DB); // UDEDGES always in positions 0 ... 7 in phase 2 -> just perm
 }
 
 Coord getCorners(const CubieCube &cube) {
   return getPermCoord(cube.cp, N_CORNERS, N_CORNERS - 1);
 }
 
+// PosPerm implementation more efficient than individual Pos and Perm, but we just need Pos for SLICE
 Coord getSlice(const CubieCube &cube) {
   Coord val = 0;
 
@@ -233,6 +239,7 @@ void setDEdges(CubieCube &cube, Coord dedges) {
 
 void setUDEdges(CubieCube &cube, Coord udedges) {
   setPermCoord(udedges, cube.ep, N_EDGES - 4, DB);
+  // Make sure ep is still valid after decoding
   for (int i = N_EDGES - 4; i < N_EDGES; i++)
     cube.ep[i] = i;
 }
@@ -288,6 +295,7 @@ void initDEdgesMove() {
   );
 }
 
+// Only coord we need just phase 2 moves -> cleaner to repeat code once than plaster initMoveCoord() with arguments
 void initUDEdgesMove2() {
   udedges_move2 = new Coord[N_UDEDGES2][N_MOVES2];
 
@@ -311,7 +319,7 @@ void initCornersMove() {
 }
 
 void initMergeUDEdges() {
-  merge_udedges = new Coord[N_4EDGES2][24];
+  merge_udedges = new Coord[N_4EDGES2][N_SSLICE2];
 
   CubieCube cube;
   for (Coord c = 0; c < N_UDEDGES2; c++) {
@@ -326,6 +334,7 @@ void initMergeUDEdges() {
       }
     }
 
+    // When UEDGES and SLICE are fixed, pos part of DEDGES is 0 -> only need perm part
     merge_udedges[getUEdges(cube)][getPermCoord(dedges, 4, DB)] = c;
   }
 }
