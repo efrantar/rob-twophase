@@ -1,3 +1,7 @@
+/*
+ * Move definitions
+ */
+
 #ifndef MOVES_H_
 #define MOVES_H_
 
@@ -9,6 +13,7 @@
 #define N_MOVES 18
 #define N_MOVES2 10
 
+// Order s.t. / 3 gives axis and % 3 power; X1 clockwise, X3 counter-clockwise
 #define U1 0
 #define U2 1
 #define U3 2
@@ -56,6 +61,7 @@ const int kInvMove[] = {
   B3, B2, B1
 };
 
+// Used for jumping to the next axis in the solver
 const int kAxisEnd[] = {
   U3, U3, U3,
   R3, R3, R3,

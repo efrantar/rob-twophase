@@ -1,3 +1,7 @@
+/**
+ * Main program; Simple CMD interface for benchmarks, solving and scrambling
+ */
+
 #include <algorithm>
 #include <chrono>
 #include <fstream>
@@ -18,8 +22,8 @@
 #include "sym.h"
 
 #define BENCHFILE "bench.cubes"
-#define MAX_BENCHTIME 10000
-#define MAX_SCRAMBLETIME 100
+#define MAX_BENCHTIME 10000 // even the worst cubes should not take much more than a few 100ms to solve in 20 moves
+#define MAX_SCRAMBLETIME 10
 #define PRINT_EVERY 1000
 
 bool checkSol(const CubieCube &cube, const std::vector<int> &sol) {

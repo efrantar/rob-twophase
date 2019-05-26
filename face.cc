@@ -11,6 +11,7 @@ int encode(const std::string &cubelet, int ori) {
   return res;
 }
 
+// Map code to cubie & ori
 std::unordered_map<int, std::pair<int, int>> corners;
 std::unordered_map<int, std::pair<int, int>> edges;
 
@@ -30,9 +31,9 @@ static bool inited = init();
 int faceToCubie(const std::string &s, CubieCube &cube) {
   for (int i = 0; i < N_FACELETS; i++) {
     if (kNameToColor.find(s[i]) == kNameToColor.end())
-      return 1;
+      return 1; // invalid color
     if ((i - 4) % 9 == 0 && kNameToColor.at(s[i]) != i / 9)
-      return 2;
+      return 2; // invalid center facelet (they are always fixed)
   }
 
   for (int corner = 0; corner < N_CORNERS; corner++) {
@@ -41,7 +42,7 @@ int faceToCubie(const std::string &s, CubieCube &cube) {
       cornlet[i] = s[kCornlets[corner][i]];
     auto tmp = corners.find(encode(std::string(cornlet, 3), 0));
     if (tmp == corners.end())
-      return 3;
+      return 3; // invalid corner cubie
     cube.cp[corner] = tmp->second.first;
     cube.co[corner] = tmp->second.second;
   }
@@ -52,7 +53,7 @@ int faceToCubie(const std::string &s, CubieCube &cube) {
       edgelet[i] = s[kEdgelets[edge][i]];
     auto tmp = edges.find(encode(std::string(edgelet, 2), 0));
     if (tmp == edges.end())
-      return 4;
+      return 4; // invalid edge cubie
     cube.ep[edge] = tmp->second.first;
     cube.eo[edge] = tmp->second.second;
   }
@@ -60,6 +61,7 @@ int faceToCubie(const std::string &s, CubieCube &cube) {
   return 0;
 }
 
+// Assumes `cube` to ve valid
 std::string cubieToFace(const CubieCube &cube) {
   char s[N_FACELETS];
 

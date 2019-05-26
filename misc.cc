@@ -26,6 +26,7 @@ int mod(int a, int m) {
   return a > 0 ? a % m : (a % m + m) % m;
 }
 
+// Best-practice randomization (instead of simple rand())
 std::random_device device;
 std::mt19937 gen(device());
 std::mt19937_64 gen64(device());
