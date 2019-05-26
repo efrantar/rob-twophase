@@ -61,7 +61,6 @@ int getFSTwistDist(Coord flip, Coord sslice, Coord twist) {
       CoordL fstwist1 = FSTWIST(
         COORD(fslice_sym[fslice1]), conj_twist[twist1][SYM(fslice_sym[fslice1])]
       );
-
       if (getPrun3(fstwist_prun3, fstwist1) == depth3 - 1) {
         flip = flip1;
         sslice = sslice1;
@@ -84,8 +83,8 @@ int getCornUDDist(Coord corners, Coord udedges) {
   );
 
   int depth3 = getPrun3(cornud_prun3, cornud);
-  if (depth3 == EMPTY)
-    return MAX_DEPTH_P2 + 1;
+  if (depth3 == EMPTY) // we do not fully fill the pruning table
+    return MAX_DEPTH_P2 + 1; // lower bound for actual pruning value
 
   int depth = 0;
   while (cornud != 0) {
@@ -156,17 +155,17 @@ int getFSSTwistDist(Coord flip, Coord sslice, Coord twist) {
 }
 
 void initFSTwistPrun3() {
-  fstwist_prun3 = new uint64_t[N_FSTWIST / 32 + 1];
+  fstwist_prun3 = new uint64_t[N_FSTWIST / 32 + 1]; // add + 1 to be safe
   std::fill(fstwist_prun3, fstwist_prun3 + N_FSTWIST / 32 + 1, EMPTY_CELL);
 
   int count = 1;
   int depth = 0;
-  auto *done = new std::bitset<N_FSTWIST>();
+  auto *done = new std::bitset<N_FSTWIST>(); // need to keep track of already expanded notes (table only stores mod 3)
   bool backsearch = false;
 
   setPrun3(fstwist_prun3, 0, 0);
   while (count < N_FSTWIST) {
-    CoordL c = 0;
+    CoordL c = 0; // increment this in the inner loop to avoid always recomputing the inde
     int depth3 = depth % 3;
     
     for (Coord fssym = 0; fssym < N_FSLICE_SYM; fssym++) {
@@ -175,7 +174,9 @@ void initFSTwistPrun3() {
 
       for (Coord twist = 0; twist < N_TWIST; twist++, c++) {
         if (!backsearch) {
+          // Quickly skip fully empty table cells in early iterations
           if (c % 32 == 0 && fstwist_prun3[c / 32] == EMPTY_CELL) {
+            // Make sure `fssym` and `c` remain synced
             int tmp = std::min(31, N_TWIST - twist - 1);
             twist += tmp;
             c += tmp;
@@ -202,7 +203,7 @@ void initFSTwistPrun3() {
               continue;
             setPrun3(fstwist_prun3, c, depth + 1);
             count++;
-            break;
+            break; // self-symmetries are not applicable during backsearch
           } else if (getPrun3(fstwist_prun3, c1) != EMPTY)
             continue;
      
@@ -210,12 +211,12 @@ void initFSTwistPrun3() {
           count++;
             
           int selfs = fslice_selfs[fssym1] >> 1;
-          for (int s = 1; selfs > 0; selfs >>= 1, s++) {
+          for (int s = 1; selfs > 0; selfs >>= 1, s++) { // bit 0 is always on -> > 0 to save an iteration
             if (selfs & 1) {
               CoordL c2 = FSTWIST(fssym1, conj_twist[twist1][s]);
               if (getPrun3(fstwist_prun3, c2) == EMPTY) {
                 setPrun3(fstwist_prun3, c2, depth + 1);
-                done->set(c2);
+                done->set(c2); // expanding self-symmetries is redundant
                 count++;
               }
             }
@@ -291,6 +292,7 @@ void initCornUDPrun3() {
   delete done;
 }
 
+// This table is rather small, hence we can populate it with standard BFS
 void initCornSlicePrun() {
   cornslice_prun = new uint8_t[N_CORNSLICE];
   std::fill(cornslice_prun, cornslice_prun + N_CORNSLICE, 0xff);

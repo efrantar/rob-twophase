@@ -51,6 +51,7 @@ static bool init() {
   for (int i = 0; i < N_SYMS; i++) {
     for (int j = 0; j < N_SYMS; j++) {
       mul(sym_cubes[i], sym_cubes[j], cube);
+      // Sufficient to check for equality in this special case
       if (cube.cp[URF] == URF && cube.cp[UFL] == UFL && cube.cp[ULB] == ULB) {
         inv_sym[i] = j;
         break;
@@ -118,6 +119,7 @@ void initConjFlip() {
   CubieCube cube3;
   CubieCube tmp;
 
+  // Init identity first to save cubie multiplications and coordinate codings
   for (Coord sssym = 0; sssym < N_SSLICE_SYM; sssym++) {
     for (Coord flip = 0; flip < N_FLIP; flip++) {
       conj_flip[flip][0][sssym] = flip;
@@ -126,9 +128,10 @@ void initConjFlip() {
 
   copy(kSolvedCube, cube1);
   for (Coord sssym = 0; sssym < N_SSLICE_SYM; sssym++) {
-    setSSlice(cube1, sslice_raw[sssym]);
+    setSSlice(cube1, sslice_raw[sssym]); // setting this is more expensive than flip -> outer loop
 
     for (int s = 1; s < N_SYMS_DH4; s++) {
+      // Necessary so that result after setting flip and conjugating by `s` has indeed SSLICE `sssym`
       mulEdges(sym_cubes[inv_sym[s]], cube1, tmp);
       mulEdges(tmp, sym_cubes[s], cube2);
 
@@ -179,7 +182,7 @@ void initCoordSym(
       Coord coord1 = getCoord(cube2);
       if (coord_sym1[coord1] == EMPTY)
         coord_sym1[coord1] = SYMCOORD(cls, s);
-      else if (coord1 == coord)
+      else if (coord1 == coord) // collect self-symmetries here essentially for free
         coord_selfs1[cls] |= 1 << s;
     }
     cls++;
@@ -190,6 +193,7 @@ void initCoordSym(
   *coord_selfs = coord_selfs1;
 }
 
+// We cannot directly reuse initCoordSym() as we want a double loop here
 void initFlipSliceSym() {
   fslice_sym = new SymCoord[N_FSLICE];
   fslice_raw = new CoordL[N_FSLICE_SYM];
@@ -203,7 +207,7 @@ void initFlipSliceSym() {
 
   copy(kSolvedCube, cube1);
   for (Coord slice = 0; slice < N_SLICE; slice++) {
-    setSlice(cube1, slice);
+    setSlice(cube1, slice); // SLICE the more expensive one to set -> outer loop
     for (Coord flip = 0; flip < N_FLIP; flip++) {
       setFlip(cube1, flip);
       CoordL fslice = FSLICE(flip, slice);

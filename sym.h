@@ -7,7 +7,7 @@
 #include "cubie.h"
 
 #define N_SYMS 48
-#define N_SYMS_DH4 16
+#define N_SYMS_DH4 16 // #symmetries used for the reductions
 
 #define N_FSLICE_SYM 64430
 #define N_CORNERS_SYM 2768
@@ -17,6 +17,7 @@
 #define SYM(scoord) (scoord % N_SYMS_DH4)
 #define COORD(scoord) (scoord / N_SYMS_DH4)
 
+// Store the class index and the symmetry in a single coordinate to save an extra table lookup
 typedef uint32_t SymCoord;
 typedef uint16_t SelfSyms;
 
@@ -48,7 +49,7 @@ extern int conj_move[N_MOVES][N_SYMS];
 
 extern Coord (*conj_twist)[N_SYMS_DH4];
 extern Coord (*conj_udedges)[N_SYMS_DH4];
-extern Coord (*conj_flip)[N_SYMS_DH4][N_SSLICE_SYM];
+extern Coord (*conj_flip)[N_SYMS_DH4][N_SSLICE_SYM]; // we also need to consider the SSLICE class here
 
 extern SymCoord *fslice_sym;
 extern SymCoord *corners_sym;
