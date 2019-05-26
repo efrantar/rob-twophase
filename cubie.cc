@@ -12,18 +12,18 @@ void mulCorners(const CubieCube &cube1, const CubieCube &cube2, CubieCube &cube3
     int ori2 = cube2.co[i];
     int ori3;
 
-    if (ori1 < 3 && ori2 < 3)
+    if (ori1 < 3 && ori2 < 3) // handle this case first as move-tables do not use symmetries
       ori3 = (ori1 + ori2) % 3;
-    else {
+    else { // handle mirroring symmetry
       if (ori1 >= 3) {
         ori3 = ori1 - ori2;
-        if (ori2 >= 3) {
+        if (ori2 >= 3) { // mirr + mirr = not
           if (ori3 < 0)
             ori3 += 3;
         } else
-          ori3 = ori3 % 3 + 3;
+          ori3 = ori3 % 3 + 3; // mir + not = mirr
       } else
-        ori3 = (ori1 + ori2 - 3) % 3 + 3;
+        ori3 = (ori1 + ori2 - 3) % 3 + 3; // not + mir = mirr
     }
 
     cube3.co[i] = ori3;
@@ -42,6 +42,7 @@ void mul(const CubieCube &cube1, const CubieCube &cube2, CubieCube &cube3) {
   mulCorners(cube1, cube2, cube3);
 }
 
+// #inversions % 2
 bool parity(const int perm[], int len) {
   int par = 0;
   for (int i = 0; i < len; i++) {
@@ -59,17 +60,17 @@ int check(const CubieCube &cube) {
   
   for (int i = 0; i < N_CORNERS; i++) {
     if (cube.cp[i] < 0 || cube.cp[i] >= N_CORNERS)
-      return 1;
+      return 1; // invalid corner cubie
     corners[cube.cp[i]] = true;
     if (cube.co[i] < 0 || cube.co[i] >= 3)
-      return 2;
+      return 2; // invalid corner orientation
     co_sum += cube.co[i];
   }
   if (co_sum % 3 != 0)
-    return 3;
+    return 3; // invalid twist parity
   for (bool corner : corners) {
     if (!corner)
-      return 4;
+      return 4; // missing corner
   }
 
   bool edges[N_EDGES] = {};
@@ -77,21 +78,21 @@ int check(const CubieCube &cube) {
 
   for (int i = 0; i < N_EDGES; i++) {
     if (cube.ep[i] < 0 || cube.ep[i] >= N_EDGES)
-      return 5;
+      return 5; // invalid edge cubie
     edges[cube.ep[i]] = true;
     if (cube.eo[i] < 0 || cube.eo[i] >= 2)
-      return 6;
+      return 6; // invalid edge orientation
     eo_sum += cube.eo[i];
   }
   if (eo_sum & 1 != 0)
-    return 7;
+    return 7; // invalid flip parity
   for (bool edge : edges) {
     if (!edge)
-      return 8;
+      return 8; // missing edge
   }
   
   if (parity(cube.cp, N_CORNERS) != parity(cube.ep, N_EDGES))
-    return 9;
+    return 9; // corner and edge parity mismatch
   return 0;
 }
 
@@ -99,16 +100,16 @@ CubieCube invCube(const CubieCube &cube) {
   CubieCube inv;
 
   for (int corner = 0; corner < N_CORNERS; corner++)
-    inv.cp[cube.cp[corner]] = corner;
+    inv.cp[cube.cp[corner]] = corner; // inv[a[i]] = i
   for (int edge = 0; edge < N_EDGES; edge++)
     inv.ep[cube.ep[edge]] = edge;
 
   for (int i = 0; i < N_CORNERS; i++) {
     int ori = cube.co[inv.cp[i]];
     if (ori >= 3)
-      inv.co[i] = ori;
+      inv.co[i] = ori; // mirr * mirr calculated as ori1 - ori2 = 0
     else
-      inv.co[i] = mod(-ori, 3);
+      inv.co[i] = mod(-ori, 3); // (ori + -ori) % 3 = 0
   }
   for (int i = 0; i < N_EDGES; i++)
     inv.eo[i] = cube.eo[inv.ep[i]];
@@ -123,7 +124,7 @@ CubieCube randomCube() {
   setFlip(cube, rand(N_FLIP));
   do {
     setCorners(cube, rand(N_CORNERS_C));
-    setEdges(cube, rand64(N_EDGES_C));
+    setEdges(cube, rand64(N_EDGES_C)); // EDGES_C is a CoordLL
   } while (parity(cube.cp, N_CORNERS) != parity(cube.ep, N_EDGES));
 
   return cube;
