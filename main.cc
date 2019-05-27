@@ -73,7 +73,7 @@ void benchMoves(const std::vector<CubieCube> &cubes, int time) {
     if (i % PRINT_EVERY == 0)
       std::cout << "Benchmarking ..." << std::endl;
     std::vector<int> sol;
-    twophase(cubes[i], -1, time, sol);
+    twophase(cubes[i], 30, time, sol);
     if (!checkSol(cubes[i], sol))
       failed++;
     else

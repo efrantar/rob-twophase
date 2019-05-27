@@ -15,6 +15,11 @@
 #include "sym.h"
 #include "prun.h"
 
+/*
+ * We always want to skip:
+ * - Consecutive moves on the same axis
+ * - Consecutive moves on parallel axes but in wrong (decreasing) order
+ */
 bool skip_move[N_MOVES][N_MOVES];
 
 static bool init() {
@@ -28,18 +33,20 @@ static bool init() {
 }
 static bool inited = init();
 
-std::mutex mutex;
-bool done;
-std::vector<int> sol;
+std::mutex mutex; // lock for writing solutions
+bool done; // signal solver shutdown
+std::vector<int> sol; // global shared solution
 
+// Various variables necessary to actually realize a simple timeout ...
 std::mutex wait;
 std::condition_variable notify;
 bool cont;
 int ret;
 
-int len;
-int max_depth;
+int len; // length of current best solution
+int max_depth; // stop as soon as a solution with at most this depth is found
 
+/* Variables for the optimal solver */
 int moves[N];
 int prun[3][N];
 Coord flip[3][N];
@@ -62,11 +69,11 @@ void TwoPhaseSolver::solve(const CubieCube &cube) {
 
   if (rot == 1) {
     CubieCube tmp;
-    mul(sym_cubes[inv_sym[16]], cube, tmp);
+    mul(sym_cubes[inv_sym[16]], cube, tmp); // 1. URF symmetry
     mul(tmp, sym_cubes[16], cube1);
   } else if (rot == 2) {
     CubieCube tmp;
-    mul(sym_cubes[inv_sym[32]], cube, tmp);
+    mul(sym_cubes[inv_sym[32]], cube, tmp); // 2. URF symmetry
     mul(tmp, sym_cubes[32], cube1);
   } else
     copy(cube, cube1);
@@ -84,7 +91,7 @@ void TwoPhaseSolver::solve(const CubieCube &cube) {
   udedges_depth = 0;
 
   int dist = getFSTwistDist(flip[0], sslice[0], twist[0]);
-  for (int togo = dist; togo < len; togo++)
+  for (int togo = dist; togo <= len; togo++)
     phase1(0, dist, togo);
 }
 
@@ -98,9 +105,10 @@ int TwoPhaseSolver::phase1(int depth, int dist, int togo) {
     if (depth > 0)
       corners_depth = depth - 1;
 
+    // We ignore phase 2 solutions that are longer than 10 moves
     int max_togo = std::min(len - 1 - depth, 10);
     if (cornslice_prun[CORNSLICE(corners[depth], sslice[depth])] > max_togo)
-      return cornslice_prun[CORNSLICE(corners[depth], sslice[depth])] > max_togo + 1;
+      return cornslice_prun[CORNSLICE(corners[depth], sslice[depth])] > max_togo + 1; // potentially skip to next axis
 
     for (int i = udedges_depth + 1; i <= depth; i++) {
       uedges[i] = uedges_move[uedges[i - 1]][moves[i - 1]];
@@ -112,6 +120,7 @@ int TwoPhaseSolver::phase1(int depth, int dist, int togo) {
 
     int dist1 = getCornUDDist(corners[depth], udedges[depth]);
 
+    // As phase 2 solutions often come in pairs, this essentially halves the expensive getCornUDDist() calls
     if (dist1 > max_togo + 1)
       return 1;
     for (int togo1 = dist1; togo1 <= max_togo; togo1++)
@@ -120,10 +129,11 @@ int TwoPhaseSolver::phase1(int depth, int dist, int togo) {
     return 0;
   }
 
+  // Discard shorter phase 1 solutions -> looses optimality but slight speedup
+  if (dist == 0)
+    return  0;
   for (int m = 0; m < N_MOVES; m++) {
     if (depth > 0 && skip_move[moves[depth - 1]][m])
-      continue;
-    if (dist == 0 && kIsPhase2Move[m])
       continue;
 
     flip[depth + 1] = flip_move[flip[depth]][m];
@@ -150,6 +160,7 @@ int TwoPhaseSolver::phase1(int depth, int dist, int togo) {
 
   if (depth > 0 && corners_depth == depth)
     corners_depth--;
+  // We need to check this individually as `corners_depth` might be updated much more often
   if (depth > 0 && udedges_depth == depth)
     udedges_depth--;
 
@@ -167,7 +178,7 @@ void TwoPhaseSolver::phase2(int depth, int dist, int togo) {
       sol.resize(depth);
       for (int i = 0; i < depth; i++)
         sol[i] = moves[i];
-      len = depth;
+      len = depth; // update so that other threads can already search for shorter solutions
 
       if (inv) {
         for (int i = 0; i < depth; i++)
@@ -179,7 +190,7 @@ void TwoPhaseSolver::phase2(int depth, int dist, int togo) {
           sol[i] = conj_move[sol[i]][16 * rot];
       }
 
-      if (depth <= max_depth)
+      if (depth <= max_depth) // keep searching if current solution exceeds max-depth
         done = true;
     }
 
@@ -203,6 +214,7 @@ void TwoPhaseSolver::phase2(int depth, int dist, int togo) {
 
     int tmp = cornslice_prun[CORNSLICE(corners[depth + 1], sslice[depth + 1])];
     if (std::max(dist1, tmp) < togo) {
+      // There are generally very few phase 2 calls, hence axis skipping is not worth it here
       moves[depth] = kPhase2Moves[m];
       phase2(depth + 1, dist1, togo - 1);
       if (done)
@@ -215,6 +227,7 @@ void optim(int depth, int dist, int togo) {
   if (done)
     return;
 
+  // As this will usually be called many many times, reconstructing one coord after the other seems worth it
   if (dist == 0) {
     for (int i = corners1_depth + 1; i <= depth; i++)
       corners1[i] = corners_move[corners1[i - 1]][moves[i - 1]];
@@ -234,7 +247,7 @@ void optim(int depth, int dist, int togo) {
       dedges[i] = dedges_move[dedges[i - 1]][moves[i - 1]];
     if (depth > 0)
       dedges_depth = depth - 1;
-    if (dedges[depth] != DEDGES_SOLVED)
+    if (dedges[depth] != DEDGES_SOLVED) // DEDDGES is non-0 in solved state
       return;
 
     sol.resize(depth);
@@ -250,7 +263,7 @@ void optim(int depth, int dist, int togo) {
     if (depth > 0 && skip_move[moves[depth - 1]][m])
       continue;
 
-    bool next = false;
+    bool next = false; // stop as soon as one of the cubes is not solvable anymore in the given number of moves
     for (int rot = 0; rot < 3; rot++) {
       flip[rot][depth + 1] = flip_move[flip[rot][depth]][conj_move[m][16 * rot]];
       sslice[rot][depth + 1] = sslice_move[sslice[rot][depth]][conj_move[m][16 * rot]];
@@ -276,10 +289,10 @@ void optim(int depth, int dist, int togo) {
 
     int dist1;
     if (
-      prun[0][depth + 1] != 0 &&
+      prun[0][depth + 1] != 0 && // the cube is already solved
       prun[0][depth + 1] == prun[1][depth + 1] && prun[1][depth + 1] == prun[2][depth + 1]
     ) {
-      dist1 = prun[0][depth + 1] + 1;
+      dist1 = prun[0][depth + 1] + 1; // optimization by Michiel de Bondt
     }
     else
       dist1 = std::max(prun[0][depth + 1], std::max(prun[1][depth + 1], prun[2][depth + 1]));
@@ -290,7 +303,7 @@ void optim(int depth, int dist, int togo) {
       if (done)
         return;
     } else if (dist1 > togo)
-      m = kAxisEnd[m];
+      m = kAxisEnd[m]; // axis-skipping crucial in the optimal solver
   }
 
   if (depth > 0 && corners1_depth == depth)
@@ -311,11 +324,11 @@ int twophase(const CubieCube &cube, int max_depth1, int timelimit, std::vector<i
     notify.wait_for(lock, std::chrono::milliseconds(timelimit), []{ return cont; });
     done = true;
     ret++;
-  });
+  }); // timeout thread
 
   sol.clear();
   max_depth = max_depth1;
-  len = max_depth > 0 ? max_depth + 1 : 31;
+  len = max_depth + 1; // inital reference value for pruning
 
   std::vector<std::thread> threads;
   for (int rot = 0; rot < 3; rot++) {
@@ -327,6 +340,7 @@ int twophase(const CubieCube &cube, int max_depth1, int timelimit, std::vector<i
 
   for (int i = 0; i < threads.size(); i++)
     threads[i].join();
+  // All of this is necessary for the timeout to work as expected
   {
     std::lock_guard<std::mutex> lock(wait);
     cont = true;
@@ -347,7 +361,7 @@ int twophase(const CubieCube &cube, int max_depth1, int timelimit, std::vector<i
 
 int optim(const CubieCube &cube, int max_depth, int timelimit, std::vector<int> &sol1) {
   done = false;
-  len = 21;
+  len = 21; // to check if a solution was found
 
   cont = false;
   ret = 0;
@@ -414,6 +428,7 @@ std::vector<int> scramble(int timelimit) {
   return scramble;
 }
 
+// We persist only the pruning tables as files (the other ones can be generated on the fly quickly enough)
 void initTwophase(bool file) {
   initTwistMove();
   initFlipMove();
@@ -444,6 +459,7 @@ void initTwophase(bool file) {
     initCornSlicePrun();
 
     f = fopen(FILE_TWOPHASE, "wb");
+    // Use `tmp` to avoid nasty warnings; not clean but we don't want to make this part to complicated
     int tmp = fwrite(fstwist_prun3, sizeof(uint64_t), N_FSTWIST / 32 + 1, f);
     tmp = fwrite(cornud_prun3, sizeof(uint64_t), N_CORNUD / 32 + 1, f);
     tmp = fwrite(cornslice_prun, sizeof(uint8_t), N_CORNSLICE, f);
