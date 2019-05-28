@@ -5,7 +5,7 @@ The solver is based on the most current algorithmic ideas (see [`RubiksCube-Twop
 It features the full phase 1 and almost full phase 2 pruning tables with 16-way symmetry reduction, multithreaded parallel search in 6 directions as well as an optimal solving mode.
 
 Even on moderate hardware, the solver usually manages to find 20 or less move solutions to random cubes in less than 1 millisecond on average.
-This probably makes it one of the fastest versions available at the moment.
+This probably makes it one of the fastest versions to date.
 
 ## Usage
 
@@ -39,5 +39,30 @@ Run `./twophase` for more information.
 **Note:** The solver does generally not use any platform specific features and should therefore in theory be portable. 
 The makefile however links the library `pthread` and has only been tested on Linux.
 
-## Benchmarks
+## Performance
 
+All benchmarks were performed with a fixed set of 10000 uniformly random cubes sampled cubes (`bench.cubes`) on an Intel(R) Core(TM) i7-4710HQ CPU @ 2.50GHz quad-core processor.
+
+**Note:** The solver likely performs even better on stronger hardware as it is considerably bottlenecked by only 4 cores (it fully supports up to 6) and relatively slow RAM access speed (the lookup tables are too large to fit into the cache).
+
+### Solving Time:
+
+| Moves | Avg [ms] | Min [ms] | Max [ms] |
+| ----- | -------- | -------- | -------- |
+| 20    | 0.739    | 0.075    | 144.913  |
+| 21    | 0.207    | 0.070    | 2.219    |
+| 30    | 0.218    | 0.076    | 1.798    |
+
+### Number of Moves:
+
+| Time [ms] | Avg Moves | Solved [%] |
+| --------- | --------- | ---------- |
+| 1         | 19.564    | 99.98      |
+| 5         | 19.261    | 100        |
+| 10        | 19.1536   | 100        |
+| 50        | 18.8351   | 100        |
+| 100       | 18.7454   | 100        |
+
+### Optimal Solver:
+
+The performance of the optimal solver highly depends on the particular cube to be solved. Typically, cubes with solutions up to depth 15 take a few milliseconds, with depth 16 - 18 a few seconds to minutes, and 19 - 20 several minutes to a few hours.
