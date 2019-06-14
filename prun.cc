@@ -28,20 +28,20 @@ static bool init() {
 }
 static bool inited = init();
 
-int getPrun3(uint64_t *prun3, CoordL c) {
+int getPrun3(uint64_t *prun3, CCoord c) {
   uint64_t tmp = prun3[c / 32];
   tmp >>= (c % 32) * 2;
   return tmp & EMPTY;
 }
 
-void setPrun3(uint64_t *prun3, CoordL c, int dist) {
+void setPrun3(uint64_t *prun3, CCoord c, int dist) {
   int shift = (c % 32) * 2;
   prun3[c / 32] &= ~(uint64_t(EMPTY) << shift) | (uint64_t(dist % 3) << shift);
 }
 
 int getFSTwistDist(Coord flip, Coord sslice, Coord twist) {
-  CoordL fslice = FSLICE(flip, SS_SLICE(sslice));
-  CoordL fstwist = FSTWIST(
+  CCoord fslice = FSLICE(flip, SS_SLICE(sslice));
+  CCoord fstwist = FSTWIST(
     COORD(fslice_sym[fslice]), conj_twist[twist][SYM(fslice_sym[fslice])]
   );
 
@@ -56,9 +56,9 @@ int getFSTwistDist(Coord flip, Coord sslice, Coord twist) {
       Coord flip1 = flip_move[flip][m];
       Coord sslice1 = sslice_move[sslice][m];
       Coord twist1 = twist_move[twist][m];
-      CoordL fslice1 = FSLICE(flip1, SS_SLICE(sslice1));
+      CCoord fslice1 = FSLICE(flip1, SS_SLICE(sslice1));
       
-      CoordL fstwist1 = FSTWIST(
+      CCoord fstwist1 = FSTWIST(
         COORD(fslice_sym[fslice1]), conj_twist[twist1][SYM(fslice_sym[fslice1])]
       );
       if (getPrun3(fstwist_prun3, fstwist1) == depth3 - 1) {
@@ -78,7 +78,7 @@ int getFSTwistDist(Coord flip, Coord sslice, Coord twist) {
 }
 
 int getCornUDDist(Coord corners, Coord udedges) {
-  CoordL cornud = CORNUD(
+  CCoord cornud = CORNUD(
     COORD(corners_sym[corners]), conj_udedges[udedges][SYM(corners_sym[corners])]
   );
 
@@ -92,9 +92,9 @@ int getCornUDDist(Coord corners, Coord udedges) {
       depth3 = 3;
 
     for (int m = 0; m < N_MOVES2; m++) {
-      Coord corners1 = corners_move[corners][kPhase2Moves[m]];
+      Coord corners1 = cperm_move[corners][kPhase2Moves[m]];
       Coord udedges1 = udedges_move2[udedges][m];
-      CoordL cornud1 = CORNUD(
+      CCoord cornud1 = CORNUD(
         COORD(corners_sym[corners1]), conj_udedges[udedges1][SYM(corners_sym[corners1])]
       );
 
@@ -114,7 +114,7 @@ int getCornUDDist(Coord corners, Coord udedges) {
 }
 
 int getFSSTwistDist(Coord flip, Coord sslice, Coord twist) {
-  CoordL fsstwist = FSSTWIST(
+  CCoord fsstwist = FSSTWIST(
     conj_flip[flip][SYM(sslice_sym[sslice])][COORD(sslice_sym[sslice])],
     COORD(sslice_sym[sslice]),
     conj_twist[twist][SYM(sslice_sym[sslice])]
@@ -132,7 +132,7 @@ int getFSSTwistDist(Coord flip, Coord sslice, Coord twist) {
       Coord sslice1 = sslice_move[sslice][m];
       Coord twist1 = twist_move[twist][m];
 
-      CoordL fsstwist1 = FSSTWIST(
+      CCoord fsstwist1 = FSSTWIST(
         conj_flip[flip1][SYM(sslice_sym[sslice1])][COORD(sslice_sym[sslice1])],
         COORD(sslice_sym[sslice1]),
         conj_twist[twist1][SYM(sslice_sym[sslice1])]
@@ -165,7 +165,7 @@ void initFSTwistPrun3() {
 
   setPrun3(fstwist_prun3, 0, 0);
   while (count < N_FSTWIST) {
-    CoordL c = 0; // increment this in the inner loop to avoid always recomputing the inde
+    CCoord c = 0; // increment this in the inner loop to avoid always recomputing the inde
     int depth3 = depth % 3;
     
     for (Coord fssym = 0; fssym < N_FSLICE_SYM; fssym++) {
@@ -191,12 +191,12 @@ void initFSTwistPrun3() {
         for (int m = 0; m < N_MOVES; m++) {
           Coord flip1 = flip_move[flip][m];
           Coord slice1 = sliceMove(slice, m);
-          CoordL fslice1 = FSLICE(flip1, slice1);
+          CCoord fslice1 = FSLICE(flip1, slice1);
           Coord twist1 = twist_move[twist][m];
 
           Coord fssym1 = COORD(fslice_sym[fslice1]);
           twist1 = conj_twist[twist1][SYM(fslice_sym[fslice1])];
-          CoordL c1 = FSTWIST(fssym1, twist1);
+          CCoord c1 = FSTWIST(fssym1, twist1);
 
           if (backsearch) {
             if (getPrun3(fstwist_prun3, c1) != depth3)
@@ -213,7 +213,7 @@ void initFSTwistPrun3() {
           int selfs = fslice_selfs[fssym1] >> 1;
           for (int s = 1; selfs > 0; selfs >>= 1, s++) { // bit 0 is always on -> > 0 to save an iteration
             if (selfs & 1) {
-              CoordL c2 = FSTWIST(fssym1, conj_twist[twist1][s]);
+              CCoord c2 = FSTWIST(fssym1, conj_twist[twist1][s]);
               if (getPrun3(fstwist_prun3, c2) == EMPTY) {
                 setPrun3(fstwist_prun3, c2, depth + 1);
                 done->set(c2); // expanding self-symmetries is redundant
@@ -243,7 +243,7 @@ void initCornUDPrun3() {
 
   setPrun3(cornud_prun3, 0, 0);
   while (depth < MAX_DEPTH_P2) {
-    CoordL c = 0;
+    CCoord c = 0;
     int depth3 = depth % 3;
 
     for (Coord csym = 0; csym < N_CORNERS_SYM; csym++) {
@@ -259,11 +259,11 @@ void initCornUDPrun3() {
         done->set(c);
 
         for (int m = 0; m < N_MOVES2; m++) {
-          Coord corners1 = corners_move[corners_raw[csym]][kPhase2Moves[m]];
+          Coord corners1 = cperm_move[corners_raw[csym]][kPhase2Moves[m]];
           Coord udedges1 = udedges_move2[udedges][m];
           Coord csym1 = COORD(corners_sym[corners1]);
           udedges1 = conj_udedges[udedges1][SYM(corners_sym[corners1])];
-          CoordL c1 = CORNUD(csym1, udedges1);
+          CCoord c1 = CORNUD(csym1, udedges1);
 
           if (getPrun3(cornud_prun3, c1) != EMPTY)
             continue;
@@ -274,7 +274,7 @@ void initCornUDPrun3() {
           int selfs = corners_selfs[csym1] >> 1;
           for (int s = 1; selfs > 0; selfs >>= 1, s++) {
             if (selfs & 1) {
-              CoordL c2 = CORNUD(csym1, conj_udedges[udedges1][s]);
+              CCoord c2 = CORNUD(csym1, conj_udedges[udedges1][s]);
               if (getPrun3(cornud_prun3, c2) == EMPTY) {
                 setPrun3(cornud_prun3, c2, depth + 1);
                 done->set(c2);
@@ -297,19 +297,19 @@ void initCornSlicePrun() {
   cornslice_prun = new uint8_t[N_CORNSLICE];
   std::fill(cornslice_prun, cornslice_prun + N_CORNSLICE, 0xff);
 
-  std::queue<CoordL> q;
+  std::queue<CCoord> q;
   cornslice_prun[0] = 0;
   q.push(0);
   
   while (q.size() > 0) {
-    CoordL c = q.front();
+    CCoord c = q.front();
     q.pop();
     Coord corners = CS_CORNERS(c);
     Coord sslice = CS_SSLICE(c);
 
     for (int m : kPhase2Moves) {
-      CoordL c1 = CORNSLICE(
-        corners_move[corners][m], sslice_move[sslice][m]
+      CCoord c1 = CORNSLICE(
+        cperm_move[corners][m], sslice_move[sslice][m]
       );
       if (cornslice_prun[c1] == 0xff) {
         cornslice_prun[c1] = cornslice_prun[c] + 1;
@@ -330,7 +330,7 @@ void initFSSTwistPrun3() {
 
   setPrun3(fsstwist_prun3, 0, 0);
   while (count < N_FSSTWIST) {
-    CoordL c = 0;
+    CCoord c = 0;
     int depth3 = depth % 3;
 
     for (Coord sssym = 0; sssym < N_SSLICE_SYM; sssym++) {
@@ -359,7 +359,7 @@ void initFSSTwistPrun3() {
             Coord sssym1 = COORD(sslice_sym[sslice1]);
             flip1 = conj_flip[flip1][SYM(sslice_sym[sslice1])][sssym1];
             twist1 = conj_twist[twist1][SYM(sslice_sym[sslice1])];
-            CoordL c1 = FSSTWIST(flip1, sssym1, twist1);
+            CCoord c1 = FSSTWIST(flip1, sssym1, twist1);
 
             if (backsearch) {
               if (getPrun3(fsstwist_prun3, c1) != depth3)
@@ -376,7 +376,7 @@ void initFSSTwistPrun3() {
             int selfs = sslice_selfs[sssym1] >> 1;
             for (int s = 1; selfs > 0; selfs >>= 1, s++) {
               if (selfs & 1) {
-                CoordLL c2 = FSSTWIST(conj_flip[flip1][s][sssym1], sssym1, conj_twist[twist1][s]);
+                CCoord c2 = FSSTWIST(conj_flip[flip1][s][sssym1], sssym1, conj_twist[twist1][s]);
                 if (getPrun3(fsstwist_prun3, c2) == EMPTY) {
                   setPrun3(fsstwist_prun3, c2, depth + 1);
                   done->set(c2);

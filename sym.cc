@@ -16,7 +16,7 @@ Coord (*conj_flip)[N_SYMS_DH4][N_SSLICE_SYM];
 SymCoord *fslice_sym;
 SymCoord *corners_sym;
 SymCoord *sslice_sym;
-CoordL *fslice_raw;
+CCoord *fslice_raw;
 Coord *corners_raw;
 Coord *sslice_raw;
 SelfSyms *fslice_selfs;
@@ -196,7 +196,7 @@ void initCoordSym(
 // We cannot directly reuse initCoordSym() as we want a double loop here
 void initFlipSliceSym() {
   fslice_sym = new SymCoord[N_FSLICE];
-  fslice_raw = new CoordL[N_FSLICE_SYM];
+  fslice_raw = new CCoord[N_FSLICE_SYM];
   fslice_selfs = new SelfSyms[N_FSLICE_SYM];
   std::fill(fslice_sym, fslice_sym + N_FSLICE, EMPTY);
 
@@ -207,10 +207,10 @@ void initFlipSliceSym() {
 
   cube1 = kSolvedCube;
   for (Coord slice = 0; slice < N_SLICE; slice++) {
-    setSlice(cube1, slice); // SLICE the more expensive one to set -> outer loop
+    setSSlice(cube1, SSLICE(slice)); // SLICE the more expensive one to set -> outer loop
     for (Coord flip = 0; flip < N_FLIP; flip++) {
       setFlip(cube1, flip);
-      CoordL fslice = FSLICE(flip, slice);
+      CCoord fslice = FSLICE(flip, slice);
 
       if (fslice_sym[fslice] != EMPTY)
         continue;
@@ -222,7 +222,7 @@ void initFlipSliceSym() {
       for (int s = 1; s < N_SYMS_DH4; s++) {
         mulEdges(sym_cubes[inv_sym[s]], cube1, tmp);
         mulEdges(tmp, sym_cubes[s], cube2);
-        CoordL fslice1 = FSLICE(getFlip(cube2), getSlice(cube2));
+        CCoord fslice1 = FSLICE(getFlip(cube2), SS_SLICE(getSSlice(cube2)));
         if (fslice_sym[fslice1] == EMPTY)
           fslice_sym[fslice1] = SYMCOORD(cls, s);
         else if (fslice1 == fslice)
@@ -236,8 +236,8 @@ void initFlipSliceSym() {
 void initCornersSym() {
   initCoordSym(
     &corners_sym, &corners_raw, &corners_selfs,
-    N_CORNERS_SYM, N_CORNERS_C,
-    getCorners, setCorners,
+    N_CORNERS_SYM, N_CPERM,
+    getCPerm, setCPerm,
     mulCorners
   );
 }

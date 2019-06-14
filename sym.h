@@ -54,7 +54,7 @@ extern Coord (*conj_flip)[N_SYMS_DH4][N_SSLICE_SYM]; // we also need to consider
 extern SymCoord *fslice_sym;
 extern SymCoord *corners_sym;
 extern SymCoord *sslice_sym;
-extern CoordL *fslice_raw;
+extern CCoord *fslice_raw;
 extern Coord *corners_raw;
 extern Coord *sslice_raw;
 extern SelfSyms *fslice_selfs;

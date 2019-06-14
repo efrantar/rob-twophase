@@ -87,7 +87,7 @@ void TwoPhaseSolver::solve(const CubieCube &cube) {
   sslice[0] = getSSlice(cube1);
   uedges[0] = getUEdges(cube1);
   dedges[0] = getDEdges(cube1);
-  corners[0] = getCorners(cube1);
+  corners[0] = getCPerm(cube1);
 
   corners_depth = 0;
   udedges_depth = 0;
@@ -103,7 +103,7 @@ int TwoPhaseSolver::phase1(int depth, int dist, int togo) {
 
   if (togo == 0) {
     for (int i = corners_depth + 1; i <= depth; i++)
-      corners[i] = corners_move[corners[i - 1]][moves[i - 1]];
+      corners[i] = cperm_move[corners[i - 1]][moves[i - 1]];
     if (depth > 0)
       corners_depth = depth - 1;
 
@@ -118,7 +118,7 @@ int TwoPhaseSolver::phase1(int depth, int dist, int togo) {
     }
     if (depth > 0)
       udedges_depth = depth - 1;
-    udedges[depth] = merge_udedges[uedges[depth]][dedges[depth] % 24];
+    udedges[depth] = UDEDGES(uedges[depth], dedges[depth]);
 
     int dist1 = getCornUDDist(corners[depth], udedges[depth]);
 
@@ -142,10 +142,10 @@ int TwoPhaseSolver::phase1(int depth, int dist, int togo) {
     sslice[depth + 1] = sslice_move[sslice[depth]][m];
     twist[depth + 1] = twist_move[twist[depth]][m];
 
-    CoordL fslice = FSLICE(
+    CCoord fslice = FSLICE(
       flip[depth + 1], SS_SLICE(sslice[depth + 1])
     );
-    CoordL fstwist = FSTWIST(
+    CCoord fstwist = FSTWIST(
       COORD(fslice_sym[fslice]),
       conj_twist[twist[depth + 1]][SYM(fslice_sym[fslice])]
     );
@@ -205,10 +205,10 @@ void TwoPhaseSolver::phase2(int depth, int dist, int togo) {
       continue;
 
     sslice[depth + 1] = sslice_move[sslice[depth]][kPhase2Moves[m]];
-    corners[depth + 1] = corners_move[corners[depth]][kPhase2Moves[m]];
+    corners[depth + 1] = cperm_move[corners[depth]][kPhase2Moves[m]];
     udedges[depth + 1] = udedges_move2[udedges[depth]][m];
 
-    CoordL cornud = CORNUD(
+    CCoord cornud = CORNUD(
       COORD(corners_sym[corners[depth + 1]]),
       conj_udedges[udedges[depth + 1]][SYM(corners_sym[corners[depth + 1]])]
     );
@@ -232,7 +232,7 @@ void optim(int depth, int dist, int togo) {
   // As this will usually be called many many times, reconstructing one coord after the other seems worth it
   if (dist == 0) {
     for (int i = corners1_depth + 1; i <= depth; i++)
-      corners1[i] = corners_move[corners1[i - 1]][moves[i - 1]];
+      corners1[i] = cperm_move[corners1[i - 1]][moves[i - 1]];
     if (depth > 0)
       corners1_depth = depth - 1;
     if (corners1[depth] != 0)
@@ -272,7 +272,7 @@ void optim(int depth, int dist, int togo) {
       twist[rot][depth + 1] = twist_move[twist[rot][depth]][conj_move[m][16 * rot]];
 
       int tmp = sslice[rot][depth + 1];
-      CoordL fsstwist = FSSTWIST(
+      CCoord fsstwist = FSSTWIST(
         conj_flip[flip[rot][depth + 1]][SYM(sslice_sym[tmp])][COORD(sslice_sym[tmp])],
         COORD(sslice_sym[tmp]),
         conj_twist[twist[rot][depth + 1]][SYM(sslice_sym[tmp])]
@@ -389,7 +389,7 @@ int optim(const CubieCube &cube, int max_depth, int timelimit, std::vector<int> 
 
   uedges[0] = getUEdges(cube);
   dedges[0] = getDEdges(cube);
-  corners1[0] = getCorners(cube);
+  corners1[0] = getCPerm(cube);
   corners1_depth = 0;
   uedges_depth = 0;
   dedges_depth = 0;
@@ -440,8 +440,7 @@ void initTwophase(bool file) {
   initUEdgesMove();
   initDEdgesMove();
   initUDEdgesMove2();
-  initCornersMove();
-  initMergeUDEdges();
+  initCPermMove();
 
   initConjTwist();
   initConjUDEdges();
@@ -485,7 +484,7 @@ void initOptim(bool file) {
   initSSliceMove();
   initUEdgesMove();
   initDEdgesMove();
-  initCornersMove();
+  initCPermMove();
 
   initConjTwist();
   initSSliceSym();
