@@ -1,16 +1,17 @@
 /*
- * Cubie level; performing cube moves and some utility methods
+ * Cubie level; performing cube moves + some utility methods
  */
 
 #ifndef CUBIE_H_
 #define CUBIE_H_
 
 #include <iostream>
-#include <stdint.h>
 #include <string>
 
 #define N_CORNERS 8
 #define N_EDGES 12
+
+/* Cubie definitions; note that any changes here might require modifications all throughout the solver */
 
 #define URF 0
 #define UFL 1
@@ -21,7 +22,6 @@
 #define DBL 6
 #define DRB 7
 
-// Coordinate definitions strongly depend on this ordering
 #define UR 0
 #define UF 1
 #define UL 2
@@ -42,7 +42,7 @@ const std::string kEdgeNames[] = {
   "UR", "UF", "UL", "UB", "DR", "DF", "DL", "DB", "FR", "FL", "BL", "BR"
 };
 
-// CubieCubes are never stored in mass -> size does not matter -> just use fastest machine type int
+// We never store more than a few `CubieCube`s -> size does not matter -> just use fastest machine type -> int
 typedef struct {
   int cp[N_CORNERS];
   int ep[N_EDGES];
@@ -56,16 +56,15 @@ const CubieCube kSolvedCube = {
   {}, {}
 };
 
-// Table generation performs millions of muls -> this seemingly inconvenient interface is the most efficient
-void mulEdges(const CubieCube &cube1, const CubieCube &cube2, CubieCube &cube3);
-void mulCorners(const CubieCube &cube1, const CubieCube &cube2, CubieCube &cube3);
-void mul(const CubieCube &cube1, const CubieCube &cube2, CubieCube &cube3);
-CubieCube invCube(const CubieCube &cube);
+// Some of the following operations are performed millions of times -> explicitly passing result-object most efficient
+void mulCorners(const CubieCube &cube1, const CubieCube &cube2, CubieCube &res);
+void mulEdges(const CubieCube &cube1, const CubieCube &cube2, CubieCube &res);
+void mul(const CubieCube &cube1, const CubieCube &cube2, CubieCube &res);
+void inv(const CubieCube &cube, CubieCube &res);
 
 int check(const CubieCube &cube);
-CubieCube randomCube();
+void randomize(CubieCube &cube);
 
-void copy(const CubieCube &from, CubieCube &to); // mostly used to initialize a new CubieCube as solved
 bool operator==(const CubieCube &cube1, const CubieCube &cube2);
 bool operator!=(const CubieCube &cube1, const CubieCube &cube2);
 std::ostream& operator<<(std::ostream &os, const CubieCube &cube);

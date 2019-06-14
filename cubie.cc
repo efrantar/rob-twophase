@@ -1,45 +1,53 @@
 #include "cubie.h"
 
-#include <iostream>
+#include <algorithm>
+#include <random>
 #include "coord.h"
-#include "misc.h"
 
-void mulCorners(const CubieCube &cube1, const CubieCube &cube2, CubieCube &cube3) {
+int mul_coris[][6] = {
+  {0, 1, 2, 3, 4, 5},
+  {1, 2, 0, 4, 5, 3},
+  {2, 0, 1, 5, 3, 4},
+  {3, 5, 4, 0, 2, 1},
+  {4, 3, 5, 1, 0, 2},
+  {5, 4, 3, 2, 1, 0}
+};
+
+int inv_cori[] = {
+  0, 2, 1, 3, 4, 5
+};
+
+std::random_device device;
+std::mt19937 gen(device());
+
+void mulCorners(const CubieCube &cube1, const CubieCube &cube2, CubieCube &res) {
   for (int i = 0; i < N_CORNERS; i++) {
-    cube3.cp[i] = cube1.cp[cube2.cp[i]];
- 
-    int ori1 = cube1.co[cube2.cp[i]];
-    int ori2 = cube2.co[i];
-    int ori3;
-
-    if (ori1 < 3 && ori2 < 3) // handle this case first as move-tables do not use symmetries
-      ori3 = (ori1 + ori2) % 3;
-    else { // handle mirroring symmetry
-      if (ori1 >= 3) {
-        ori3 = ori1 - ori2;
-        if (ori2 >= 3) { // mirr + mirr = not
-          if (ori3 < 0)
-            ori3 += 3;
-        } else
-          ori3 = ori3 % 3 + 3; // mir + not = mirr
-      } else
-        ori3 = (ori1 + ori2 - 3) % 3 + 3; // not + mir = mirr
-    }
-
-    cube3.co[i] = ori3;
+    res.cp[i] = cube1.cp[cube2.cp[i]];
+    res.co[i] = mul_coris[cube1.co[cube2.cp[i]]][cube2.co[i]];
   }
 }
 
-void mulEdges(const CubieCube &cube1, const CubieCube &cube2, CubieCube &cube3) {
+void mulEdges(const CubieCube &cube1, const CubieCube &cube2, CubieCube &res) {
   for (int i = 0; i < N_EDGES; i++) {
-    cube3.ep[i] = cube1.ep[cube2.ep[i]];
-    cube3.eo[i] = (cube1.eo[cube2.ep[i]] + cube2.eo[i]) & 1;
+    res.ep[i] = cube1.ep[cube2.ep[i]];
+    res.eo[i] = (cube1.eo[cube2.ep[i]] + cube2.eo[i]) & 1;
   }
 }
 
-void mul(const CubieCube &cube1, const CubieCube &cube2, CubieCube &cube3) {
-  mulEdges(cube1, cube2, cube3);
-  mulCorners(cube1, cube2, cube3);
+void mul(const CubieCube &cube1, const CubieCube &cube2, CubieCube &res) {
+  mulEdges(cube1, cube2, res);
+  mulCorners(cube1, cube2, res);
+}
+
+void inv(const CubieCube &cube, CubieCube &res) {
+  for (int corner = 0; corner < N_CORNERS; corner++)
+    res.cp[cube.cp[corner]] = corner; // inv[a[i]] = i
+  for (int edge = 0; edge < N_EDGES; edge++)
+    res.ep[cube.ep[edge]] = edge;
+  for (int i = 0; i < N_CORNERS; i++)
+    res.co[i] = inv_cori[cube.co[res.cp[i]]];
+  for (int i = 0; i < N_EDGES; i++)
+    res.eo[i] = cube.eo[res.ep[i]];
 }
 
 // #inversions % 2
@@ -92,49 +100,23 @@ int check(const CubieCube &cube) {
   }
   
   if (parity(cube.cp, N_CORNERS) != parity(cube.ep, N_EDGES))
-    return 9; // corner and edge parity mismatch
+    return 9; // corner and edge perm parity mismatch
   return 0;
 }
 
-CubieCube invCube(const CubieCube &cube) {
-  CubieCube inv;
-
-  for (int corner = 0; corner < N_CORNERS; corner++)
-    inv.cp[cube.cp[corner]] = corner; // inv[a[i]] = i
-  for (int edge = 0; edge < N_EDGES; edge++)
-    inv.ep[cube.ep[edge]] = edge;
-
-  for (int i = 0; i < N_CORNERS; i++) {
-    int ori = cube.co[inv.cp[i]];
-    if (ori >= 3)
-      inv.co[i] = ori; // mirr * mirr calculated as ori1 - ori2 = 0
-    else
-      inv.co[i] = mod(-ori, 3); // (ori + -ori) % 3 = 0
-  }
+void randomize(CubieCube &cube) {
+  for (int i = 0; i < N_CORNERS; i++)
+    cube.cp[i] = i;
   for (int i = 0; i < N_EDGES; i++)
-    inv.eo[i] = cube.eo[inv.ep[i]];
+    cube.ep[i] = i;
 
-  return inv;
-}
+  std::shuffle(cube.cp, cube.cp + N_CORNERS, gen);
+  std::shuffle(cube.ep, cube.ep + N_EDGES, gen);
+  if (parity(cube.cp, N_CORNERS) != parity(cube.ep, N_EDGES))
+    std::swap(cube.cp[N_CORNERS - 2], cube.cp[N_CORNERS - 1]);
 
-CubieCube randomCube() {
-  CubieCube cube;
-
-  setTwist(cube, rand(N_TWIST));
-  setFlip(cube, rand(N_FLIP));
-  do {
-    setCorners(cube, rand(N_CORNERS_C));
-    setEdges(cube, rand64(N_EDGES_C)); // EDGES_C is a CoordLL
-  } while (parity(cube.cp, N_CORNERS) != parity(cube.ep, N_EDGES));
-
-  return cube;
-}
-
-void copy(const CubieCube &from, CubieCube &to) {
-  std::copy(from.cp, from.cp + N_CORNERS, to.cp);
-  std::copy(from.ep, from.ep + N_EDGES, to.ep);
-  std::copy(from.co, from.co + N_CORNERS, to.co);
-  std::copy(from.eo, from.eo + N_EDGES, to.eo);
+  setTwist(cube, std::uniform_int_distribution<Coord>(0, N_TWIST)(gen));
+  setFlip(cube, std::uniform_int_distribution<Coord>(0, N_FLIP)(gen));
 }
 
 bool operator==(const CubieCube &cube1, const CubieCube &cube2) {
