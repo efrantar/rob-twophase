@@ -30,7 +30,7 @@ bool checkSol(const CubieCube &cube, const std::vector<int> &sol) {
   CubieCube cube1;
   CubieCube cube2;
 
-  copy(cube, cube1);
+  cube1 = cube;
   for (int m : sol) {
     mul(cube1, move_cubes[m], cube2);
     std::swap(cube1, cube2);

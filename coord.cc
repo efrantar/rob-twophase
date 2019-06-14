@@ -4,6 +4,7 @@
 #include <iostream>
 #include <vector>
 #include <stdint.h>
+#include <bitset>
 
 #include "cubie.h"
 #include "misc.h"
@@ -18,6 +19,128 @@ Coord (*udedges_move2)[N_MOVES2];
 Coord (*corners_move)[N_MOVES];
 
 Coord (*merge_udedges)[N_SSLICE2];
+
+// Don't waste space here as we want these tables to fit into the cache
+uint8_t enc_perm4[256];
+uint8_t dec_perm4[24];
+uint16_t enc_comb4[4096];
+uint16_t dec_comb4[495];
+
+/*
+bool init() {
+  int perm[] = {0, 1, 2, 3};
+  for (int i = 0; i < 24; i++) {
+    int tmp = 0;
+    for (int j = 0; j < 4; j++)
+      tmp = (tmp << 2) | perm[j];
+    enc_perm4[tmp] = i;
+    dec_perm4[i] = tmp;
+    std::next_permutation(perm, perm + 4);
+  }
+
+  int i = 0;
+  for (int j = 0; j < 4096; j++) {
+    if (std::bitset<12>(i).count() == 4) {
+      enc_comb4[j] = i;
+      dec_comb4[i] = j;
+      i++;
+    }
+  }
+}
+static bool inited = init();
+
+int getEdges4(const int edges[], int mask, int min_edge) {
+  int comb = 0;
+  int perm = 0;
+
+  for (int i = 0; i < N_EDGES; i++) {
+    if (mask & (1 << edges[i]) != 0) {
+      comb |= (1 << i);
+      perm = (perm << 2) | (edges[i] - min_edge);
+    }
+  }
+
+  return 24 * enc_comb4[comb] + enc_perm4[perm];
+}
+
+int setEdges4(Coord val, int edges[], int min_edge) {
+  int comb = dec_comb4[val / 24];
+  int perm = dec_perm4[val % 24];
+
+  int cubie = 0;
+  for (int i = N_EDGES - 1; i >= 0; i--) {
+    if (cubie == min_edge)
+      cubie += 4;
+    if (comb & (1 << i) != 0) {
+      edges[i] = (perm & 0x3) + min_edge;
+      perm >>= 2;
+    } else
+      edges[i] = cubie++;
+  }
+}
+
+Coord getSSlice(const CubieCube &cube) {
+  return N_SSLICE - getEdges4(cube.ep, 0xf00, FR);
+}
+
+Coord getUEdges(const CubieCube &cube) {
+  return getEdges4(cube.ep, 0x00f, UR);
+}
+
+Coord getDEdges(const CubieCube &cube) {
+  return getEdges4(cube.ep, 0x0f0, DR);
+}
+
+Coord getCPerm(const CubieCube &cube) {
+  int comb = 0;
+  int cperm1 = 0;
+  int cperm2 = 0;
+
+  for (int i = 0; i < N_CORNERS; i++) {
+    if (cube.cp[i] < 4) {
+      cperm1 = (cperm1 << 2) | cube.cp[i];
+      comb |= 1 << i;
+    }
+    else
+      cperm2 = (cperm2 << 2) | (cube.cp[i] - 4);
+  }
+
+  return 24 * (24 * enc_comb4[comb] + enc_perm4[cperm1]) + enc_perm4[cperm2];
+}
+
+void setSSlice(CubieCube &cube, Coord sslice) {
+  setEdges4(N_SSLICE - sslice, cube.ep, FR);
+}
+
+void setUEdges(CubieCube &cube, Coord uedges) {
+  setEdges4(uedges, cube.ep, FR);
+}
+
+void setDEdges(CubieCube &cube, Coord dedges) {
+  setEdges4(dedges, cube.ep, DR);
+}
+
+void setCPerm(CubieCube &cube, Coord cperm) {
+  int comb = (cperm / 24) / 24;
+  int cperm1 = (cperm / 24) % 24;
+  int cperm2 = cperm % 24;
+
+  for (int i = N_CORNERS - 1; i >= 0; i--) {
+    if ((comb & (1 << i)) != 0) {
+      cube.cp[i] = cperm1 & 0x3;
+      cperm1 >>= 2;
+    } else {
+      cube.cp[i] = (cperm2 & 0x3) + 4;
+      cperm2 >>= 2;
+    }
+  }
+}
+
+Coord mergeEdges(Coord uedges, Coord dedges) {
+  return 24 * uedges + (dedges % 24);
+}
+
+*/
 
 Coord getOriCoord(const int oris[], int len, int n_oris) {
   Coord val = 0;
@@ -162,7 +285,7 @@ void initMoveCoord(
   CubieCube cube1;
   CubieCube cube2;
 
-  copy(kSolvedCube, cube1);
+  cube1 = kSolvedCube;
   for (Coord c = 0; c < n_coords; c++) {
     setCoord(cube1, c);
     for (int m = 0; m < N_MOVES; m++) {
@@ -302,7 +425,7 @@ void initUDEdgesMove2() {
   CubieCube cube1;
   CubieCube cube2;
 
-  copy(kSolvedCube, cube1);
+  cube1 = kSolvedCube;
   for (Coord c = 0; c < N_UDEDGES2; c++) {
     setUDEdges(cube1, c);
     for (int m = 0; m < N_MOVES2; m++) {

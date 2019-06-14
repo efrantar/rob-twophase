@@ -19,7 +19,7 @@ class TwoPhaseSolver {
   
   private:
     int rot;
-    bool inv;
+    bool inv_;
 
     Coord flip[N];
     Coord sslice[N];

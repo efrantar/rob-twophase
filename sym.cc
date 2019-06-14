@@ -27,9 +27,9 @@ static bool init() {
   CubieCube cube;
   CubieCube tmp;
 
-  copy(kSolvedCube, cube);
+  cube = kSolvedCube;
   for (int i = 0; i < N_SYMS; i++) {
-    copy(cube, sym_cubes[i]);
+    sym_cubes[i] = cube;
 
     mul(cube, kLR2Cube, tmp);
     std::swap(tmp, cube);
@@ -89,7 +89,7 @@ void initConjCoord(
   CubieCube cube2;
   CubieCube tmp;
 
-  copy(kSolvedCube, cube1);
+  cube1 = kSolvedCube;
   for (Coord c = 0; c < n_coords; c++) {
     setCoord(cube1, c);
     conj_coord1[c][0] = c;
@@ -126,7 +126,7 @@ void initConjFlip() {
     }
   }
 
-  copy(kSolvedCube, cube1);
+  cube1 = kSolvedCube;
   for (Coord sssym = 0; sssym < N_SSLICE_SYM; sssym++) {
     setSSlice(cube1, sslice_raw[sssym]); // setting this is more expensive than flip -> outer loop
 
@@ -165,7 +165,7 @@ void initCoordSym(
   CubieCube tmp;
   int cls = 0;
 
-  copy(kSolvedCube, cube1);
+  cube1 = kSolvedCube;
   for (Coord coord = 0; coord < n_coord; coord++) {
     setCoord(cube1, coord);
 
@@ -205,7 +205,7 @@ void initFlipSliceSym() {
   CubieCube tmp;
   int cls = 0;
 
-  copy(kSolvedCube, cube1);
+  cube1 = kSolvedCube;
   for (Coord slice = 0; slice < N_SLICE; slice++) {
     setSlice(cube1, slice); // SLICE the more expensive one to set -> outer loop
     for (Coord flip = 0; flip < N_FLIP; flip++) {

@@ -61,7 +61,7 @@ int dedges_depth;
 
 TwoPhaseSolver::TwoPhaseSolver(int rot1, bool inv1) {
   rot = rot1;
-  inv = inv1;
+  inv_ = inv1;
 }
 
 void TwoPhaseSolver::solve(const CubieCube &cube) {
@@ -76,9 +76,11 @@ void TwoPhaseSolver::solve(const CubieCube &cube) {
     mul(sym_cubes[inv_sym[32]], cube, tmp); // 2. URF symmetry
     mul(tmp, sym_cubes[32], cube1);
   } else
-    copy(cube, cube1);
-  if (inv)
-    cube1 = invCube(cube1);
+    cube1 = cube;
+  if (inv_) {
+    CubieCube tmp = cube1;
+    inv(tmp, cube1);
+  }
 
   flip[0] = getFlip(cube1);
   twist[0] = getTwist(cube1);
@@ -180,7 +182,7 @@ void TwoPhaseSolver::phase2(int depth, int dist, int togo) {
         sol[i] = moves[i];
       len = depth; // update so that other threads can already search for shorter solutions
 
-      if (inv) {
+      if (inv_) {
         for (int i = 0; i < depth; i++)
           sol[i] = kInvMove[sol[i]];
         std::reverse(sol.begin(), sol.end());
@@ -421,7 +423,9 @@ int optim(const CubieCube &cube, int max_depth, int timelimit, std::vector<int> 
 
 std::vector<int> scramble(int timelimit) {
   std::vector<int> scramble;
-  twophase(randomCube(), -1, timelimit, scramble);
+  CubieCube cube;
+  randomize(cube);
+  twophase(cube, -1, timelimit, scramble);
   std::reverse(scramble.begin(), scramble.end());
   for (int i = 0; i < scramble.size(); i++)
     scramble[i] = kInvMove[scramble[i]];
