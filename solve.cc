@@ -120,9 +120,9 @@ int TwoPhaseSolver::phase1(int depth, int dist, int togo) {
       udedges_depth = depth - 1;
     udedges[depth] = UDEDGES(uedges[depth], dedges[depth]);
 
-    int dist1 = getCornUDDist(corners[depth], udedges[depth]);
+    int dist1 = getCornEdDist(corners[depth], udedges[depth]);
 
-    // As phase 2 solutions often come in pairs, this essentially halves the expensive getCornUDDist() calls
+    // As phase 2 solutions often come in pairs, this essentially halves the expensive getCornEdDist() calls
     if (dist1 > max_togo + 1)
       return 1;
     for (int togo1 = dist1; togo1 <= max_togo; togo1++)
@@ -208,11 +208,11 @@ void TwoPhaseSolver::phase2(int depth, int dist, int togo) {
     corners[depth + 1] = cperm_move[corners[depth]][kPhase2Moves[m]];
     udedges[depth + 1] = udedges_move2[udedges[depth]][m];
 
-    CCoord cornud = CORNUD(
+    CCoord cornud = CORNED(
       COORD(cperm_sym[corners[depth + 1]]),
       conj_udedges[udedges[depth + 1]][SYM(cperm_sym[corners[depth + 1]])]
     );
-    int dist1 = next_dist[dist][getPrun3(cornud_prun3, cornud)];
+    int dist1 = next_dist[dist][getPrun3(corned_prun3, cornud)];
 
     int tmp = cornslice_prun[CORNSLICE(corners[depth + 1], sslice[depth + 1])];
     if (std::max(dist1, tmp) < togo) {
@@ -313,14 +313,14 @@ void initTwophase(bool file) {
     f = fopen(FILE_TWOPHASE, "wb");
     // Use `tmp` to avoid nasty warnings; not clean but we don't want to make this part to complicated
     int tmp = fwrite(fstwist_prun3, sizeof(uint64_t), N_FSTWIST / 32 + 1, f);
-    tmp = fwrite(cornud_prun3, sizeof(uint64_t), N_CORNUD / 32 + 1, f);
+    tmp = fwrite(corned_prun3, sizeof(uint64_t), N_CORNED / 32 + 1, f);
     tmp = fwrite(cornslice_prun, sizeof(uint8_t), N_CORNSLICE, f);
   } else {
     fstwist_prun3 = new uint64_t[N_FSTWIST / 32 + 1];
-    cornud_prun3 = new uint64_t[N_CORNUD / 32 + 1];
+    corned_prun3 = new uint64_t[N_CORNED / 32 + 1];
     cornslice_prun = new uint8_t[N_CORNSLICE];
     int tmp = fread(fstwist_prun3, sizeof(uint64_t), N_FSTWIST / 32 + 1, f);
-    tmp = fread(cornud_prun3, sizeof(uint64_t), N_CORNUD / 32 + 1, f);
+    tmp = fread(corned_prun3, sizeof(uint64_t), N_CORNED / 32 + 1, f);
     tmp = fread(cornslice_prun, sizeof(uint8_t), N_CORNSLICE, f);
   }
 
