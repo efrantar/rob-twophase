@@ -5,13 +5,16 @@
 #ifndef MOVES_H_
 #define MOVES_H_
 
-#include <stdint.h>
 #include <string>
-#include <vector>
 #include "cubie.h"
 
-#define N_MOVES 18
-#define N_MOVES2 10
+#ifdef FACES5
+  #define N_MOVES 15
+  #define N_MOVES2 9
+#else
+  #define N_MOVES 18
+  #define N_MOVES2 10
+#endif
 
 // Order s.t. / 3 gives axis and % 3 power; X1 clockwise, X3 counter-clockwise
 #define U1 0
@@ -34,11 +37,11 @@
 #define B3 17
 
 const std::string kMoveNames[] = {
-  "U", "U2", "U'", 
-  "R", "R2", "R'", 
-  "F", "F2", "F'", 
-  "D", "D2", "D'", 
-  "L", "L2", "L'", 
+  "U", "U2", "U'",
+  "R", "R2", "R'",
+  "F", "F2", "F'",
+  "D", "D2", "D'",
+  "L", "L2", "L'",
   "B", "B2", "B'"
 };
 
