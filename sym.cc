@@ -9,9 +9,9 @@ CubieCube sym_cubes[N_SYMS];
 int inv_sym[N_SYMS];
 int conj_move[N_MOVES][N_SYMS];
 
-Coord (*conj_twist)[N_SYMS_DH4];
-Coord (*conj_udedges)[N_SYMS_DH4];
-Coord (*conj_flip)[N_SYMS_DH4][N_SSLICE_SYM];
+Coord (*conj_twist)[N_SYMS_SUB];
+Coord (*conj_udedges)[N_SYMS_SUB];
+Coord (*conj_flip)[N_SYMS_SUB][N_SSLICE_SYM];
 
 SymCoord *fslice_sym;
 SymCoord *corners_sym;
@@ -77,13 +77,13 @@ static bool init() {
 static bool inited = init();
 
 void initConjCoord(
-  Coord (**conj_coord)[N_SYMS_DH4],
+  Coord (**conj_coord)[N_SYMS_SUB],
   int n_coords,
   Coord (*getCoord)(const CubieCube &),
   void (*setCoord)(CubieCube &, Coord),
   void (*mul)(const CubieCube &, const CubieCube &, CubieCube &)
 ) {
-  auto conj_coord1 = new Coord[n_coords][N_SYMS_DH4];
+  auto conj_coord1 = new Coord[n_coords][N_SYMS_SUB];
 
   CubieCube cube1;
   CubieCube cube2;
@@ -93,7 +93,7 @@ void initConjCoord(
   for (Coord c = 0; c < n_coords; c++) {
     setCoord(cube1, c);
     conj_coord1[c][0] = c;
-    for (int s = 1; s < N_SYMS_DH4; s++) {
+    for (int s = 1; s < N_SYMS_SUB; s++) {
       mul(sym_cubes[s], cube1, tmp);
       mul(tmp, sym_cubes[inv_sym[s]], cube2);
       conj_coord1[c][s] = getCoord(cube2);
@@ -112,7 +112,7 @@ void initConjUDEdges() {
 }
 
 void initConjFlip() {
-  conj_flip = new Coord[N_FLIP][N_SYMS_DH4][N_SSLICE_SYM];
+  conj_flip = new Coord[N_FLIP][N_SYMS_SUB][N_SSLICE_SYM];
 
   CubieCube cube1;
   CubieCube cube2;
@@ -130,7 +130,7 @@ void initConjFlip() {
   for (Coord sssym = 0; sssym < N_SSLICE_SYM; sssym++) {
     setSSlice(cube1, sslice_raw[sssym]); // setting this is more expensive than flip -> outer loop
 
-    for (int s = 1; s < N_SYMS_DH4; s++) {
+    for (int s = 1; s < N_SYMS_SUB; s++) {
       // Necessary so that result after setting flip and conjugating by `s` has indeed SSLICE `sssym`
       mulEdges(sym_cubes[inv_sym[s]], cube1, tmp);
       mulEdges(tmp, sym_cubes[s], cube2);
@@ -176,7 +176,7 @@ void initCoordSym(
     coord_raw1[cls] = coord;
     coord_selfs1[cls] = 1;
 
-    for (int s = 1; s < N_SYMS_DH4; s++) {
+    for (int s = 1; s < N_SYMS_SUB; s++) {
       mul(sym_cubes[inv_sym[s]], cube1, tmp);
       mul(tmp, sym_cubes[s], cube2);
       Coord coord1 = getCoord(cube2);
@@ -219,7 +219,7 @@ void initFlipSliceSym() {
       fslice_raw[cls] = fslice;
       fslice_selfs[cls] = 1;
 
-      for (int s = 1; s < N_SYMS_DH4; s++) {
+      for (int s = 1; s < N_SYMS_SUB; s++) {
         mulEdges(sym_cubes[inv_sym[s]], cube1, tmp);
         mulEdges(tmp, sym_cubes[s], cube2);
         CCoord fslice1 = FSLICE(getFlip(cube2), SS_SLICE(getSSlice(cube2)));

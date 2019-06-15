@@ -53,11 +53,11 @@ const bool kIsPhase2Move[] = {
 };
 
 const int kInvMove[] = {
-  U3, U2, U1, 
-  R3, R2, R1, 
-  F3, F2, F1, 
-  D3, D2, D1, 
-  L3, L2, L1, 
+  U3, U2, U1,
+  R3, R2, R1,
+  F3, F2, F1,
+  D3, D2, D1,
+  L3, L2, L1,
   B3, B2, B1
 };
 
