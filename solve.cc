@@ -209,8 +209,8 @@ void TwoPhaseSolver::phase2(int depth, int dist, int togo) {
     udedges[depth + 1] = udedges_move2[udedges[depth]][m];
 
     CCoord cornud = CORNUD(
-      COORD(corners_sym[corners[depth + 1]]),
-      conj_udedges[udedges[depth + 1]][SYM(corners_sym[corners[depth + 1]])]
+      COORD(cperm_sym[corners[depth + 1]]),
+      conj_udedges[udedges[depth + 1]][SYM(cperm_sym[corners[depth + 1]])]
     );
     int dist1 = next_dist[dist][getPrun3(cornud_prun3, cornud)];
 
@@ -223,97 +223,6 @@ void TwoPhaseSolver::phase2(int depth, int dist, int togo) {
         return;
     }
   }
-}
-
-void optim(int depth, int dist, int togo) {
-  if (done)
-    return;
-
-  // As this will usually be called many many times, reconstructing one coord after the other seems worth it
-  if (dist == 0) {
-    for (int i = corners1_depth + 1; i <= depth; i++)
-      corners1[i] = cperm_move[corners1[i - 1]][moves[i - 1]];
-    if (depth > 0)
-      corners1_depth = depth - 1;
-    if (corners1[depth] != 0)
-      return;
-
-    for (int i = uedges_depth + 1; i <= depth; i++)
-      uedges[i] = uedges_move[uedges[i - 1]][moves[i - 1]];
-    if (depth > 0)
-      uedges_depth = depth - 1;
-    if (uedges[depth] != 0)
-      return;
-
-    for (int i = dedges_depth + 1; i <= depth; i++)
-      dedges[i] = dedges_move[dedges[i - 1]][moves[i - 1]];
-    if (depth > 0)
-      dedges_depth = depth - 1;
-    if (dedges[depth] != DEDGES_SOLVED) // DEDDGES is non-0 in solved state
-      return;
-
-    sol.resize(depth);
-    for (int i = 0; i < depth; i++)
-      sol[i] = moves[i];
-    len = depth;
-    done = true;
-
-    return;
-  }
-
-  for (int m = 0; m < N_MOVES; m++) {
-    if (depth > 0 && skip_move[moves[depth - 1]][m])
-      continue;
-
-    bool next = false; // stop as soon as one of the cubes is not solvable anymore in the given number of moves
-    for (int rot = 0; rot < 3; rot++) {
-      flip[rot][depth + 1] = flip_move[flip[rot][depth]][conj_move[m][16 * rot]];
-      sslice[rot][depth + 1] = sslice_move[sslice[rot][depth]][conj_move[m][16 * rot]];
-      twist[rot][depth + 1] = twist_move[twist[rot][depth]][conj_move[m][16 * rot]];
-
-      int tmp = sslice[rot][depth + 1];
-      CCoord fsstwist = FSSTWIST(
-        conj_flip[flip[rot][depth + 1]][SYM(sslice_sym[tmp])][COORD(sslice_sym[tmp])],
-        COORD(sslice_sym[tmp]),
-        conj_twist[twist[rot][depth + 1]][SYM(sslice_sym[tmp])]
-      );
-
-      prun[rot][depth + 1] = next_dist[prun[rot][depth]][getPrun3(fsstwist_prun3, fsstwist)];
-      if (prun[rot][depth + 1] >= togo) {
-        if (prun[rot][depth + 1] > togo)
-          m = kAxisEnd[m];
-        next = true;
-        break;
-      }
-    }
-    if (next)
-      continue;
-
-    int dist1;
-    if (
-      prun[0][depth + 1] != 0 && // the cube is already solved
-      prun[0][depth + 1] == prun[1][depth + 1] && prun[1][depth + 1] == prun[2][depth + 1]
-    ) {
-      dist1 = prun[0][depth + 1] + 1; // optimization by Michiel de Bondt
-    }
-    else
-      dist1 = std::max(prun[0][depth + 1], std::max(prun[1][depth + 1], prun[2][depth + 1]));
-
-    if (dist1 < togo) {
-      moves[depth] = m;
-      optim(depth + 1, dist1, togo - 1);
-      if (done)
-        return;
-    } else if (dist1 > togo)
-      m = kAxisEnd[m]; // axis-skipping crucial in the optimal solver
-  }
-
-  if (depth > 0 && corners1_depth == depth)
-    corners1_depth--;
-  if (depth > 0 && uedges_depth == depth)
-    uedges_depth--;
-  if (depth > 0 && dedges_depth == depth)
-    dedges_depth--;
 }
 
 int twophase(const CubieCube &cube, int max_depth1, int timelimit, std::vector<int> &sol1) {
@@ -361,66 +270,6 @@ int twophase(const CubieCube &cube, int max_depth1, int timelimit, std::vector<i
   return 2;
 }
 
-int optim(const CubieCube &cube, int max_depth, int timelimit, std::vector<int> &sol1) {
-  done = false;
-  len = 21; // to check if a solution was found
-
-  cont = false;
-  ret = 0;
-  std::thread timeout([timelimit]() {
-    std::unique_lock<std::mutex> lock(wait);
-    notify.wait_for(lock, std::chrono::seconds(timelimit), []{ return cont; });
-    done = true;
-    ret++;
-  });
-
-  for (int rot = 0; rot < 3; rot++) {
-    CubieCube cube1;
-    CubieCube tmp;
-    mul(sym_cubes[16 * rot], cube, tmp);
-    mul(tmp, sym_cubes[inv_sym[16 * rot]], cube1);
-
-    flip[rot][0] = getFlip(cube1);
-    sslice[rot][0] = getSSlice(cube1);
-    twist[rot][0] = getTwist(cube1);
-
-    prun[rot][0] = getFSSTwistDist(flip[rot][0], sslice[rot][0], twist[rot][0]);
-  }
-
-  uedges[0] = getUEdges(cube);
-  dedges[0] = getDEdges(cube);
-  corners1[0] = getCPerm(cube);
-  corners1_depth = 0;
-  uedges_depth = 0;
-  dedges_depth = 0;
-
-  int dist;
-  if (prun[0][0] != 0 && prun[0][0] == prun[1][0] && prun[1][0] == prun[2][0])
-    dist = prun[0][0] + 1;
-  else
-    dist = std::max(prun[0][0], std::max(prun[1][0], prun[2][0]));
-
-  for (int togo = dist; togo <= max_depth; togo++)
-    optim(0, dist, togo);
-
-  {
-    std::lock_guard<std::mutex> lock(wait);
-    cont = true;
-    if (ret == 0)
-      ret--;
-  }
-  notify.notify_one();
-  timeout.join();
-
-  if (sol.size() == len) {
-    sol1.resize(len);
-    for (int i = 0; i < len; i++)
-      sol1[i] = sol[i];
-    return 0;
-  }
-  return 2 - ret;
-}
-
 std::vector<int> scramble(int timelimit) {
   std::vector<int> scramble;
   CubieCube cube;
@@ -445,7 +294,7 @@ void initTwophase(bool file) {
   initConjTwist();
   initConjUDEdges();
   initFlipSliceSym();
-  initCornersSym();
+  initCPermSym();
 
   if (!file) {
     initFSTwistPrun3();
@@ -478,37 +327,6 @@ void initTwophase(bool file) {
   fclose(f);
 }
 
-void initOptim(bool file) {
-  initTwistMove();
-  initFlipMove();
-  initSSliceMove();
-  initUEdgesMove();
-  initDEdgesMove();
-  initCPermMove();
-
-  initConjTwist();
-  initSSliceSym();
-  initConjFlip();
-
-  if (!file) {
-    initFSSTwistPrun3();
-    return;
-  }
-
-  FILE *f = fopen(FILE_OPTIM, "rb");
-
-  if (f == NULL) {
-    initFSSTwistPrun3();
-    f = fopen(FILE_OPTIM, "wb");
-    int tmp = fwrite(fsstwist_prun3, sizeof(uint64_t), N_FSSTWIST / 32 + 1, f);
-  } else {
-    fsstwist_prun3 = new uint64_t[N_FSSTWIST / 32 + 1];
-    int tmp = fread(fsstwist_prun3, sizeof(uint64_t), N_FSSTWIST / 32 + 1, f);
-  }
-
-  fclose(f);
-}
-
 std::string solToStr(const std::vector<int> &sol) {
   std::ostringstream ss;
   for (int i = 0; i < sol.size(); i++) {
@@ -529,19 +347,6 @@ std::string twophaseStr(std::string s, int max_depth, int timelimit) {
 
   std::vector<int> sol;
   int ret = twophase(cube, max_depth, timelimit, sol);
-  return ret == 0 ? solToStr(sol) : "SolveError " + std::to_string(ret);
-}
-
-std::string optimStr(std::string s, int max_depth, int timelimit) {
-  CubieCube cube;
-  int err = faceToCubie(s, cube);
-  if (err)
-    return "FaceError " + std::to_string(err);
-  if ((err = check(cube)))
-    return "CubieError " + std::to_string(err);
-
-  std::vector<int> sol;
-  int ret = optim(cube, max_depth, timelimit, sol);
   return ret == 0 ? solToStr(sol) : "SolveError " + std::to_string(ret);
 }
 

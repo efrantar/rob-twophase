@@ -10,9 +10,8 @@
 #include "sym.h"
 
 #define N_FSTWIST (N_FSLICE_SYM * N_TWIST)
-#define N_CORNUD (N_CORNERS_SYM * N_UDEDGES2)
+#define N_CORNUD (N_CPERM_SYM * N_UDEDGES2)
 #define N_CORNSLICE (N_CPERM * N_SSLICE2)
-#define N_FSSTWIST (uint64_t(N_FLIP) * N_SSLICE_SYM * N_TWIST)
 
 #define FSTWIST(fssym, twist) (CCoord(fssym) * N_TWIST + twist)
 #define CORNUD(csym, udedges) (CCoord(csym) * N_UDEDGES2 + udedges)

@@ -101,10 +101,7 @@ int main(int argc, char *argv[]) {
 
   std::cout << "Loading tables ..." << std::endl;
   auto tick = std::chrono::high_resolution_clock::now();
-  if (mode == "optim")
-    initOptim(true);
-  else
-    initTwophase(true);
+  initTwophase(true);
   auto tock = std::chrono::high_resolution_clock::now() - tick;
   std::cout
     << "Done. " << std::chrono::duration_cast<std::chrono::milliseconds>(tock).count() / 1000. << "s" << std::endl;
@@ -120,11 +117,6 @@ int main(int argc, char *argv[]) {
       std::cout << std::chrono::duration_cast<std::chrono::microseconds>(
         std::chrono::high_resolution_clock::now() - tick
       ).count() / 1000. << "ms" << std::endl;
-    } else {
-      std::cout << optimStr(std::string(argv[2]), std::stoi(argv[3]), std::stoi(argv[4])) << std::endl;
-      std::cout << std::chrono::duration_cast<std::chrono::milliseconds>(
-        std::chrono::high_resolution_clock::now() - tick
-      ).count() / 60000. << "min" << std::endl;
     }
   } else {
     std::vector<CubieCube> cubes;
