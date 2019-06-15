@@ -11,10 +11,12 @@
   #define N_SYMS_SUB 4 // only 4 symmetries applicable when using 5 faces
   #define N_FSLICE_SYM 255664
   #define N_CPERM_SYM 10368
+  #define ROT_SYM 36 // 90 degree rotation around F-B axis
 #else
   #define N_SYMS_SUB 16 // #symmetries used for the reductions (sub-group DH4)
   #define N_FSLICE_SYM 64430
   #define N_CPERM_SYM 2768
+  #define ROT_SYM 16 // 120 degree rotation around URF-DBL axis
 #endif
 
 #define SYMCOORD(coord, sym) (SymCoord(coord) * N_SYMS_SUB + sym)

@@ -6,7 +6,7 @@
 
 #ifdef FACES5
   #define BACKSEARCH_DEPTH 10
-  #define MAX_DEPTH_P2 11
+  #define MAX_DEPTH_P2 12
 #else
   #define BACKSEARCH_DEPTH 9
   #define MAX_DEPTH_P2 10
@@ -131,8 +131,9 @@ void initFSTwistPrun3() {
   while (count < N_FSTWIST) {
     CCoord c = 0; // increment this in the inner loop to avoid always recomputing the index
     int depth3 = depth % 3;
-    
-    for (Coord fssym = 0; fssym < N_FSLICE_SYM; fssym++) {
+
+    // `fssym` needs to `CCoord` so that it also works in 5-face mode
+    for (CCoord fssym = 0; fssym < N_FSLICE_SYM; fssym++) {
       Coord flip = FS_FLIP(fslice_raw[fssym]);
       Coord slice = FS_SLICE(fslice_raw[fssym]);
 
@@ -158,7 +159,7 @@ void initFSTwistPrun3() {
           CCoord fslice1 = FSLICE(flip1, slice1);
           Coord twist1 = twist_move[twist][m];
 
-          Coord fssym1 = COORD(fslice_sym[fslice1]);
+          CCoord fssym1 = COORD(fslice_sym[fslice1]);
           twist1 = conj_twist[twist1][SYM(fslice_sym[fslice1])];
           CCoord c1 = FSTWIST(fssym1, twist1);
 
@@ -271,9 +272,10 @@ void initCornSlicePrun() {
     Coord corners = CS_CORNERS(c);
     Coord sslice = CS_SSLICE(c);
 
-    for (int m : kPhase2Moves) {
+    // Can't foreach through `kPhase2Moves` in 5-face mode
+    for (int m = 0; m < N_MOVES2; m++) {
       CCoord c1 = CORNSLICE(
-        cperm_move[corners][m], sslice_move[sslice][m]
+        cperm_move[corners][kPhase2Moves[m]], sslice_move[sslice][kPhase2Moves[m]]
       );
       if (cornslice_prun[c1] == 0xff) {
         cornslice_prun[c1] = cornslice_prun[c] + 1;

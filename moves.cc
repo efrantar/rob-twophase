@@ -9,7 +9,9 @@ static bool init() {
   move_cubes[F1] = kFCube;
   move_cubes[D1] = kDCube;
   move_cubes[L1] = kLCube;
-  move_cubes[B1] = kBCube;
+  #ifndef FACES5
+    move_cubes[B1] = kBCube;
+  #endif
 
   for (int i = 0; i < N_MOVES; i += 3) {
     mul(move_cubes[i], move_cubes[i], move_cubes[i + 1]);

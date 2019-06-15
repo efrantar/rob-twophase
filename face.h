@@ -56,7 +56,7 @@ const std::unordered_map<char, int> kNameToColor = {
   {'U', U}, {'R', R}, {'F', F}, {'D', D}, {'L', L}, {'B', B}
 }; // for decoding input strings
 
-/* Mapping of corners/edges to corresponding facelets */
+/* Mapping of cperm/edges to corresponding facelets */
 const int kCornlets[][3] = {
   {8, 9, 20}, {6, 18, 38}, {0, 36, 47}, {2, 45, 11},
   {29, 26, 15}, {27, 44, 24}, {33, 53, 42}, {35, 17, 51}
