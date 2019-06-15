@@ -15,7 +15,6 @@
 #include "cubie.h"
 #include "coord.h"
 #include "face.h"
-#include "misc.h"
 #include "moves.h"
 #include "prun.h"
 #include "solve.h"

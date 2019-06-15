@@ -2,7 +2,10 @@
 
 #include <string>
 #include <unordered_map>
-#include "misc.h"
+
+int mod(int a, int m) {
+  return a > 0 ? a % m : (a % m + m) % m;
+}
 
 int encode(const std::string &cubelet, int ori) {
   int res = 0;
@@ -61,7 +64,7 @@ int faceToCubie(const std::string &s, CubieCube &cube) {
   return 0;
 }
 
-// Assumes `cube` to ve valid
+// Assumes `cube` to be valid
 std::string cubieToFace(const CubieCube &cube) {
   char s[N_FACELETS];
 
