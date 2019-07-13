@@ -10,7 +10,7 @@ This probably makes it one of the fastest versions to date.
 ## Usage
 
 Usually you will probably want to use this as an API. 
-The file `cube.h` provides 3 simple function for solving cubes with the twophase algorithm, optimally and for generating scrambles to unfiorm cubes.
+The file `cube.h` provides 3 simple function for solving cubes with the twophase algorithm, optimally and for generating scrambles to uniform cubes.
 Their interfaces are completely decoupled from any internal structures and work solely with `std::string`s.
 A short example is shown below, refer to respective function documentation for details.
 
