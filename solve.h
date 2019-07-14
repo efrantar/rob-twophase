@@ -57,13 +57,6 @@ int twophase(const CubieCube &cube, int max_depth, int timelimit, std::vector<in
  */
 void initTwophase(bool file = true);
 
-/**
- * Initializes the optimal solver by generating / loading all move and pruning tables. Note that this may take
- * a few minutes
- * @param file whether or not to load/store them in a file (named "optim.tbl")
- */
-void initOptim(bool file = true);
-
 /* Higher level API that masks all solver internal structures */
 
 /**

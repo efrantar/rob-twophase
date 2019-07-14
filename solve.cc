@@ -250,7 +250,7 @@ int twophase(const CubieCube &cube, int max_depth1, int timelimit, std::vector<i
     sol1.resize(len);
     for (int i = 0; i < len; i++)
       sol1[i] = sol[i];
-    return ret;
+    return max_depth1 > 0 ? ret : 0;
   }
   return 2;
 }
