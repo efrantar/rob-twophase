@@ -33,7 +33,7 @@ int main() {
 }
 ```
 
-A small CMD-application is also includes. It provides functionality to run benchmarks, solve individual cubes and generate scrambles.
+A small CMD-application is also included. It provides functionality to run benchmarks, solve individual cubes and generate scrambles.
 Run `./twophase` for more information.
 
 **Note:** The solver does generally not use any platform specific features and should therefore in theory be portable. 
