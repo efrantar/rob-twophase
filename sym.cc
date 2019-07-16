@@ -2,7 +2,7 @@
 
 #include <algorithm>
 
-#define EMPTY ~SymCoord(0)
+#define EMPTY2 ~SymCoord(0)
 
 CubieCube sym_cubes[N_SYMS];
 int inv_sym[N_SYMS];
@@ -111,7 +111,7 @@ void initFlipSliceSym() {
   fslice_sym = new SymCoord[N_FSLICE];
   fslice_raw = new CCoord[N_FSLICE_SYM];
   fslice_selfs = new SelfSyms[N_FSLICE_SYM];
-  std::fill(fslice_sym, fslice_sym + N_FSLICE, EMPTY);
+  std::fill(fslice_sym, fslice_sym + N_FSLICE, EMPTY2);
 
   CubieCube cube1;
   CubieCube cube2;
@@ -125,7 +125,7 @@ void initFlipSliceSym() {
       setFlip(cube1, flip);
       CCoord fslice = FSLICE(flip, slice);
 
-      if (fslice_sym[fslice] != EMPTY)
+      if (fslice_sym[fslice] != EMPTY2)
         continue;
 
       fslice_sym[fslice] = SYMCOORD(cls, 0);
@@ -136,7 +136,7 @@ void initFlipSliceSym() {
         mulEdges(sym_cubes[inv_sym[s]], cube1, tmp);
         mulEdges(tmp, sym_cubes[s], cube2);
         CCoord fslice1 = FSLICE(getFlip(cube2), SS_SLICE(getSSlice(cube2)));
-        if (fslice_sym[fslice1] == EMPTY)
+        if (fslice_sym[fslice1] == EMPTY2)
           fslice_sym[fslice1] = SYMCOORD(cls, s);
         else if (fslice1 == fslice) // collect self-symmetries here essentially for free
           fslice_selfs[cls] |= 1 << s;
@@ -150,7 +150,7 @@ void initCPermSym() {
   cperm_sym = new SymCoord[N_CPERM];
   cperm_raw = new Coord[N_CPERM_SYM];
   cperm_selfs = new SelfSyms[N_CPERM_SYM];
-  std::fill(cperm_sym, cperm_sym + N_CPERM, EMPTY);
+  std::fill(cperm_sym, cperm_sym + N_CPERM, EMPTY2);
 
   CubieCube cube1;
   CubieCube cube2;
@@ -161,7 +161,7 @@ void initCPermSym() {
   for (Coord cperm = 0; cperm < N_CPERM; cperm++) {
     setCPerm(cube1, cperm);
 
-    if (cperm_sym[cperm] != EMPTY)
+    if (cperm_sym[cperm] != EMPTY2)
       continue;
 
     cperm_sym[cperm] = SYMCOORD(cls, 0);
@@ -172,7 +172,7 @@ void initCPermSym() {
       mul(sym_cubes[inv_sym[s]], cube1, tmp);
       mul(tmp, sym_cubes[s], cube2);
       Coord cperm1 = getCPerm(cube2);
-      if (cperm_sym[cperm1] == EMPTY)
+      if (cperm_sym[cperm1] == EMPTY2)
         cperm_sym[cperm1] = SYMCOORD(cls, s);
       else if (cperm1 == cperm)
         cperm_selfs[cls] |= 1 << s;

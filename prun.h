@@ -13,6 +13,12 @@
 #define N_CORNED (N_CPERM_SYM * N_UDEDGES2)
 #define N_CORNSLICE (N_CPERM * N_SSLICE2)
 
+#ifdef FACES5
+  #define MAX_DEPTH_P2 12
+#else
+  #define MAX_DEPTH_P2 10
+#endif
+
 #define FSTWIST(fssym, twist) (CCoord(fssym) * N_TWIST + twist)
 #define CORNED(csym, udedges) (CCoord(csym) * N_UDEDGES2 + udedges)
 
@@ -24,15 +30,16 @@
 extern int (*next_dist)[3];
 
 extern uint64_t *fstwist_prun3;
-extern uint64_t *corned_prun3;
-extern uint8_t *cornslice_prun; // phase 2 precheck; not mod 3
+extern uint64_t *corned_prun; // full resolution; 16 entries per cell
+extern uint8_t *cornslice_prun; // phase 2 precheck; comparatively small -> just 1 entry per cell
 
-int getPrun3(uint64_t *prun3, CCoord c);
 int getFSTwistDist(Coord flip, Coord sslice, Coord twist);
-int getCornEdDist(Coord cperm, Coord udedges);
+int getFSTwistPrun3(Coord flip, Coord sslice, Coord twist);
+int getCornEdPrun(Coord cperm, Coord udedges);
+int getCornSlicePrun(Coord cperm, Coord sslice);
 
 void initFSTwistPrun3();
-void initCornUDPrun3();
+void initCornEdPrun();
 void initCornSlicePrun();
 
 #endif

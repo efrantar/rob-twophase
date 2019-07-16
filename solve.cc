@@ -80,19 +80,19 @@ void TwoPhaseSolver::solve(const CubieCube &cube) {
   }
 }
 
-int TwoPhaseSolver::phase1(int depth, int dist, int togo) {
+void TwoPhaseSolver::phase1(int depth, int dist, int togo) {
   if (done)
-    return 0;
+    return;
 
   if (togo == 0) {
     for (int i = cperm_depth + 1; i <= depth; i++)
       cperm[i] = cperm_move[cperm[i - 1]][moves[i - 1]];
     cperm_depth = depth - 1;
 
-    // We ignore phase 2 solutions that are longer than 10 moves
-    int max_togo = std::min(len - 1 - depth, 12);
-    if (cornslice_prun[CORNSLICE(cperm[depth], sslice[depth])] > max_togo)
-      return cornslice_prun[CORNSLICE(cperm[depth], sslice[depth])] > max_togo + 1; // potentially skip to next axis
+    // We ignore phase 2 solutions that are longer than `MAX_DEPTH_P2` moves
+    int max_togo = std::min(len - 1 - depth, MAX_DEPTH_P2);
+    if (getCornSlicePrun(cperm[depth], sslice[depth]) > max_togo)
+      return;
 
     for (int i = udedges_depth + 1; i <= depth; i++) {
       uedges[i] = uedges_move[uedges[i - 1]][moves[i - 1]];
@@ -101,20 +101,18 @@ int TwoPhaseSolver::phase1(int depth, int dist, int togo) {
     udedges_depth = depth - 1;
     udedges[depth] = UDEDGES(uedges[depth], dedges[depth]);
 
-    int dist1 = getCornEdDist(cperm[depth], udedges[depth]);
-
-    // As phase 2 solutions often come in pairs, this essentially halves the expensive `getCornEdDist()` calls
-    if (dist1 > max_togo + 1)
-      return 1;
-    for (int togo1 = dist1; togo1 <= max_togo; togo1++)
-      phase2(depth, dist1, togo1);
-
-    return 0;
+    int tmp = std::max(
+      getCornSlicePrun(cperm[depth], sslice[depth]),
+      getCornEdPrun(cperm[depth], udedges[depth])
+    );
+    for (int togo1 = tmp; togo1 <= max_togo; togo1++)
+      phase2(depth, togo1);
+    return;
   }
 
   // Discard shorter phase 1 solutions -> loses optimality but slight speedup
   if (dist == 0)
-    return  0;
+    return;
   for (int m = 0; m < N_MOVES; m++) {
     if (depth > 0 && skip_move[moves[depth - 1]][m])
       continue;
@@ -123,21 +121,10 @@ int TwoPhaseSolver::phase1(int depth, int dist, int togo) {
     sslice[depth + 1] = sslice_move[sslice[depth]][m];
     twist[depth + 1] = twist_move[twist[depth]][m];
 
-    CCoord fslice = FSLICE(
-      flip[depth + 1], SS_SLICE(sslice[depth + 1])
-    );
-    CCoord fstwist = FSTWIST(
-      COORD(fslice_sym[fslice]),
-      conj_twist[twist[depth + 1]][SYM(fslice_sym[fslice])]
-    );
-    int dist1 = next_dist[dist][getPrun3(fstwist_prun3, fstwist)];
-
+    int dist1 = next_dist[dist][getFSTwistPrun3(flip[depth + 1], sslice[depth + 1], twist[depth + 1])];
     if (dist1 < togo) {
       moves[depth] = m;
-      if (phase1(depth + 1, dist1, togo - 1) == 1)
-        m = kAxisEnd[m];
-      if (done)
-        return 0;
+      phase1(depth + 1, dist1, togo - 1);
     }
   }
 
@@ -146,11 +133,9 @@ int TwoPhaseSolver::phase1(int depth, int dist, int togo) {
   // We need to check this individually as `cperm_depth` might be updated considerably more often
   if (udedges_depth == depth)
     udedges_depth--;
-
-  return 0;
 }
 
-void TwoPhaseSolver::phase2(int depth, int dist, int togo) {
+void TwoPhaseSolver::phase2(int depth, int togo) {
   if (done)
     return;
 
@@ -189,19 +174,10 @@ void TwoPhaseSolver::phase2(int depth, int dist, int togo) {
     cperm[depth + 1] = cperm_move[cperm[depth]][kPhase2Moves[m]];
     udedges[depth + 1] = udedges_move2[udedges[depth]][m];
 
-    CCoord corned = CORNED(
-      COORD(cperm_sym[cperm[depth + 1]]),
-      conj_udedges[udedges[depth + 1]][SYM(cperm_sym[cperm[depth + 1]])]
-    );
-    int dist1 = next_dist[dist][getPrun3(corned_prun3, corned)];
-
-    int tmp = cornslice_prun[CORNSLICE(cperm[depth + 1], sslice[depth + 1])];
-    if (std::max(dist1, tmp) < togo) {
-      // There are generally rather few `phase2()` calls, hence axis skipping is not worth it here
+    int tmp = getCornEdPrun(cperm[depth + 1], udedges[depth + 1]);
+    if (std::max(tmp, getCornSlicePrun(cperm[depth + 1], sslice[depth + 1])) < togo) {
       moves[depth] = kPhase2Moves[m];
-      phase2(depth + 1, dist1, togo - 1);
-      if (done)
-        return;
+      phase2(depth + 1, togo - 1);
     }
   }
 }
@@ -272,7 +248,7 @@ void initTwophase(bool file) {
 
   if (!file) {
     initFSTwistPrun3();
-    initCornUDPrun3();
+    initCornEdPrun();
     initCornSlicePrun();
     return;
   }
@@ -281,20 +257,20 @@ void initTwophase(bool file) {
 
   if (f == NULL) {
     initFSTwistPrun3();
-    initCornUDPrun3();
+    initCornEdPrun();
     initCornSlicePrun();
 
     f = fopen(FILE_TWOPHASE, "wb");
     // Use `tmp` to avoid nasty warnings; not clean but we don't want to make this part to complicated
     int tmp = fwrite(fstwist_prun3, sizeof(uint64_t), N_FSTWIST / 32 + 1, f);
-    tmp = fwrite(corned_prun3, sizeof(uint64_t), N_CORNED / 32 + 1, f);
+    tmp = fwrite(corned_prun, sizeof(uint64_t), N_CORNED / 16 + 1, f);
     tmp = fwrite(cornslice_prun, sizeof(uint8_t), N_CORNSLICE, f);
   } else {
     fstwist_prun3 = new uint64_t[N_FSTWIST / 32 + 1];
-    corned_prun3 = new uint64_t[N_CORNED / 32 + 1];
+    corned_prun = new uint64_t[N_CORNED / 16 + 1];
     cornslice_prun = new uint8_t[N_CORNSLICE];
     int tmp = fread(fstwist_prun3, sizeof(uint64_t), N_FSTWIST / 32 + 1, f);
-    tmp = fread(corned_prun3, sizeof(uint64_t), N_CORNED / 32 + 1, f);
+    tmp = fread(corned_prun, sizeof(uint64_t), N_CORNED / 16 + 1, f);
     tmp = fread(cornslice_prun, sizeof(uint8_t), N_CORNSLICE, f);
   }
 

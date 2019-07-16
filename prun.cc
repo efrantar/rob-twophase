@@ -6,19 +6,18 @@
 
 #ifdef FACES5
   #define BACKSEARCH_DEPTH 10
-  #define MAX_DEPTH_P2 12
 #else
   #define BACKSEARCH_DEPTH 9
-  #define MAX_DEPTH_P2 10
 #endif
 
-#define EMPTY 0x3
+#define EMPTY2 0x3
+#define EMPTY4 0xf
 #define EMPTY_CELL ~uint64_t(0)
 
 int (*next_dist)[3];
 
 uint64_t *fstwist_prun3;
-uint64_t *corned_prun3;
+uint64_t *corned_prun;
 uint8_t *cornslice_prun;
 
 static bool init() {
@@ -33,15 +32,26 @@ static bool init() {
 }
 static bool inited = init();
 
-int getPrun3(uint64_t *prun3, CCoord c) {
-  uint64_t tmp = prun3[c / 32];
+int getFSTwistPrun3(CCoord c) {
+  uint64_t tmp = fstwist_prun3[c / 32];
   tmp >>= (c % 32) * 2;
-  return tmp & EMPTY;
+  return tmp & EMPTY2;
 }
 
-void setPrun3(uint64_t *prun3, CCoord c, int dist) {
+void setFSTwistPrun3(CCoord c, int dist) {
   int shift = (c % 32) * 2;
-  prun3[c / 32] &= ~(uint64_t(EMPTY) << shift) | (uint64_t(dist % 3) << shift);
+  fstwist_prun3[c / 32] &= ~(uint64_t(EMPTY2) << shift) | (uint64_t(dist % 3) << shift);
+}
+
+int getCornEdPrun(CCoord c) {
+  uint64_t tmp = corned_prun[c / 16];
+  tmp >>= (c % 16) * 4;
+  return tmp & EMPTY4;
+}
+
+void setCornEdPrun(CCoord c, int dist) {
+  int shift = (c % 16) * 4;
+  corned_prun[c / 16] &= ~(uint64_t(EMPTY4) << shift) | (uint64_t(dist) << shift);
 }
 
 int getFSTwistDist(Coord flip, Coord sslice, Coord twist) {
@@ -50,7 +60,7 @@ int getFSTwistDist(Coord flip, Coord sslice, Coord twist) {
     COORD(fslice_sym[fslice]), conj_twist[twist][SYM(fslice_sym[fslice])]
   );
 
-  int depth3 = getPrun3(fstwist_prun3, fstwist);
+  int depth3 = getFSTwistPrun3(fstwist);
   int depth = 0;
 
   while (fstwist != 0) {
@@ -66,7 +76,7 @@ int getFSTwistDist(Coord flip, Coord sslice, Coord twist) {
       CCoord fstwist1 = FSTWIST(
         COORD(fslice_sym[fslice1]), conj_twist[twist1][SYM(fslice_sym[fslice1])]
       );
-      if (getPrun3(fstwist_prun3, fstwist1) == depth3 - 1) {
+      if (getFSTwistPrun3(fstwist1) == depth3 - 1) {
         flip = flip1;
         sslice = sslice1;
         twist = twist1;
@@ -82,40 +92,23 @@ int getFSTwistDist(Coord flip, Coord sslice, Coord twist) {
   return depth;
 }
 
-int getCornEdDist(Coord cperm, Coord udedges) {
+int getFSTwistPrun3(Coord flip, Coord sslice, Coord twist) {
+  CCoord fslice = FSLICE(flip, SS_SLICE(sslice));
+  CCoord fstwist = FSTWIST(
+    COORD(fslice_sym[fslice]), conj_twist[twist][SYM(fslice_sym[fslice])]
+  );
+  return getFSTwistPrun3(fstwist);
+}
+
+int getCornEdPrun(Coord cperm, Coord udedges) {
   CCoord corned = CORNED(
     COORD(cperm_sym[cperm]), conj_udedges[udedges][SYM(cperm_sym[cperm])]
   );
+  return getCornEdPrun(corned);
+}
 
-  int depth3 = getPrun3(corned_prun3, corned);
-  if (depth3 == EMPTY) // we do not fully fill the pruning table
-    return MAX_DEPTH_P2 + 1; // lower bound for actual pruning value
-
-  int depth = 0;
-  while (corned != 0) {
-    if (depth3 == 0)
-      depth3 = 3;
-
-    for (int m = 0; m < N_MOVES2; m++) {
-      Coord corners1 = cperm_move[cperm][kPhase2Moves[m]];
-      Coord udedges1 = udedges_move2[udedges][m];
-      CCoord corned1 = CORNED(
-        COORD(cperm_sym[corners1]), conj_udedges[udedges1][SYM(cperm_sym[corners1])]
-      );
-
-      if (getPrun3(corned_prun3, corned1) == depth3 - 1) {
-        cperm = corners1;
-        udedges = udedges1;
-        corned = corned1;
-        break;
-      }
-    }
-
-    depth3--;
-    depth++;
-  }
-
-  return depth;
+int getCornSlicePrun(Coord cperm, Coord sslice) {
+  return cornslice_prun[CORNSLICE(cperm, sslice)];
 }
 
 void initFSTwistPrun3() {
@@ -127,7 +120,7 @@ void initFSTwistPrun3() {
   auto *done = new std::bitset<N_FSTWIST>(); // need to keep track of already expanded notes (table only stores mod 3)
   bool backsearch = false;
 
-  setPrun3(fstwist_prun3, 0, 0);
+  setFSTwistPrun3(0, 0);
   while (count < N_FSTWIST) {
     CCoord c = 0; // increment this in the inner loop to avoid always recomputing the index
     int depth3 = depth % 3;
@@ -147,10 +140,10 @@ void initFSTwistPrun3() {
             c += tmp;
             continue;
           }
-          if (done->test(c) || getPrun3(fstwist_prun3, c) != depth3)
+          if (done->test(c) || getFSTwistPrun3(c) != depth3)
             continue;
           done->set(c);
-        } else if (getPrun3(fstwist_prun3, c) != EMPTY)
+        } else if (getFSTwistPrun3(c) != EMPTY2)
           continue;
 
         for (int m = 0; m < N_MOVES; m++) {
@@ -164,23 +157,23 @@ void initFSTwistPrun3() {
           CCoord c1 = FSTWIST(fssym1, twist1);
 
           if (backsearch) {
-            if (getPrun3(fstwist_prun3, c1) != depth3)
+            if (getFSTwistPrun3(c1) != depth3)
               continue;
-            setPrun3(fstwist_prun3, c, depth + 1);
+            setFSTwistPrun3(c, depth + 1);
             count++;
             break; // self-symmetries are not applicable during backsearch
-          } else if (getPrun3(fstwist_prun3, c1) != EMPTY)
+          } else if (getFSTwistPrun3(c1) != EMPTY2)
             continue;
      
-          setPrun3(fstwist_prun3, c1, depth + 1);
+          setFSTwistPrun3(c1, depth + 1);
           count++;
             
           int selfs = fslice_selfs[fssym1] >> 1;
           for (int s = 1; selfs > 0; selfs >>= 1, s++) { // bit 0 is always on -> > 0 to save an iteration
             if (selfs & 1) {
               CCoord c2 = FSTWIST(fssym1, conj_twist[twist1][s]);
-              if (getPrun3(fstwist_prun3, c2) == EMPTY) {
-                setPrun3(fstwist_prun3, c2, depth + 1);
+              if (getFSTwistPrun3(c2) == EMPTY2) {
+                setFSTwistPrun3(c2, depth + 1);
                 done->set(c2); // expanding self-symmetries is redundant
                 count++;
               }
@@ -198,30 +191,27 @@ void initFSTwistPrun3() {
   delete done;
 }
 
-void initCornUDPrun3() {
-  corned_prun3 = new uint64_t[N_CORNED / 32 + 1];
-  std::fill(corned_prun3, corned_prun3 + N_CORNED / 32 + 1, EMPTY_CELL);
+void initCornEdPrun() {
+  corned_prun = new uint64_t[N_CORNED / 16 + 1];
+  std::fill(corned_prun, corned_prun + N_CORNED / 16 + 1, EMPTY_CELL);
 
+  setCornEdPrun(0, 0);
   int count = 1;
   int depth = 0;
-  auto *done = new std::bitset<N_CORNED>();
 
-  setPrun3(corned_prun3, 0, 0);
   while (depth < MAX_DEPTH_P2) {
     CCoord c = 0;
-    int depth3 = depth % 3;
 
     for (Coord csym = 0; csym < N_CPERM_SYM; csym++) {
       for (Coord udedges = 0; udedges < N_UDEDGES2; udedges++, c++) {
-        if (c % 32 == 0 && corned_prun3[c / 32] == EMPTY_CELL) {
-          int tmp = std::min(31, N_UDEDGES2 - udedges - 1);
+        if (c % 16 == 0 && corned_prun[c / 16] == EMPTY_CELL) {
+          int tmp = std::min(15, N_UDEDGES2 - udedges - 1);
           udedges += tmp;
           c += tmp;
           continue;
         }
-        if (done->test(c) || getPrun3(corned_prun3, c) != depth3)
+        if (getCornEdPrun(c) != depth)
           continue;
-        done->set(c);
 
         for (int m = 0; m < N_MOVES2; m++) {
           Coord corners1 = cperm_move[cperm_raw[csym]][kPhase2Moves[m]];
@@ -230,19 +220,17 @@ void initCornUDPrun3() {
           udedges1 = conj_udedges[udedges1][SYM(cperm_sym[corners1])];
           CCoord c1 = CORNED(csym1, udedges1);
 
-          if (getPrun3(corned_prun3, c1) != EMPTY)
+          if (getCornEdPrun(c1) != EMPTY4)
             continue;
-    
-          setPrun3(corned_prun3, c1, depth + 1);
+          setCornEdPrun(c1, depth + 1);
           count++;
-            
+
           int selfs = cperm_selfs[csym1] >> 1;
           for (int s = 1; selfs > 0; selfs >>= 1, s++) {
             if (selfs & 1) {
               CCoord c2 = CORNED(csym1, conj_udedges[udedges1][s]);
-              if (getPrun3(corned_prun3, c2) == EMPTY) {
-                setPrun3(corned_prun3, c2, depth + 1);
-                done->set(c2);
+              if (getCornEdPrun(c2) == EMPTY4) {
+                setCornEdPrun(c2, depth + 1);
                 count++;
               }
             }
@@ -253,8 +241,6 @@ void initCornUDPrun3() {
 
     depth++;
   }
-
-  delete done;
 }
 
 // This table is rather small, hence we can populate it with standard BFS
