@@ -21,6 +21,7 @@
  */
 bool skip_move[N_MOVES][N_MOVES];
 
+/* TODO: fix for axial */
 static bool init() {
   for (int m1 = 0; m1 < N_MOVES; m1++) {
     for (int m2 = 0; m2 < N_MOVES; m2++) {

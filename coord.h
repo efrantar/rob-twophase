@@ -32,8 +32,6 @@
 #define SSLICE(slice) (slice * N_SSLICE2)
 #define SS_SLICE(sslice) (sslice / N_SSLICE2)
 
-#define DEDGES_SOLVED 1656 // only coordinate that is != 0 in solved state; TODO: remove eventually
-
 typedef uint16_t Coord;
 typedef uint32_t CCoord; // for combined coords
 

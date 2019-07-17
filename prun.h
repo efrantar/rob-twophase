@@ -16,7 +16,11 @@
 #ifdef FACES5
   #define MAX_DEPTH_P2 12
 #else
-  #define MAX_DEPTH_P2 10
+  #ifdef AXIAL
+    #define MAX_DEPTH_P2 6
+  #else
+    #define MAX_DEPTH_P2 10
+  #endif
 #endif
 
 #define FSTWIST(fssym, twist) (CCoord(fssym) * N_TWIST + twist)

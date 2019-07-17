@@ -7,7 +7,11 @@
 #ifdef FACES5
   #define BACKSEARCH_DEPTH 10
 #else
-  #define BACKSEARCH_DEPTH 9
+  #ifdef AXIAL
+    #define BACKSEARCH_DEPTH 6
+  #else
+    #define BACKSEARCH_DEPTH 9
+  #endif
 #endif
 
 #define EMPTY2 0x3

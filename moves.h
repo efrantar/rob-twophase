@@ -9,12 +9,24 @@
 #include "cubie.h"
 
 #ifdef FACES5
-  #define N_MOVES 15
-  #define N_MOVES2 9
+  #ifdef AXIAL
+    #define N_MOVES 33
+    #define N_MOVES2 18
+  #else
+    #define N_MOVES 15
+    #define N_MOVES2 9
+  #endif
 #else
-  #define N_MOVES 18
-  #define N_MOVES2 10
+  #ifdef AXIAL
+    #define N_MOVES 45
+    #define N_MOVES2 29
+  #else
+    #define N_MOVES 18
+    #define N_MOVES2 10
+  #endif
 #endif
+
+#define MAX_MOVES 45
 
 // Order s.t. / 3 gives axis and % 3 power; X1 clockwise, X3 counter-clockwise
 #define U1 0
@@ -36,43 +48,9 @@
 #define B2 16
 #define B3 17
 
-const std::string kMoveNames[] = {
-  "U", "U2", "U'",
-  "R", "R2", "R'",
-  "F", "F2", "F'",
-  "D", "D2", "D'",
-  "L", "L2", "L'",
-  "B", "B2", "B'"
-};
-
-const int kPhase2Moves[] = {
-  U1, U2, U3, R2, F2, D1, D2, D3, L2, B2
-};
-
-const bool kIsPhase2Move[] = {
-  true, true, true, false, true, false,
-  false, true, false, true, true, true,
-  false, true, false, false, true, false
-};
-
-const int kInvMove[] = {
-  U3, U2, U1,
-  R3, R2, R1,
-  F3, F2, F1,
-  D3, D2, D1,
-  L3, L2, L1,
-  B3, B2, B1
-};
-
-// Used for jumping to the next axis in the solver
-const int kAxisEnd[] = {
-  U3, U3, U3,
-  R3, R3, R3,
-  F3, F3, F3,
-  D3, D3, D3,
-  L3, L3, L3,
-  B3, B3, B3
-};
+extern std::string kMoveNames[MAX_MOVES];
+extern int kPhase2Moves[MAX_MOVES];
+extern int kInvMove[MAX_MOVES];
 
 const CubieCube kUCube = { 
   {UBR, URF, UFL, ULB, DFR, DLF, DBL, DRB},
@@ -107,6 +85,6 @@ const CubieCube kBCube = {
   {0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 1, 1}
 };
 
-extern CubieCube move_cubes[N_MOVES];
+extern CubieCube move_cubes[MAX_MOVES];
 
 #endif
