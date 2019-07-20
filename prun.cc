@@ -5,10 +5,14 @@
 #include <queue>
 
 #ifdef FACES5
-  #define BACKSEARCH_DEPTH 10
+  #ifdef AXIAL
+    #define BACKSEARCH_DEPTH 8
+  #else
+    #define BACKSEARCH_DEPTH 10
+  #endif
 #else
   #ifdef AXIAL
-    #define BACKSEARCH_DEPTH 6
+    #define BACKSEARCH_DEPTH 7
   #else
     #define BACKSEARCH_DEPTH 9
   #endif

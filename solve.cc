@@ -14,25 +14,6 @@
 #include "sym.h"
 #include "prun.h"
 
-/*
- * We always want to skip:
- * - Consecutive moves on the same axis
- * - Consecutive moves on parallel axes but in wrong (decreasing) order
- */
-bool skip_move[N_MOVES][N_MOVES];
-
-/* TODO: fix for axial */
-static bool init() {
-  for (int m1 = 0; m1 < N_MOVES; m1++) {
-    for (int m2 = 0; m2 < N_MOVES; m2++) {
-      int axis_diff = m1 / 3 - m2 / 3;
-      skip_move[m1][m2] = axis_diff == 0 || axis_diff == 3;
-    }
-  }
-  return true;
-}
-static bool inited = init();
-
 std::mutex mutex; // lock for writing solutions
 bool done; // signal solver shutdown
 std::vector<int> sol; // global shared solution
@@ -115,7 +96,7 @@ void TwoPhaseSolver::phase1(int depth, int dist, int togo) {
   if (dist == 0)
     return;
   for (int m = 0; m < N_MOVES; m++) {
-    if (depth > 0 && skip_move[moves[depth - 1]][m])
+    if (depth > 0 && (skip_moves[moves[depth - 1]] & (1 << m)) != 0)
       continue;
 
     flip[depth + 1] = flip_move[flip[depth]][m];
@@ -151,7 +132,7 @@ void TwoPhaseSolver::phase2(int depth, int togo) {
 
       if (inv_) {
         for (int i = 0; i < depth; i++)
-          sol[i] = kInvMove[sol[i]];
+          sol[i] = inv_move[sol[i]];
         std::reverse(sol.begin(), sol.end());
       }
       if (rot > 0) {
@@ -168,7 +149,7 @@ void TwoPhaseSolver::phase2(int depth, int togo) {
   }
 
   for (int m = 0; m < N_MOVES2; m++) {
-    if (depth > 0 && skip_move[moves[depth - 1]][kPhase2Moves[m]])
+    if (depth > 0 && (skip_moves[moves[depth - 1]] & (1 << kPhase2Moves[m])) != 0)
       continue;
 
     sslice[depth + 1] = sslice_move[sslice[depth]][kPhase2Moves[m]];
@@ -281,7 +262,7 @@ void initTwophase(bool file) {
 std::string solToStr(const std::vector<int> &sol) {
   std::ostringstream ss;
   for (int i = 0; i < sol.size(); i++) {
-    ss << kMoveNames[sol[i]];
+    ss << move_names[sol[i]];
     if (i != sol.size() - 1)
       ss << " ";
   }

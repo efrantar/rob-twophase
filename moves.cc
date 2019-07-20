@@ -1,69 +1,94 @@
 #include "moves.h"
 #include "cubie.h"
 
-std::string kMoveNames[MAX_MOVES] = {
+#ifdef FACES5
+  #define N_SIMPLE 15
+#else
+  #define N_SIMPLE 18
+#endif
+
+int kPhase2Moves[N_MOVES2];
+
+std::string move_names[N_MOVES] = {
   "U", "U2", "U'",
   "R", "R2", "R'",
   "F", "F2", "F'",
   "D", "D2", "D'",
   "L", "L2", "L'",
-  "B", "B2", "B'"
+  #ifndef FACES5
+    "B", "B2", "B'",
+  #endif
 };
 
-int kPhase2Moves[MAX_MOVES] = {
-  U1, U2, U3, R2, F2, D1, D2, D3, L2, B2
-};
+int inv_move[N_MOVES];
+MoveSet skip_moves[N_MOVES];
 
-int kInvMove[MAX_MOVES] = {
-  U3, U2, U1,
-  R3, R2, R1,
-  F3, F2, F1,
-  D3, D2, D1,
-  L3, L2, L1,
-  B3, B2, B1
-};
-
-CubieCube move_cubes[MAX_MOVES];
+CubieCube move_cubes[N_MOVES];
 
 static bool init() {
-  int n_phase1 = 18;
-  int n_phase2 = 10;
-  #ifdef FACES5
-    n_phase1 = 15;
-    n_phase2 = 9;
+  move_cubes[0] = kUCube;
+  move_cubes[3] = kRCube;
+  move_cubes[6] = kFCube;
+  move_cubes[9] = kDCube;
+  move_cubes[12] = kLCube;
+  #ifndef FACES5
+      move_cubes[15] = kBCube;
   #endif
 
-  move_cubes[U1] = kUCube;
-  move_cubes[R1] = kRCube;
-  move_cubes[F1] = kFCube;
-  move_cubes[D1] = kDCube;
-  move_cubes[L1] = kLCube;
-  move_cubes[B1] = kBCube;
+  int m = 0;
+  int j = 0;
 
-  for (int i = 0; i < n_phase1; i += 3) {
-    mul(move_cubes[i], move_cubes[i], move_cubes[i + 1]);
-    mul(move_cubes[i + 1], move_cubes[i], move_cubes[i + 2]);
-  }
+  for (int ax = 0; ax < N_SIMPLE; ax += 3) {
+    for (int i = ax; i < ax + 3; i++)
+      skip_moves[m] |= 1 << i;
+    for (int i = N_SIMPLE + (ax % 3) * 9; i < N_SIMPLE + (ax % 3 + 1) * 9; i++)
+      skip_moves[m] |= 1 << i;
+    if (ax > 3) {
+      for (int i = ax - 3 * 3; i < ax - 3 * 3 + 3; i++)
+        skip_moves[m] |= 1 << i;
+    }
 
-  int i = n_phase1;
-  int j = n_phase2;
-  for (int ax1 = U1; ax1 <= F1; ax1 += 3) {
-    #ifdef FACES5
-        if (ax1 == F1)
-          continue;
-    #endif
-    int ax2 = 3 * (ax1 + 3);
-    for (int pow1 = 0; pow1 < 3; pow1++) {
-      for (int pow2 = 0; pow2 < 3; pow2++) {
-        kMoveNames[i] = kMoveNames[ax1] + " " + kMoveNames[ax2];
-        if (ax1 == U1 || (pow1 != 1 && pow2 != 1))
-          kPhase2Moves[j++] = i;
-        kInvMove[i] = n_phase1 + (ax1 / 3) * 9 + 3 * (2 - pow1) + (2 - pow2);
-        mul(move_cubes[ax1 + pow1], move_cubes[ax2 + pow2], move_cubes[i]);
-        i++;
-      }
+    for (int pow = 0; pow < 3; pow++) {
+      inv_move[m] = ax + (2 - pow);
+      if (pow > 0)
+        mul(move_cubes[ax], move_cubes[ax + (pow - 1)], move_cubes[m]);
+      if (ax / 3 % 3 == 0 || pow == 1)
+        kPhase2Moves[j++] = m;
+      m++;
     }
   }
+  for (int i = 0; i < N_SIMPLE; i += 3) {
+    for (int j = 1; j < 3; j++)
+      skip_moves[i + j] = skip_moves[i];
+  }
+
+  #ifdef AXIAL
+    for (int ax1 = 0; ax1 <= N_SIMPLE / 2 - 3; ax1 += 3) {
+      int ax2 = ax1 + 3 * 3;
+
+      for (int i = ax1; i < ax1 + 3; i++)
+        skip_moves[m] |= 1 << i;
+      for (int i = ax2; i < ax2 + 3; i++)
+        skip_moves[m] |= 1 << i;
+      for (int i = N_SIMPLE + (ax1 / 3) * 9; i < N_SIMPLE + ((ax1 / 3) + 1) * 9; i++)
+        skip_moves[m] |= 1 << i;
+
+      for (int pow1 = 0; pow1 < 3; pow1++) {
+        for (int pow2 = 0; pow2 < 3; pow2++) {
+          move_names[m] = move_names[ax1 + pow1] + " " + move_names[ax2 + pow2];
+          inv_move[m] = N_SIMPLE + (ax1 / 3) * 9 + 3 * (2 - pow1) + (2 - pow2);
+          mul(move_cubes[ax1 + pow1], move_cubes[ax2 + pow2], move_cubes[m]);
+          if (ax1 == 0 || (pow1 == 1 && pow2 == 1))
+            kPhase2Moves[j++] = m;
+          m++;
+        }
+      }
+    }
+    for (int i = N_SIMPLE; i < N_MOVES; i += 9) {
+      for (int j = 1; j < 9; j++)
+        skip_moves[i + j] = skip_moves[i];
+    }
+  #endif
 
   return true;
 }

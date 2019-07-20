@@ -11,7 +11,7 @@
 #ifdef FACES5
   #ifdef AXIAL
     #define N_MOVES 33
-    #define N_MOVES2 18
+    #define N_MOVES2 20
   #else
     #define N_MOVES 15
     #define N_MOVES2 9
@@ -19,38 +19,20 @@
 #else
   #ifdef AXIAL
     #define N_MOVES 45
-    #define N_MOVES2 29
+    #define N_MOVES2 21
   #else
     #define N_MOVES 18
     #define N_MOVES2 10
   #endif
 #endif
 
-#define MAX_MOVES 45
+typedef uint64_t MoveSet;
 
-// Order s.t. / 3 gives axis and % 3 power; X1 clockwise, X3 counter-clockwise
-#define U1 0
-#define U2 1
-#define U3 2
-#define R1 3
-#define R2 4
-#define R3 5
-#define F1 6
-#define F2 7
-#define F3 8
-#define D1 9
-#define D2 10
-#define D3 11
-#define L1 12
-#define L2 13
-#define L3 14
-#define B1 15
-#define B2 16
-#define B3 17
+extern int kPhase2Moves[N_MOVES2];
 
-extern std::string kMoveNames[MAX_MOVES];
-extern int kPhase2Moves[MAX_MOVES];
-extern int kInvMove[MAX_MOVES];
+extern std::string move_names[N_MOVES];
+extern int inv_move[N_MOVES];
+extern MoveSet skip_moves[N_MOVES];
 
 const CubieCube kUCube = { 
   {UBR, URF, UFL, ULB, DFR, DLF, DBL, DRB},
@@ -85,6 +67,6 @@ const CubieCube kBCube = {
   {0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 1, 1}
 };
 
-extern CubieCube move_cubes[MAX_MOVES];
+extern CubieCube move_cubes[N_MOVES];
 
 #endif
