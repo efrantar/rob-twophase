@@ -32,7 +32,7 @@ extern int moves2[N_MOVES2];
 
 extern std::string move_names[N_MOVES];
 extern int inv_move[N_MOVES];
-extern MoveSet skip_moves[N_MOVES];
+extern MoveSet skip_moves[N_MOVES + 1];
 extern int qtm[N_MOVES];
 extern int axis[N_MOVES];
 

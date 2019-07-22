@@ -49,6 +49,7 @@ void TwoPhaseSolver::solve(const CubieCube &cube) {
   uedges[0] = getUEdges(cube1);
   dedges[0] = getDEdges(cube1);
   cperm[0] = getCPerm(cube1);
+  moves[0] = N_MOVES;
 
   cperm_depth = 0;
   udedges_depth = 0;
@@ -68,7 +69,7 @@ void TwoPhaseSolver::phase1(int depth, int dist, int togo) {
 
   if (togo == 0) {
     for (int i = cperm_depth + 1; i <= depth; i++)
-      cperm[i] = cperm_move[cperm[i - 1]][moves[i - 1]];
+      cperm[i] = cperm_move[cperm[i - 1]][moves[i]];
     cperm_depth = depth - 1;
 
     // We ignore phase 2 solutions that are longer than `MAX_DIST_P2` moves
@@ -77,8 +78,8 @@ void TwoPhaseSolver::phase1(int depth, int dist, int togo) {
       return;
 
     for (int i = udedges_depth + 1; i <= depth; i++) {
-      uedges[i] = uedges_move[uedges[i - 1]][moves[i - 1]];
-      dedges[i] = dedges_move[dedges[i - 1]][moves[i - 1]];
+      uedges[i] = uedges_move[uedges[i - 1]][moves[i]];
+      dedges[i] = dedges_move[dedges[i - 1]][moves[i]];
     }
     udedges_depth = depth - 1;
     udedges[depth] = UDEDGES(uedges[depth], dedges[depth]);
@@ -102,7 +103,7 @@ void TwoPhaseSolver::phase1(int depth, int dist, int togo) {
       if (qtm[m] != 0)
         continue;
     #endif
-    if (depth > 0 && (skip_moves[moves[depth - 1]] & (1 << m)) != 0)
+    if ((skip_moves[moves[depth]] & (1 << m)) != 0)
       continue;
 
     flip[depth + 1] = flip_move[flip[depth]][m];
@@ -111,7 +112,7 @@ void TwoPhaseSolver::phase1(int depth, int dist, int togo) {
 
     int dist1 = next_dist[dist][getFSTwistPrun3(flip[depth + 1], sslice[depth + 1], twist[depth + 1])];
     if (dist1 < togo) {
-      moves[depth] = m;
+      moves[depth + 1] = m;
       phase1(depth + 1, dist1, togo - 1);
     }
   }
@@ -133,7 +134,7 @@ int TwoPhaseSolver::phase2(int depth, int togo) {
     if (depth < len) {
       sol.resize(depth);
       for (int i = 0; i < depth; i++)
-        sol[i] = moves[i];
+        sol[i] = moves[i + 1];
       len = depth; // update so that other threads can already search for shorter solutions
 
       if (inv_) {
@@ -162,7 +163,7 @@ int TwoPhaseSolver::phase2(int depth, int togo) {
       if (qtm[m] > 1)
         continue;
     #endif
-    if (depth > 0 && (skip_moves[moves[depth - 1]] & (1 << moves2[m])) != 0)
+    if ((skip_moves[moves[depth]] & (1 << moves2[m])) != 0)
       continue;
 
     int depth1 = depth;
@@ -180,11 +181,11 @@ int TwoPhaseSolver::phase2(int depth, int togo) {
 
     int tmp = getCornEdPrun(cperm[depth1 + 1], udedges[depth1 + 1]);
     if (std::max(tmp, getCornSlicePrun(cperm[depth1 + 1], sslice[depth1 + 1])) < togo1) {
-      moves[depth] = moves2[m];
+      moves[depth + 1] = moves2[m];
       #ifdef QTM
         if (qtm[moves2[m]] == 1) {
-          moves[depth] = axis[moves2[m]];
-          moves[depth + 1] = axis[moves2[m]];
+          moves[depth1] = axis[moves2[m]];
+          moves[depth1 + 1] = axis[moves2[m]];
         }
       #endif
       if (phase2(depth1 + 1, togo1 - 1) == 1)

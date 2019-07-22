@@ -21,7 +21,7 @@ std::string move_names[N_MOVES] = {
 };
 
 int inv_move[N_MOVES];
-MoveSet skip_moves[N_MOVES];
+MoveSet skip_moves[N_MOVES + 1];
 int qtm[N_MOVES];
 int axis[N_MOVES];
 
@@ -111,6 +111,7 @@ static bool init() {
     for (int i = 0; i < 9; i++)
       axis[ax + i] = ax;
   }
+  skip_moves[N_MOVES] = 0;
 
   return true;
 }
