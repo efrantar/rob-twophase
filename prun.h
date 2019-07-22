@@ -13,16 +13,6 @@
 #define N_CORNED (N_CPERM_SYM * N_UDEDGES2)
 #define N_CORNSLICE (N_CPERM * N_SSLICE2)
 
-#ifdef FACES5
-  #define MAX_DIST_P2 12
-#else
-  #ifdef QTM
-    #define MAX_DIST_P2 20
-  #else
-    #define MAX_DIST_P2 10
-  #endif
-#endif
-
 #define FSTWIST(fssym, twist) (CCoord(fssym) * N_TWIST + twist)
 #define CORNED(csym, udedges) (CCoord(csym) * N_UDEDGES2 + udedges)
 

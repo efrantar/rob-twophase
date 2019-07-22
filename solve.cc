@@ -72,9 +72,7 @@ void TwoPhaseSolver::phase1(int depth, int dist, int togo) {
       cperm[i] = cperm_move[cperm[i - 1]][moves[i]];
     cperm_depth = depth - 1;
 
-    // We ignore phase 2 solutions that are longer than `MAX_DIST_P2` moves
-    int max_togo = std::min(len - 1 - depth, MAX_DIST_P2);
-    if (getCornSlicePrun(cperm[depth], sslice[depth]) > max_togo)
+    if (getCornSlicePrun(cperm[depth], sslice[depth]) > len - 1 - depth)
       return;
 
     for (int i = udedges_depth + 1; i <= depth; i++) {
@@ -88,8 +86,8 @@ void TwoPhaseSolver::phase1(int depth, int dist, int togo) {
       getCornSlicePrun(cperm[depth], sslice[depth]),
       getCornEdPrun(cperm[depth], udedges[depth])
     );
-    for (int togo1 = tmp; togo1 <= std::min(len - 1 - depth, MAX_DIST_P2); togo1++) {
-      if (phase2(depth, togo1) == 1)
+    for (int togo1 = tmp; togo1 < len - depth; togo1++) {
+      if (phase2(depth, togo1))
         return;
     }
     return;
@@ -124,9 +122,9 @@ void TwoPhaseSolver::phase1(int depth, int dist, int togo) {
     udedges_depth--;
 }
 
-int TwoPhaseSolver::phase2(int depth, int togo) {
+bool TwoPhaseSolver::phase2(int depth, int togo) {
   if (done)
-    return 0;
+    return false;
 
   if (togo == 0) {
     mutex.lock();
@@ -151,11 +149,11 @@ int TwoPhaseSolver::phase2(int depth, int togo) {
         done = true;
 
       mutex.unlock();
-      return 1;
+      return true;
     }
 
     mutex.unlock();
-    return 0;
+    return false;
   }
 
   for (int m = 0; m < N_MOVES2; m++) {
@@ -189,11 +187,11 @@ int TwoPhaseSolver::phase2(int depth, int togo) {
         }
       #endif
       if (phase2(depth1 + 1, togo1 - 1) == 1)
-        return 1;
+        return true;
     }
   }
 
-  return 0;
+  return false;
 }
 
 int twophase(const CubieCube &cube, int max_depth1, int timelimit, std::vector<int> &sol1) {

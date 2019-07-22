@@ -35,7 +35,7 @@ class TwoPhaseSolver {
     int moves[N];
 
     void phase1(int depth, int dist, int togo);
-    int phase2(int depth, int togo);
+    bool phase2(int depth, int togo);
 
   public:
     TwoPhaseSolver(int rot, bool inv);

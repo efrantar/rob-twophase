@@ -4,23 +4,7 @@
 #include <bitset>
 #include <queue>
 
-#ifdef FACES5
-  #ifdef AXIAL
-    #define BACKSEARCH_DEPTH 8
-  #else
-    #define BACKSEARCH_DEPTH 10
-  #endif
-#else
-  #ifdef AXIAL
-    #define BACKSEARCH_DEPTH 7
-  #else
-    #ifdef QTM
-      #define BACKSEARCH_DEPTH 10
-    #else
-      #define BACKSEARCH_DEPTH 9
-    #endif
-  #endif
-#endif
+#define BACKSEARCH_PERCENT 0.2
 
 #define EMPTY2 0x3
 #define EMPTY8 0xff
@@ -139,7 +123,6 @@ void initFSTwistPrun3() {
 
   setFSTwistPrun3(0, 0);
   while (count < N_FSTWIST) {
-    std::cout << count << "\n";
     CCoord c = 0; // increment this in the inner loop to avoid always recomputing the index
     int depth3 = depth % 3;
 
@@ -207,8 +190,10 @@ void initFSTwistPrun3() {
     }
 
     depth++;
-    if (depth == BACKSEARCH_DEPTH)
+    if (count > N_FSTWIST * BACKSEARCH_PERCENT)
       backsearch = true;
+
+    std::cout << depth << " " << count << "\n";
   }
 
   delete done;
@@ -219,7 +204,7 @@ void initCornEdPrun() {
   std::fill(corned_prun, corned_prun + N_CORNED, EMPTY8);
 
   corned_prun[0] = 0;
-  for (int dist = 0, count = 0; dist < MAX_DIST_P2; dist++) {
+  for (int dist = 0, count = 0; count < N_CORNED; dist++) {
     CCoord c = 0;
     for (Coord csym = 0; csym < N_CPERM_SYM; csym++) {
       for (Coord udedges = 0; udedges < N_UDEDGES2; udedges++, c++) {
@@ -258,7 +243,7 @@ void initCornEdPrun() {
         }
       }
     }
-    std::cout << count << "\n";
+    std::cout << dist << " " << count << "\n";
   }
 }
 
