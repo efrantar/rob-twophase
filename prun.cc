@@ -14,18 +14,22 @@
   #ifdef AXIAL
     #define BACKSEARCH_DEPTH 7
   #else
-    #define BACKSEARCH_DEPTH 9
+    #ifdef QTM
+      #define BACKSEARCH_DEPTH 10
+    #else
+      #define BACKSEARCH_DEPTH 9
+    #endif
   #endif
 #endif
 
 #define EMPTY2 0x3
-#define EMPTY4 0xf
+#define EMPTY8 0xff
 #define EMPTY_CELL ~uint64_t(0)
 
 int (*next_dist)[3];
 
 uint64_t *fstwist_prun3;
-uint64_t *corned_prun;
+uint8_t *corned_prun;
 uint8_t *cornslice_prun;
 
 static bool init() {
@@ -54,12 +58,12 @@ void setFSTwistPrun3(CCoord c, int dist) {
 int getCornEdPrun(CCoord c) {
   uint64_t tmp = corned_prun[c / 16];
   tmp >>= (c % 16) * 4;
-  return tmp & EMPTY4;
+  return tmp & EMPTY8;
 }
 
 void setCornEdPrun(CCoord c, int dist) {
   int shift = (c % 16) * 4;
-  corned_prun[c / 16] &= ~(uint64_t(EMPTY4) << shift) | (uint64_t(dist) << shift);
+  corned_prun[c / 16] &= ~(uint64_t(EMPTY8) << shift) | (uint64_t(dist) << shift);
 }
 
 int getFSTwistDist(Coord flip, Coord sslice, Coord twist) {
@@ -76,6 +80,11 @@ int getFSTwistDist(Coord flip, Coord sslice, Coord twist) {
       depth3 = 3;
 
     for (int m = 0; m < N_MOVES; m++) {
+      #ifdef QTM
+        if (qtm[m] != 0)
+          continue;
+      #endif
+
       Coord flip1 = flip_move[flip][m];
       Coord sslice1 = sslice_move[sslice][m];
       Coord twist1 = twist_move[twist][m];
@@ -112,7 +121,7 @@ int getCornEdPrun(Coord cperm, Coord udedges) {
   CCoord corned = CORNED(
     COORD(cperm_sym[cperm]), conj_udedges[udedges][SYM(cperm_sym[cperm])]
   );
-  return getCornEdPrun(corned);
+  return corned_prun[corned];
 }
 
 int getCornSlicePrun(Coord cperm, Coord sslice) {
@@ -130,6 +139,7 @@ void initFSTwistPrun3() {
 
   setFSTwistPrun3(0, 0);
   while (count < N_FSTWIST) {
+    std::cout << count << "\n";
     CCoord c = 0; // increment this in the inner loop to avoid always recomputing the index
     int depth3 = depth % 3;
 
@@ -155,6 +165,11 @@ void initFSTwistPrun3() {
           continue;
 
         for (int m = 0; m < N_MOVES; m++) {
+          #ifdef QTM
+            if (qtm[m] != 0)
+              continue;
+          #endif
+
           Coord flip1 = flip_move[flip][m];
           Coord slice1 = sliceMove(slice, m);
           CCoord fslice1 = FSLICE(flip1, slice1);
@@ -200,80 +215,82 @@ void initFSTwistPrun3() {
 }
 
 void initCornEdPrun() {
-  corned_prun = new uint64_t[N_CORNED / 16 + 1];
-  std::fill(corned_prun, corned_prun + N_CORNED / 16 + 1, EMPTY_CELL);
+  corned_prun = new uint8_t[N_CORNED];
+  std::fill(corned_prun, corned_prun + N_CORNED, EMPTY8);
 
-  setCornEdPrun(0, 0);
-  int count = 1;
-  int depth = 0;
-
-  while (depth < MAX_DEPTH_P2) {
+  corned_prun[0] = 0;
+  for (int dist = 0, count = 0; dist < MAX_DIST_P2; dist++) {
     CCoord c = 0;
-
     for (Coord csym = 0; csym < N_CPERM_SYM; csym++) {
       for (Coord udedges = 0; udedges < N_UDEDGES2; udedges++, c++) {
-        if (c % 16 == 0 && corned_prun[c / 16] == EMPTY_CELL) {
-          int tmp = std::min(15, N_UDEDGES2 - udedges - 1);
-          udedges += tmp;
-          c += tmp;
+        if (corned_prun[c] != dist)
           continue;
-        }
-        if (getCornEdPrun(c) != depth)
-          continue;
+        count++;
 
         for (int m = 0; m < N_MOVES2; m++) {
-          Coord corners1 = cperm_move[cperm_raw[csym]][kPhase2Moves[m]];
+          #ifdef QTM
+            if (qtm[moves2[m]] > 1)
+                continue;
+          #endif
+
+          int dist1 = dist + 1;
+          #ifdef QTM
+            dist1 += qtm[moves2[m]];
+          #endif
+          Coord corners1 = cperm_move[cperm_raw[csym]][moves2[m]];
           Coord udedges1 = udedges_move2[udedges][m];
           Coord csym1 = COORD(cperm_sym[corners1]);
           udedges1 = conj_udedges[udedges1][SYM(cperm_sym[corners1])];
           CCoord c1 = CORNED(csym1, udedges1);
 
-          if (getCornEdPrun(c1) != EMPTY4)
+          if (corned_prun[c1] <= dist1)
             continue;
-          setCornEdPrun(c1, depth + 1);
-          count++;
+          corned_prun[c1] = dist1;
 
           int selfs = cperm_selfs[csym1] >> 1;
           for (int s = 1; selfs > 0; selfs >>= 1, s++) {
             if (selfs & 1) {
               CCoord c2 = CORNED(csym1, conj_udedges[udedges1][s]);
-              if (getCornEdPrun(c2) == EMPTY4) {
-                setCornEdPrun(c2, depth + 1);
-                count++;
-              }
+              if (corned_prun[c2] > dist1)
+                corned_prun[c2] = dist1;
             }
           }
         }
       }
     }
-
-    depth++;
+    std::cout << count << "\n";
   }
 }
 
-// This table is rather small, hence we can populate it with standard BFS
 void initCornSlicePrun() {
   cornslice_prun = new uint8_t[N_CORNSLICE];
-  std::fill(cornslice_prun, cornslice_prun + N_CORNSLICE, 0xff);
+  std::fill(cornslice_prun, cornslice_prun + N_CORNSLICE, EMPTY8);
 
-  std::queue<CCoord> q;
   cornslice_prun[0] = 0;
-  q.push(0);
-  
-  while (q.size() > 0) {
-    CCoord c = q.front();
-    q.pop();
-    Coord corners = CS_CORNERS(c);
-    Coord sslice = CS_SSLICE(c);
+  for (int dist = 0, count = 0; count < N_CORNSLICE; dist++) {
+    CCoord c = 0;
+    for (Coord cperm = 0; cperm < N_CPERM; cperm++) {
+      for (Coord sslice = 0; sslice < N_SSLICE2; sslice++, c++) {
+        if (cornslice_prun[c] != dist)
+          continue;
+        count++;
 
-    // Can't foreach through `kPhase2Moves` in 5-face mode
-    for (int m = 0; m < N_MOVES2; m++) {
-      CCoord c1 = CORNSLICE(
-        cperm_move[corners][kPhase2Moves[m]], sslice_move[sslice][kPhase2Moves[m]]
-      );
-      if (cornslice_prun[c1] == 0xff) {
-        cornslice_prun[c1] = cornslice_prun[c] + 1;
-        q.push(c1);
+        for (int m = 0; m < N_MOVES2; m++) {
+          #ifdef QTM
+            if (qtm[moves2[m]] > 1)
+              continue;
+          #endif
+
+          CCoord c1 = CORNSLICE(
+            cperm_move[cperm][moves2[m]], sslice_move[sslice][moves2[m]]
+          );
+          int dist1 = dist + 1;
+          #ifdef QTM
+            dist1 += qtm[moves2[m]];
+          #endif
+          if (cornslice_prun[c1] > dist1)
+            cornslice_prun[c1] = dist1;
+        }
       }
     }
   }

@@ -14,23 +14,25 @@
 #define N_CORNSLICE (N_CPERM * N_SSLICE2)
 
 #ifdef FACES5
-  #define MAX_DEPTH_P2 12
+  #define MAX_DIST_P2 12
 #else
-  #define MAX_DEPTH_P2 10
+  #ifdef QTM
+    #define MAX_DIST_P2 20
+  #else
+    #define MAX_DIST_P2 10
+  #endif
 #endif
 
 #define FSTWIST(fssym, twist) (CCoord(fssym) * N_TWIST + twist)
 #define CORNED(csym, udedges) (CCoord(csym) * N_UDEDGES2 + udedges)
 
 #define CORNSLICE(cperm, sslice) (CCoord(cperm) * N_SSLICE2 + sslice)
-#define CS_CORNERS(cornslice) (cornslice / N_SSLICE2)
-#define CS_SSLICE(cornslice) (cornslice % N_SSLICE2)
 
 // Get new dist from current dist and mod 3 pruning value
 extern int (*next_dist)[3];
 
 extern uint64_t *fstwist_prun3;
-extern uint64_t *corned_prun; // full resolution; 16 entries per cell
+extern uint8_t *corned_prun; // full resolution; 16 entries per cell
 extern uint8_t *cornslice_prun; // phase 2 precheck; comparatively small -> just 1 entry per cell
 
 int getFSTwistDist(Coord flip, Coord sslice, Coord twist);

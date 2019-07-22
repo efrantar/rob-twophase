@@ -251,7 +251,7 @@ void initUDEdgesMove2() {
   for (Coord c = 0; c < N_UDEDGES2; c++) {
     setUDEdges(cube1, c);
     for (int m = 0; m < N_MOVES2; m++) {
-      mulEdges(cube1, move_cubes[kPhase2Moves[m]], cube2);
+      mulEdges(cube1, move_cubes[moves2[m]], cube2);
       udedges_move2[c][m] = getUDEdges(cube2);
     }
   }

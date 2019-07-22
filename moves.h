@@ -28,11 +28,13 @@
 
 typedef uint64_t MoveSet;
 
-extern int kPhase2Moves[N_MOVES2];
+extern int moves2[N_MOVES2];
 
 extern std::string move_names[N_MOVES];
 extern int inv_move[N_MOVES];
 extern MoveSet skip_moves[N_MOVES];
+extern int qtm[N_MOVES];
+extern int axis[N_MOVES];
 
 const CubieCube kUCube = { 
   {UBR, URF, UFL, ULB, DFR, DLF, DBL, DRB},

@@ -7,7 +7,7 @@
   #define N_SIMPLE 18
 #endif
 
-int kPhase2Moves[N_MOVES2];
+int moves2[N_MOVES2];
 
 std::string move_names[N_MOVES] = {
   "U", "U2", "U'",
@@ -22,6 +22,8 @@ std::string move_names[N_MOVES] = {
 
 int inv_move[N_MOVES];
 MoveSet skip_moves[N_MOVES];
+int qtm[N_MOVES];
+int axis[N_MOVES];
 
 CubieCube move_cubes[N_MOVES];
 
@@ -37,6 +39,7 @@ static bool init() {
 
   int m = 0;
   int j = 0;
+  std::fill(qtm, qtm + N_MOVES, 0);
 
   for (int ax = 0; ax < N_SIMPLE; ax += 3) {
     for (int i = ax; i < ax + 3; i++)
@@ -53,7 +56,10 @@ static bool init() {
       if (pow > 0)
         mul(move_cubes[ax], move_cubes[ax + (pow - 1)], move_cubes[m]);
       if (ax / 3 % 3 == 0 || pow == 1)
-        kPhase2Moves[j++] = m;
+        moves2[j++] = m;
+      if (pow == 1)
+        qtm[m] = 2;
+      axis[m] = ax;
       m++;
     }
   }
@@ -79,7 +85,9 @@ static bool init() {
           inv_move[m] = N_SIMPLE + (ax1 / 3) * 9 + 3 * (2 - pow1) + (2 - pow2);
           mul(move_cubes[ax1 + pow1], move_cubes[ax2 + pow2], move_cubes[m]);
           if (ax1 == 0 || (pow1 == 1 && pow2 == 1))
-            kPhase2Moves[j++] = m;
+            moves2[j++] = m;
+          if (pow1 == 1 || pow2 == 1)
+            qtm[m] = 2;
           m++;
         }
       }
@@ -89,6 +97,20 @@ static bool init() {
         skip_moves[i + j] = skip_moves[i];
     }
   #endif
+
+  #ifdef QTM
+    for (int m = 0; m < N_MOVES; m++)
+      skip_moves[m] ^= 1 << m;
+  #endif
+  for (int i = 1; i < N_MOVES2; i++) {
+    if (moves2[i] - moves2[i - 1] == 1 || qtm[moves2[i]] == 0)
+      continue;
+    qtm[moves2[i]] = 1;
+  }
+  for (int ax = N_SIMPLE; ax <  N_MOVES; ax += 9) {
+    for (int i = 0; i < 9; i++)
+      axis[ax + i] = ax;
+  }
 
   return true;
 }

@@ -71,8 +71,8 @@ void TwoPhaseSolver::phase1(int depth, int dist, int togo) {
       cperm[i] = cperm_move[cperm[i - 1]][moves[i - 1]];
     cperm_depth = depth - 1;
 
-    // We ignore phase 2 solutions that are longer than `MAX_DEPTH_P2` moves
-    int max_togo = std::min(len - 1 - depth, MAX_DEPTH_P2);
+    // We ignore phase 2 solutions that are longer than `MAX_DIST_P2` moves
+    int max_togo = std::min(len - 1 - depth, MAX_DIST_P2);
     if (getCornSlicePrun(cperm[depth], sslice[depth]) > max_togo)
       return;
 
@@ -87,8 +87,10 @@ void TwoPhaseSolver::phase1(int depth, int dist, int togo) {
       getCornSlicePrun(cperm[depth], sslice[depth]),
       getCornEdPrun(cperm[depth], udedges[depth])
     );
-    for (int togo1 = tmp; togo1 <= max_togo; togo1++)
-      phase2(depth, togo1);
+    for (int togo1 = tmp; togo1 <= std::min(len - 1 - depth, MAX_DIST_P2); togo1++) {
+      if (phase2(depth, togo1) == 1)
+        return;
+    }
     return;
   }
 
@@ -96,6 +98,10 @@ void TwoPhaseSolver::phase1(int depth, int dist, int togo) {
   if (dist == 0)
     return;
   for (int m = 0; m < N_MOVES; m++) {
+    #ifdef QTM
+      if (qtm[m] != 0)
+        continue;
+    #endif
     if (depth > 0 && (skip_moves[moves[depth - 1]] & (1 << m)) != 0)
       continue;
 
@@ -117,9 +123,9 @@ void TwoPhaseSolver::phase1(int depth, int dist, int togo) {
     udedges_depth--;
 }
 
-void TwoPhaseSolver::phase2(int depth, int togo) {
+int TwoPhaseSolver::phase2(int depth, int togo) {
   if (done)
-    return;
+    return 0;
 
   if (togo == 0) {
     mutex.lock();
@@ -142,26 +148,51 @@ void TwoPhaseSolver::phase2(int depth, int togo) {
 
       if (depth <= max_depth) // keep searching if current solution exceeds max-depth
         done = true;
+
+      mutex.unlock();
+      return 1;
     }
 
     mutex.unlock();
-    return;
+    return 0;
   }
 
   for (int m = 0; m < N_MOVES2; m++) {
-    if (depth > 0 && (skip_moves[moves[depth - 1]] & (1 << kPhase2Moves[m])) != 0)
+    #ifdef QTM
+      if (qtm[m] > 1)
+        continue;
+    #endif
+    if (depth > 0 && (skip_moves[moves[depth - 1]] & (1 << moves2[m])) != 0)
       continue;
 
-    sslice[depth + 1] = sslice_move[sslice[depth]][kPhase2Moves[m]];
-    cperm[depth + 1] = cperm_move[cperm[depth]][kPhase2Moves[m]];
-    udedges[depth + 1] = udedges_move2[udedges[depth]][m];
+    int depth1 = depth;
+    int togo1 = togo;
+    #ifdef QTM
+      if (qtm[moves2[m]] == 1) {
+        depth1++;
+        togo1--;
+      }
+    #endif
 
-    int tmp = getCornEdPrun(cperm[depth + 1], udedges[depth + 1]);
-    if (std::max(tmp, getCornSlicePrun(cperm[depth + 1], sslice[depth + 1])) < togo) {
-      moves[depth] = kPhase2Moves[m];
-      phase2(depth + 1, togo - 1);
+    sslice[depth1 + 1] = sslice_move[sslice[depth]][moves2[m]];
+    cperm[depth1 + 1] = cperm_move[cperm[depth]][moves2[m]];
+    udedges[depth1 + 1] = udedges_move2[udedges[depth]][m];
+
+    int tmp = getCornEdPrun(cperm[depth1 + 1], udedges[depth1 + 1]);
+    if (std::max(tmp, getCornSlicePrun(cperm[depth1 + 1], sslice[depth1 + 1])) < togo1) {
+      moves[depth] = moves2[m];
+      #ifdef QTM
+        if (qtm[moves2[m]] == 1) {
+          moves[depth] = axis[moves2[m]];
+          moves[depth + 1] = axis[moves2[m]];
+        }
+      #endif
+      if (phase2(depth1 + 1, togo1 - 1) == 1)
+        return 1;
     }
   }
+
+  return 0;
 }
 
 int twophase(const CubieCube &cube, int max_depth1, int timelimit, std::vector<int> &sol1) {
@@ -245,14 +276,14 @@ void initTwophase(bool file) {
     f = fopen(FILE_TWOPHASE, "wb");
     // Use `tmp` to avoid nasty warnings; not clean but we don't want to make this part to complicated
     int tmp = fwrite(fstwist_prun3, sizeof(uint64_t), N_FSTWIST / 32 + 1, f);
-    tmp = fwrite(corned_prun, sizeof(uint64_t), N_CORNED / 16 + 1, f);
+    tmp = fwrite(corned_prun, sizeof(uint8_t), N_CORNED, f);
     tmp = fwrite(cornslice_prun, sizeof(uint8_t), N_CORNSLICE, f);
   } else {
     fstwist_prun3 = new uint64_t[N_FSTWIST / 32 + 1];
-    corned_prun = new uint64_t[N_CORNED / 16 + 1];
+    corned_prun = new uint8_t[N_CORNED];
     cornslice_prun = new uint8_t[N_CORNSLICE];
     int tmp = fread(fstwist_prun3, sizeof(uint64_t), N_FSTWIST / 32 + 1, f);
-    tmp = fread(corned_prun, sizeof(uint64_t), N_CORNED / 16 + 1, f);
+    tmp = fread(corned_prun, sizeof(uint8_t), N_CORNED, f);
     tmp = fread(cornslice_prun, sizeof(uint8_t), N_CORNSLICE, f);
   }
 

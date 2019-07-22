@@ -9,13 +9,9 @@
 #include <vector>
 #include "coord.h"
 
-#define N 35 // longer solutions will never be found
+#define N 50 // longer solutions will not be found in any metric
 
-#ifdef FACES5
-  #define FILE_TWOPHASE "twophase5.tbl"
-#else
-  #define FILE_TWOPHASE "twophase.tbl"
-#endif
+#define FILE_TWOPHASE "twophase.tbl"
 
 // Class as we want to search in parallel from multiple starting positions and every search needs its own variables
 class TwoPhaseSolver {
@@ -39,7 +35,7 @@ class TwoPhaseSolver {
     int moves[N];
 
     void phase1(int depth, int dist, int togo);
-    void phase2(int depth, int togo);
+    int phase2(int depth, int togo);
 
   public:
     TwoPhaseSolver(int rot, bool inv);
