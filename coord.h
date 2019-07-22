@@ -38,8 +38,7 @@ typedef uint32_t CCoord; // for combined coords
 extern Coord (*twist_move)[N_MOVES];
 extern Coord (*flip_move)[N_MOVES];
 extern Coord (*sslice_move)[N_MOVES];
-extern Coord (*uedges_move)[N_MOVES];
-extern Coord (*dedges_move)[N_MOVES];
+extern Coord (*edges4_move)[N_MOVES];
 extern Coord (*udedges_move2)[N_MOVES2]; // UDEDGES only used in phase 2
 extern Coord (*cperm_move)[N_MOVES];
 
@@ -63,8 +62,7 @@ void setCPerm(CubieCube &cube, Coord cperm);
 void initTwistMove();
 void initFlipMove();
 void initSSliceMove();
-void initUEdgesMove();
-void initDEdgesMove();
+void initEdges4Move();
 void initUDEdgesMove2();
 void initCPermMove();
 

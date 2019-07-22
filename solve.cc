@@ -78,8 +78,8 @@ void TwoPhaseSolver::phase1(int depth, int dist, int togo) {
       return;
 
     for (int i = udedges_depth + 1; i <= depth; i++) {
-      uedges[i] = uedges_move[uedges[i - 1]][moves[i]];
-      dedges[i] = dedges_move[dedges[i - 1]][moves[i]];
+      uedges[i] = edges4_move[uedges[i - 1]][moves[i]];
+      dedges[i] = edges4_move[dedges[i - 1]][moves[i]];
     }
     udedges_depth = depth - 1;
     udedges[depth] = UDEDGES(uedges[depth], dedges[depth]);
@@ -250,8 +250,7 @@ void initTwophase(bool file) {
   initTwistMove();
   initFlipMove();
   initSSliceMove();
-  initUEdgesMove();
-  initDEdgesMove();
+  initEdges4Move();
   initUDEdgesMove2();
   initCPermMove();
 

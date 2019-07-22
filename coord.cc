@@ -12,8 +12,7 @@
 Coord (*twist_move)[N_MOVES];
 Coord (*flip_move)[N_MOVES];
 Coord (*sslice_move)[N_MOVES];
-Coord (*uedges_move)[N_MOVES];
-Coord (*dedges_move)[N_MOVES];
+Coord (*edges4_move)[N_MOVES];
 Coord (*udedges_move2)[N_MOVES2];
 Coord (*cperm_move)[N_MOVES];
 
@@ -228,15 +227,9 @@ void initSSliceMove() {
   );
 }
 
-void initUEdgesMove() {
+void initEdges4Move() {
   initMoveCoord(
-    &uedges_move, N_UEDGES, getUEdges, setUEdges, mulEdges
-  );
-}
-
-void initDEdgesMove() {
-  initMoveCoord(
-    &dedges_move, N_DEDGES, getDEdges, setDEdges, mulEdges
+    &edges4_move, N_UEDGES, getUEdges, setUEdges, mulEdges
   );
 }
 

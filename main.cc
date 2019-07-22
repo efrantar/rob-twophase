@@ -73,8 +73,13 @@ void benchMoves(const std::vector<CubieCube> &cubes, int time) {
     twophase(cubes[i], -1, time, sol);
     if (!checkSol(cubes[i], sol))
       failed++;
-    else
-      moves.push_back(sol.size());
+    else {
+      // moves.push_back(sol.size());
+      int count = sol.size();
+      for (int m : sol)
+        count += qtm[m];
+      moves.push_back(count);
+    }
   }
 
   std::cout
