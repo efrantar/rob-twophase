@@ -97,7 +97,7 @@ void TwoPhaseSolver::phase1(int depth, int dist, int togo) {
   if (dist == 0)
     return;
   for (int m = 0; m < N_MOVES; m++) {
-    if ((movemasks[moves[depth]] & (MoveMask(1) << m)) == 0)
+    if ((movemasks[moves[depth]] & MOVEBIT(m)) == 0)
       continue;
 
     flip[depth + 1] = flip_move[flip[depth]][m];
@@ -157,13 +157,13 @@ bool TwoPhaseSolver::phase2(int depth, int togo) {
     int togo1 = togo;
 
     #ifdef QUARTER
-      if ((extra_movemask & (MoveMask(1) << moves2[m])) != 0) {
+      if ((extra_movemask & MOVEBIT(moves2[m])) != 0) {
         depth1++;
         togo1--;
-      } else if ((movemasks[moves[depth]] & (MoveMask(1) << moves2[m])) == 0)
+      } else if ((movemasks[moves[depth]] & MOVEBIT(moves2[m])) == 0)
         continue;
     #else
-      if ((movemasks[moves[depth]] & (MoveMask(1) << moves2[m])) == 0)
+      if ((movemasks[moves[depth]] & MOVEBIT(moves2[m])) == 0)
         continue;
     #endif
 

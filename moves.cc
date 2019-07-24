@@ -7,7 +7,7 @@ std::string move_names[N_MOVES];
 int inv_move[N_MOVES];
 int split[N_MOVES];
 MoveMask movemasks[N_MOVES + 1];
-MoveMask all_movemask = (MoveMask(1) << N_MOVES) - 1;
+MoveMask all_movemask = MOVEBIT(N_MOVES) - 1;
 MoveMask extra_movemask = 0;
 
 int moves2[N_MOVES2];
@@ -39,7 +39,7 @@ static bool init() {
       movemasks[i] &= ~(MoveMask(0x1ff) << (off[ax % 3 + 3] + 3));
     #endif
     if (ax % 3 != 0) {
-      extra_movemask |= MoveMask(1) << (off[ax] + 1);
+      extra_movemask |= MOVEBIT(off[ax] + 1);
       split[off[ax] + 1] = off[ax];
     }
 
@@ -57,12 +57,12 @@ static bool init() {
     }
 
     #ifdef QUARTER
-      all_movemask &= ~(MoveMask(1) << (off[ax] + 1));
+      all_movemask &= ~MOVEBIT(off[ax] + 1);
     #endif
   }
   #ifdef FACES5
     all_movemask &= ~(MoveMask(0x7) << off[5]);
-    extra_movemask ^= MoveMask(1) << (off[5] + 1);
+    extra_movemask ^= MOVEBIT(off[5] + 1);
   #endif
 
   #ifdef AXIAL
@@ -83,14 +83,14 @@ static bool init() {
           movemasks[i] = movemasks[off[ax2] + 3];
           #ifdef QUARTER
             if (pow1 == 1 || pow2 == 1)
-              all_movemask &= ~(MoveMask(1) << i);
+              all_movemask &= ~MOVEBIT(i);
             else {
-              movemasks[i1] |= MoveMask(1) << i;
-              movemasks[i2] |= MoveMask(1) << i;
+              movemasks[i1] |= MOVEBIT(i);
+              movemasks[i2] |= MOVEBIT(i);
             }
           #endif
           if (ax1 != 0 && pow1 == 1 && pow2 == 1) {
-            extra_movemask |= MoveMask(1) << i;
+            extra_movemask |= MOVEBIT(i);
             split[i] = i - 4;
           }
 
@@ -103,13 +103,13 @@ static bool init() {
     }
     #ifdef FACES5
       all_movemask &= ~(MoveMask(0x1ff) << (off[5] + 3));
-      extra_movemask ^= MoveMask(1) << (off[5] + 3 + 5);
+      extra_movemask ^= MOVEBIT(off[5] + 3 + 5);
     #endif
   #endif
 
   for (int m = 0; m < N_MOVES; m++) {
     #ifdef QUARTER
-      movemasks[m] |= MoveMask(1) << m;
+      movemasks[m] |= MOVEBIT(m);
     #endif
     movemasks[m] &= all_movemask;
   }

@@ -14,13 +14,13 @@
   #define N_AXES 6
 #endif
 
-#define MOVEBIT(m) (MoveMask(1) << m)
+#define MOVEBIT(m) (MoveMask(1) << (m))
 
 typedef uint64_t MoveMask;
 
 extern std::string move_names[N_MOVES];
 extern int inv_move[N_MOVES];
-extern int split[N_MOVES];
+extern int split[N_MOVES]; // TODO: this is a bit ugly
 extern MoveMask movemasks[N_MOVES + 1];
 extern MoveMask all_movemask;
 extern MoveMask extra_movemask;

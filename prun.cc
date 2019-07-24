@@ -66,7 +66,7 @@ int getFSTwistDist(Coord flip, Coord sslice, Coord twist) {
       depth3 = 3;
 
     for (int m = 0; m < N_MOVES; m++) {
-      if ((all_movemask & (MoveMask(1) << m)) == 0)
+      if ((all_movemask & MOVEBIT(m)) == 0)
         continue;
 
       Coord flip1 = flip_move[flip][m];
@@ -220,7 +220,7 @@ void initFSTwistPrun3() {
           continue;
 
         for (int m = 0; m < N_MOVES; m++) {
-          if ((all_movemask & (MoveMask(1) << m)) == 0)
+          if ((all_movemask & MOVEBIT(m)) == 0)
             continue;
 
           Coord flip1 = flip_move[flip][m];
@@ -285,12 +285,12 @@ void initCornEdPrun() {
         for (int m = 0; m < N_MOVES2; m++) {
           int dist1 = dist + 1;
           #ifdef QUARTER
-            if ((extra_movemask & (MoveMask(1) << moves2[m])) != 0)
+            if ((extra_movemask & MOVEBIT(moves2[m])) != 0)
               dist1++;
-            else if ((all_movemask & (MoveMask(1) << moves2[m])) == 0)
+            else if ((all_movemask & MOVEBIT(moves2[m])) == 0)
               continue;
           #else
-            if ((all_movemask & (MoveMask(1) << moves2[m])) == 0)
+            if ((all_movemask & MOVEBIT(moves2[m])) == 0)
               continue;
           #endif
 
@@ -335,12 +335,12 @@ void initCornSlicePrun() {
         for (int m = 0; m < N_MOVES2; m++) {
           int dist1 = dist + 1;
           #ifdef QUARTER
-            if ((extra_movemask & (MoveMask(1) << moves2[m])) != 0)
+            if ((extra_movemask & MOVEBIT(moves2[m])) != 0)
                 dist1++;
-            else if ((all_movemask & (MoveMask(1) << moves2[m])) == 0)
+            else if ((all_movemask & MOVEBIT(moves2[m])) == 0)
                 continue;
           #else
-            if ((all_movemask & (MoveMask(1) << moves2[m])) == 0)
+            if ((all_movemask & MOVEBIT(moves2[m])) == 0)
               continue;
           #endif
 
