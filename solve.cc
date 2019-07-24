@@ -97,11 +97,7 @@ void TwoPhaseSolver::phase1(int depth, int dist, int togo) {
   if (dist == 0)
     return;
   for (int m = 0; m < N_MOVES; m++) {
-    #ifdef QTM
-      if (qtm[m] != 0)
-        continue;
-    #endif
-    if ((skip_moves[moves[depth]] & (1 << m)) != 0)
+    if ((movemasks[moves[depth]] & (MoveMask(1) << m)) == 0)
       continue;
 
     flip[depth + 1] = flip_move[flip[depth]][m];
@@ -157,20 +153,18 @@ bool TwoPhaseSolver::phase2(int depth, int togo) {
   }
 
   for (int m = 0; m < N_MOVES2; m++) {
-    #ifdef QTM
-      if (qtm[m] > 1)
-        continue;
-    #endif
-    if ((skip_moves[moves[depth]] & (1 << moves2[m])) != 0)
-      continue;
-
     int depth1 = depth;
     int togo1 = togo;
-    #ifdef QTM
-      if (qtm[moves2[m]] == 1) {
+
+    #ifdef QUARTER
+      if ((extra_movemask & (MoveMask(1) << moves2[m])) != 0) {
         depth1++;
         togo1--;
-      }
+      } else if ((movemasks[moves[depth]] & (MoveMask(1) << moves2[m])) == 0)
+        continue;
+    #else
+      if ((movemasks[moves[depth]] & (MoveMask(1) << moves2[m])) == 0)
+        continue;
     #endif
 
     sslice[depth1 + 1] = sslice_move[sslice[depth]][moves2[m]];
@@ -180,10 +174,10 @@ bool TwoPhaseSolver::phase2(int depth, int togo) {
     int tmp = getCornEdPrun(cperm[depth1 + 1], udedges[depth1 + 1]);
     if (std::max(tmp, getCornSlicePrun(cperm[depth1 + 1], sslice[depth1 + 1])) < togo1) {
       moves[depth + 1] = moves2[m];
-      #ifdef QTM
-        if (qtm[moves2[m]] == 1) {
-          moves[depth1] = axis[moves2[m]];
-          moves[depth1 + 1] = axis[moves2[m]];
+      #ifdef QUARTER
+        if ((extra_movemask & (MoveMask(1) << moves2[m])) != 0) {
+          moves[depth1] = split[moves2[m]];
+          moves[depth1 + 1] = split[moves2[m]];
         }
       #endif
       if (phase2(depth1 + 1, togo1 - 1) == 1)

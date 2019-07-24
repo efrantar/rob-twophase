@@ -15,11 +15,15 @@
 
 #define FSTWIST(fssym, twist) (CCoord(fssym) * N_TWIST + twist)
 #define CORNED(csym, udedges) (CCoord(csym) * N_UDEDGES2 + udedges)
-
 #define CORNSLICE(cperm, sslice) (CCoord(cperm) * N_SSLICE2 + sslice)
+
+#define DIST(prun) (prun & 0xff)
 
 // Get new dist from current dist and mod 3 pruning value
 extern int (*next_dist)[3];
+
+typedef uint32_t Prun;
+extern Prun *fsttwist_prun;
 
 extern uint64_t *fstwist_prun3;
 extern uint8_t *corned_prun; // full resolution; 16 entries per cell

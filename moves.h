@@ -1,42 +1,33 @@
-/*
- * Move definitions
- */
-
 #ifndef MOVES_H_
 #define MOVES_H_
 
 #include <string>
 #include "cubie.h"
 
-#ifdef FACES5
-  #ifdef AXIAL
-    #define N_MOVES 33
-    #define N_MOVES2 20
-  #else
-    #define N_MOVES 15
-    #define N_MOVES2 9
-  #endif
+#ifdef AXIAL
+  #define N_MOVES 45
+  #define N_MOVES2 21
+  #define N_AXES 3
 #else
-  #ifdef AXIAL
-    #define N_MOVES 45
-    #define N_MOVES2 21
-  #else
-    #define N_MOVES 18
-    #define N_MOVES2 10
-  #endif
+  #define N_MOVES 18
+  #define N_MOVES2 10
+  #define N_AXES 6
 #endif
 
-typedef uint64_t MoveSet;
+#define MOVEBIT(m) (MoveMask(1) << m)
 
-extern int moves2[N_MOVES2];
+typedef uint64_t MoveMask;
 
 extern std::string move_names[N_MOVES];
 extern int inv_move[N_MOVES];
-extern MoveSet skip_moves[N_MOVES + 1];
-extern int qtm[N_MOVES];
-extern int axis[N_MOVES];
+extern int split[N_MOVES];
+extern MoveMask movemasks[N_MOVES + 1];
+extern MoveMask all_movemask;
+extern MoveMask extra_movemask;
 
-const CubieCube kUCube = { 
+extern int moves2[N_MOVES2];
+
+const CubieCube kUCube = {
   {UBR, URF, UFL, ULB, DFR, DLF, DBL, DRB},
   {UB, UR, UF, UL, DR, DF, DL, DB, FR, FL, BL, BR},
   {}, {}

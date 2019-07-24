@@ -16,6 +16,8 @@ uint64_t *fstwist_prun3;
 uint8_t *corned_prun;
 uint8_t *cornslice_prun;
 
+Prun *fstwist_prun;
+
 static bool init() {
  next_dist = new int[22][3];
  for (int i = 0; i < 22; i++) {
@@ -64,10 +66,8 @@ int getFSTwistDist(Coord flip, Coord sslice, Coord twist) {
       depth3 = 3;
 
     for (int m = 0; m < N_MOVES; m++) {
-      #ifdef QTM
-        if (qtm[m] != 0)
-          continue;
-      #endif
+      if ((all_movemask & (MoveMask(1) << m)) == 0)
+        continue;
 
       Coord flip1 = flip_move[flip][m];
       Coord sslice1 = sslice_move[sslice][m];
@@ -112,6 +112,78 @@ int getCornSlicePrun(Coord cperm, Coord sslice) {
   return cornslice_prun[CORNSLICE(cperm, sslice)];
 }
 
+/*
+void initFSTwistPrun() {
+  fstwist_prun = new Prun[N_FSTWIST];
+  std::fill(fstwist_prun, fstwist_prun + N_FSTWIST, EMPTY8);
+
+  fstwist_prun[0] = 0;
+  for (int dist = 0, count = 0; count < N_FSTWIST; dist++) {
+    CCoord c = 0;
+
+    for (CCoord fssym = 0; fssym < N_FSLICE_SYM; fssym++) {
+      Coord flip = FS_FLIP(fslice_raw[fssym]);
+      Coord slice = FS_SLICE(fslice_raw[fssym]);
+
+      for (Coord twist = 0; twist < N_TWIST; twist++, c++) {
+        if (DIST(fstwist_prun[c]) != dist)
+          continue;
+        count++;
+
+        int deltas[N_MOVES];
+        for (int m = 0; m < N_MOVES; m++) {
+          #ifdef QTM
+            if (qtm[m] != 0)
+              continue;
+          #endif
+
+          Coord flip1 = flip_move[flip][m];
+          Coord slice1 = sliceMove(slice, m);
+          CCoord fslice1 = FSLICE(flip1, slice1);
+          Coord twist1 = twist_move[twist][m];
+
+          CCoord fssym1 = COORD(fslice_sym[fslice1]);
+          twist1 = conj_twist[twist1][SYM(fslice_sym[fslice1])];
+          CCoord c1 = FSTWIST(fssym1, twist1);
+
+          if (fstwist_prun[c1] == EMPTY8)
+            fstwist_prun[c1] = dist + 1;
+          deltas[m] = fstwist_prun[c1] - dist;
+
+          int selfs = fslice_selfs[fssym1] >> 1;
+          for (int s = 1; selfs > 0; selfs >>= 1, s++) { // bit 0 is always on -> > 0 to save an iteration
+            if (selfs & 1) {
+              CCoord c2 = FSTWIST(fssym1, conj_twist[twist1][s]);
+              if (fstwist_prun[c2] == EMPTY8)
+                fstwist_prun[c2] = dist + 1;
+            }
+          }
+        }
+
+        Prun prun = 0;
+        for (int ax = 0, i = 0; ax < N_MOVES; ax = next_axis[ax], i++) {
+          bool dec = false;
+          for (int j = ax; j < next_axis[ax]; j++) {
+            if (deltas[j] != 0) {
+              if (deltas[j] < 0) {
+                prun |= 1 << (ax + i);
+                dec = true;
+              }
+              break;
+            }
+          }
+          for (int j = ax; j < next_axis[ax]; j++)
+            prun |= (dec == (deltas[i] < 0)) << (j + i + 1);
+        }
+        fstwist_prun[c] |= prun << 8;
+      }
+    }
+
+    std::cout << dist << " " << count << "\n";
+  }
+}
+*/
+
 void initFSTwistPrun3() {
   fstwist_prun3 = new uint64_t[N_FSTWIST / 32 + 1]; // add + 1 to be safe
   std::fill(fstwist_prun3, fstwist_prun3 + N_FSTWIST / 32 + 1, EMPTY_CELL);
@@ -148,10 +220,8 @@ void initFSTwistPrun3() {
           continue;
 
         for (int m = 0; m < N_MOVES; m++) {
-          #ifdef QTM
-            if (qtm[m] != 0)
-              continue;
-          #endif
+          if ((all_movemask & (MoveMask(1) << m)) == 0)
+            continue;
 
           Coord flip1 = flip_move[flip][m];
           Coord slice1 = sliceMove(slice, m);
@@ -213,15 +283,17 @@ void initCornEdPrun() {
         count++;
 
         for (int m = 0; m < N_MOVES2; m++) {
-          #ifdef QTM
-            if (qtm[moves2[m]] > 1)
-                continue;
+          int dist1 = dist + 1;
+          #ifdef QUARTER
+            if ((extra_movemask & (MoveMask(1) << moves2[m])) != 0)
+              dist1++;
+            else if ((all_movemask & (MoveMask(1) << moves2[m])) == 0)
+              continue;
+          #else
+            if ((all_movemask & (MoveMask(1) << moves2[m])) == 0)
+              continue;
           #endif
 
-          int dist1 = dist + 1;
-          #ifdef QTM
-            dist1 += qtm[moves2[m]];
-          #endif
           Coord corners1 = cperm_move[cperm_raw[csym]][moves2[m]];
           Coord udedges1 = udedges_move2[udedges][m];
           Coord csym1 = COORD(cperm_sym[corners1]);
@@ -261,22 +333,25 @@ void initCornSlicePrun() {
         count++;
 
         for (int m = 0; m < N_MOVES2; m++) {
-          #ifdef QTM
-            if (qtm[moves2[m]] > 1)
+          int dist1 = dist + 1;
+          #ifdef QUARTER
+            if ((extra_movemask & (MoveMask(1) << moves2[m])) != 0)
+                dist1++;
+            else if ((all_movemask & (MoveMask(1) << moves2[m])) == 0)
+                continue;
+          #else
+            if ((all_movemask & (MoveMask(1) << moves2[m])) == 0)
               continue;
           #endif
 
           CCoord c1 = CORNSLICE(
             cperm_move[cperm][moves2[m]], sslice_move[sslice][moves2[m]]
           );
-          int dist1 = dist + 1;
-          #ifdef QTM
-            dist1 += qtm[moves2[m]];
-          #endif
           if (cornslice_prun[c1] > dist1)
             cornslice_prun[c1] = dist1;
         }
       }
     }
+    std::cout << dist << " " << count << "\n";
   }
 }

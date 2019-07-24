@@ -1,7 +1,7 @@
 C=gcc
 CXX=g++
 RM=rm -f
-CPPFLAGS=-std=c++11 -lpthread -O3 -DAXIAL -DFACES5 -DQTM
+CPPFLAGS=-std=c++11 -lpthread -O3 -DAXIAL -DQUARTER -DFACES5
 LDFLAGS=
 LDLIBS=-lpthread
 
