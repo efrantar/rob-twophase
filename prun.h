@@ -11,6 +11,11 @@
 
 #define AXIS_BITMASK ((1 << N_PER_AXIS) - 1)
 #define N_INFO 2
+#ifdef QUARTER
+  #define N_PER_MOVE 2
+#else
+  #define N_PER_MOVE 1
+#endif
 
 #define N_FSTWIST (N_FSLICE_SYM * N_TWIST)
 #define N_CORNED (N_CPERM_SYM * N_UDEDGES2)

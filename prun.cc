@@ -13,17 +13,8 @@ uint8_t *cornslice_prun;
 uint8_t mm_key[N_SYMS_SUB][N_AXES];
 MMChunk mm_map[2][N_INFO][1 << (N_PER_AXIS + 1)];
 
-// TODO: AXIAL mode!
+// TODO: AXIAL + QUARTER TURN mode!
 void initPrun() {
-  /*
-  for (int s = 0; s < N_SYMS_SUB; s++) {
-    for (int ax = 0; ax < N_AXES; ax++) {
-      mm_key[s][ax] = (conj_move[N_PER_AXIS * ax][s] / N_PER_AXIS) << 1;
-      mm_key[s][ax] |= conj_move[N_PER_AXIS * ax][s] % N_PER_AXIS != 0;
-    }
-  }
-  */
-
   for (int s = 0; s < N_SYMS_SUB; s++) {
     for (int ax = 0; ax < N_AXES; ax++) {
     mm_key[s][ax] = (conj_move[N_PER_AXIS * ax][inv_sym[s]] / N_PER_AXIS) << 1;
@@ -34,17 +25,37 @@ void initPrun() {
   for (int s = 0; s < N_SYMS_SUB; s++) {
     for (int info = 0; info < N_INFO; info++) {
       for (int chunk = 0; chunk < (1 << (N_PER_AXIS + 1)); chunk++) {
-        int mm = chunk >> 1;
+        int mm = chunk;
+        #ifndef QUARTER
+          mm >>= 1;
+        #endif
         if (info & 1) {
           int rev = 0;
           for (int i = 0; i < N_PER_AXIS; i++) {
-            rev = (rev << 1) | (mm & 1);
-            mm >>= 1;
+            if ((all_movemask & MOVEBIT(i)) != 0) {
+              rev = (rev << N_PER_MOVE) | (mm & ((1 << N_PER_MOVE) - 1));
+              mm >>= N_PER_MOVE;
+            }
           }
           mm = rev;
         }
+
+      #ifdef QUARTER
+        mm_map[0][info][chunk] = 0;
+        mm_map[1][info][chunk] = 0;
+        for (int i = N_PER_AXIS - 1; i >= 0; i--) {
+          mm_map[0][info][chunk] <<= 1;
+          mm_map[1][info][chunk] <<= 1;
+          if ((all_movemask & MOVEBIT(i)) != 0) {
+            mm_map[0][info][chunk] |= (mm & (0x3 << (N_PER_AXIS - 1))) == 0;
+            mm_map[1][info][chunk] |= (mm & (0x3 << (N_PER_AXIS - 1))) <= (1 << (N_PER_AXIS - 1));
+            mm <<= 2;
+          }
+        }
+      #else
         mm_map[0][info][chunk] = (chunk & 1) ? 0 : ~mm & AXIS_BITMASK;
         mm_map[1][info][chunk] = (chunk & 1) ? ~mm & AXIS_BITMASK : AXIS_BITMASK;
+      #endif
       }
     }
   }
@@ -141,23 +152,30 @@ void initFSTwistPrun() {
         }
 
         Prun prun = 0;
-        for (int ax = N_AXES - 1; ax >= 0; ax--) {
-          bool away = false;
-          for (int i = N_PER_AXIS * ax; i < N_PER_AXIS * (ax + 1); i++) {
-            if (deltas[i] != 0) {
-              if (deltas[i] > 0)
-                away = true;
-              break;
-            }
+        #ifdef QUARTER
+          for (int m = N_MOVES - 1; m >= 0; m--) {
+            if ((all_movemask & MOVEBIT(m)) != 0)
+              prun = (prun << 2) | (deltas[m] + 1);
           }
+        #else
+          for (int ax = N_AXES - 1; ax >= 0; ax--) {
+            bool away = false;
+            for (int i = N_PER_AXIS * ax; i < N_PER_AXIS * (ax + 1); i++) {
+              if (deltas[i] != 0) {
+                if (deltas[i] > 0)
+                  away = true;
+                break;
+              }
+            }
 
-          int tmp = 0;
-          for (int i = N_PER_AXIS * (ax + 1) - 1; i >= N_PER_AXIS * ax; i--)
-            tmp = (tmp | (away ? deltas[i] : deltas[i] + 1)) << 1;
-          tmp |= away;
+            int tmp = 0;
+            for (int i = N_PER_AXIS * (ax + 1) - 1; i >= N_PER_AXIS * ax; i--)
+              tmp = (tmp | (away ? deltas[i] : deltas[i] + 1)) << 1;
+            tmp |= away;
 
-          prun = (prun << (N_PER_AXIS + 1)) | tmp;
-        }
+            prun = (prun << (N_PER_AXIS + 1)) | tmp;
+          }
+        #endif
         fstwist_prun[c] |= prun << 8;
       }
     }

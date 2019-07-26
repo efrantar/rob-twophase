@@ -104,8 +104,9 @@ void TwoPhaseSolver::phase1(int depth, int togo) {
     if (DIST(getFSTwistPrun(flip[depth + 1], sslice[depth + 1], twist[depth + 1])) < togo)
       test |= MOVEBIT(m);
   }
+  test &= all_movemask;
 
-  int test1 = getFSTwistMoves(flip[depth], sslice[depth], twist[depth], togo);
+  int test1 = getFSTwistMoves(flip[depth], sslice[depth], twist[depth], togo) & all_movemask;
   if (test1 != test) {
     std::cout << test1 << " " << test << getFSTwistMoves(flip[depth], sslice[depth], twist[depth], togo) << "\n";
   }
