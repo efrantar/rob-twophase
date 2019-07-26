@@ -18,7 +18,7 @@ Coord *cperm_raw;
 SelfSyms *fslice_selfs;
 SelfSyms *cperm_selfs;
 
-static bool init() {
+void initSym() {
   CubieCube cube;
   CubieCube tmp;
 
@@ -66,10 +66,7 @@ static bool init() {
       }
     }
   }
-
-  return true;
 }
-static bool inited = init();
 
 void initConjCoord(
   Coord (**conj_coord)[N_SYMS_SUB],

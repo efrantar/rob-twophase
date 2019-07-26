@@ -4,101 +4,82 @@
 #include <bitset>
 #include <queue>
 
-#define BACKSEARCH_PERCENT 0.2
-
-#define EMPTY2 0x3
 #define EMPTY8 0xff
-#define EMPTY_CELL ~uint64_t(0)
 
-int (*next_dist)[3];
-
-uint64_t *fstwist_prun3;
+Prun *fstwist_prun;
 uint8_t *corned_prun;
 uint8_t *cornslice_prun;
 
-Prun *fstwist_prun;
+uint8_t mm_key[N_SYMS_SUB][N_AXES];
+MMChunk mm_map[2][N_INFO][1 << (N_PER_AXIS + 1)];
 
-static bool init() {
- next_dist = new int[22][3];
- for (int i = 0; i < 22; i++) {
-   if (i > 0)
-     next_dist[i][(i - 1) % 3] = i - 1;
-   next_dist[i][i % 3] = i;
-   next_dist[i][(i + 1) % 3] = i + 1;
- }
- return true;
-}
-static bool inited = init();
-
-int getFSTwistPrun3(CCoord c) {
-  uint64_t tmp = fstwist_prun3[c / 32];
-  tmp >>= (c % 32) * 2;
-  return tmp & EMPTY2;
-}
-
-void setFSTwistPrun3(CCoord c, int dist) {
-  int shift = (c % 32) * 2;
-  fstwist_prun3[c / 32] &= ~(uint64_t(EMPTY2) << shift) | (uint64_t(dist % 3) << shift);
-}
-
-int getCornEdPrun(CCoord c) {
-  uint64_t tmp = corned_prun[c / 16];
-  tmp >>= (c % 16) * 4;
-  return tmp & EMPTY8;
-}
-
-void setCornEdPrun(CCoord c, int dist) {
-  int shift = (c % 16) * 4;
-  corned_prun[c / 16] &= ~(uint64_t(EMPTY8) << shift) | (uint64_t(dist) << shift);
-}
-
-int getFSTwistDist(Coord flip, Coord sslice, Coord twist) {
-  CCoord fslice = FSLICE(flip, SS_SLICE(sslice));
-  CCoord fstwist = FSTWIST(
-    COORD(fslice_sym[fslice]), conj_twist[twist][SYM(fslice_sym[fslice])]
-  );
-
-  int depth3 = getFSTwistPrun3(fstwist);
-  int depth = 0;
-
-  while (fstwist != 0) {
-    if (depth3 == 0)
-      depth3 = 3;
-
-    for (int m = 0; m < N_MOVES; m++) {
-      if ((all_movemask & MOVEBIT(m)) == 0)
-        continue;
-
-      Coord flip1 = flip_move[flip][m];
-      Coord sslice1 = sslice_move[sslice][m];
-      Coord twist1 = twist_move[twist][m];
-      CCoord fslice1 = FSLICE(flip1, SS_SLICE(sslice1));
-      
-      CCoord fstwist1 = FSTWIST(
-        COORD(fslice_sym[fslice1]), conj_twist[twist1][SYM(fslice_sym[fslice1])]
-      );
-      if (getFSTwistPrun3(fstwist1) == depth3 - 1) {
-        flip = flip1;
-        sslice = sslice1;
-        twist = twist1;
-        fstwist = fstwist1;
-        break;
-      }
+// TODO: AXIAL mode!
+void initPrun() {
+  /*
+  for (int s = 0; s < N_SYMS_SUB; s++) {
+    for (int ax = 0; ax < N_AXES; ax++) {
+      mm_key[s][ax] = (conj_move[N_PER_AXIS * ax][s] / N_PER_AXIS) << 1;
+      mm_key[s][ax] |= conj_move[N_PER_AXIS * ax][s] % N_PER_AXIS != 0;
     }
+  }
+  */
 
-    depth3--;
-    depth++;
+  for (int s = 0; s < N_SYMS_SUB; s++) {
+    for (int ax = 0; ax < N_AXES; ax++) {
+    mm_key[s][ax] = (conj_move[N_PER_AXIS * ax][inv_sym[s]] / N_PER_AXIS) << 1;
+    mm_key[s][ax] |= conj_move[N_PER_AXIS * ax][inv_sym[s]] % N_PER_AXIS != 0;
+    }
   }
 
-  return depth;
+  for (int s = 0; s < N_SYMS_SUB; s++) {
+    for (int info = 0; info < N_INFO; info++) {
+      for (int chunk = 0; chunk < (1 << (N_PER_AXIS + 1)); chunk++) {
+        int mm = chunk >> 1;
+        if (info & 1) {
+          int rev = 0;
+          for (int i = 0; i < N_PER_AXIS; i++) {
+            rev = (rev << 1) | (mm & 1);
+            mm >>= 1;
+          }
+          mm = rev;
+        }
+        mm_map[0][info][chunk] = (chunk & 1) ? 0 : ~mm & AXIS_BITMASK;
+        mm_map[1][info][chunk] = (chunk & 1) ? ~mm & AXIS_BITMASK : AXIS_BITMASK;
+      }
+    }
+  }
 }
 
-int getFSTwistPrun3(Coord flip, Coord sslice, Coord twist) {
+Prun getFSTwistPrun(Coord flip, Coord sslice, Coord twist) {
   CCoord fslice = FSLICE(flip, SS_SLICE(sslice));
   CCoord fstwist = FSTWIST(
     COORD(fslice_sym[fslice]), conj_twist[twist][SYM(fslice_sym[fslice])]
   );
-  return getFSTwistPrun3(fstwist);
+  return fstwist_prun[fstwist];
+}
+
+MoveMask getFSTwistMoves(Coord flip, Coord sslice, Coord twist, int togo) {
+  CCoord fslice = FSLICE(flip, SS_SLICE(sslice));
+  int s = SYM(fslice_sym[fslice]);
+  CCoord fstwist = FSTWIST(
+    COORD(fslice_sym[fslice]), conj_twist[twist][s]
+  );
+  Prun prun = fstwist_prun[fstwist];
+
+  int delta = togo - DIST(prun);
+  if (delta < 0)
+    return 0;
+  if (delta > 1)
+    return all_movemask;
+  prun >>= 8;
+
+  MoveMask mm = 0;
+  for (int ax = 0; ax < N_AXES; ax++) {
+    mm |= mm_map[delta][INFO(mm_key[s][ax])][prun & ((1 << (N_PER_AXIS + 1)) - 1)] << OFF(mm_key[s][ax]);
+    prun >>= N_PER_AXIS + 1;
+  }
+
+  return mm;
 }
 
 int getCornEdPrun(Coord cperm, Coord udedges) {
@@ -112,7 +93,6 @@ int getCornSlicePrun(Coord cperm, Coord sslice) {
   return cornslice_prun[CORNSLICE(cperm, sslice)];
 }
 
-/*
 void initFSTwistPrun() {
   fstwist_prun = new Prun[N_FSTWIST];
   std::fill(fstwist_prun, fstwist_prun + N_FSTWIST, EMPTY8);
@@ -132,10 +112,10 @@ void initFSTwistPrun() {
 
         int deltas[N_MOVES];
         for (int m = 0; m < N_MOVES; m++) {
-          #ifdef QTM
-            if (qtm[m] != 0)
-              continue;
-          #endif
+          if ((all_movemask & MOVEBIT(m)) == 0) {
+            deltas[m] = 0;
+            continue;
+          }
 
           Coord flip1 = flip_move[flip][m];
           Coord slice1 = sliceMove(slice, m);
@@ -148,7 +128,7 @@ void initFSTwistPrun() {
 
           if (fstwist_prun[c1] == EMPTY8)
             fstwist_prun[c1] = dist + 1;
-          deltas[m] = fstwist_prun[c1] - dist;
+          deltas[m] = DIST(fstwist_prun[c1]) - dist;
 
           int selfs = fslice_selfs[fssym1] >> 1;
           for (int s = 1; selfs > 0; selfs >>= 1, s++) { // bit 0 is always on -> > 0 to save an iteration
@@ -161,19 +141,22 @@ void initFSTwistPrun() {
         }
 
         Prun prun = 0;
-        for (int ax = 0, i = 0; ax < N_MOVES; ax = next_axis[ax], i++) {
-          bool dec = false;
-          for (int j = ax; j < next_axis[ax]; j++) {
-            if (deltas[j] != 0) {
-              if (deltas[j] < 0) {
-                prun |= 1 << (ax + i);
-                dec = true;
-              }
+        for (int ax = N_AXES - 1; ax >= 0; ax--) {
+          bool away = false;
+          for (int i = N_PER_AXIS * ax; i < N_PER_AXIS * (ax + 1); i++) {
+            if (deltas[i] != 0) {
+              if (deltas[i] > 0)
+                away = true;
               break;
             }
           }
-          for (int j = ax; j < next_axis[ax]; j++)
-            prun |= (dec == (deltas[i] < 0)) << (j + i + 1);
+
+          int tmp = 0;
+          for (int i = N_PER_AXIS * (ax + 1) - 1; i >= N_PER_AXIS * ax; i--)
+            tmp = (tmp | (away ? deltas[i] : deltas[i] + 1)) << 1;
+          tmp |= away;
+
+          prun = (prun << (N_PER_AXIS + 1)) | tmp;
         }
         fstwist_prun[c] |= prun << 8;
       }
@@ -181,92 +164,6 @@ void initFSTwistPrun() {
 
     std::cout << dist << " " << count << "\n";
   }
-}
-*/
-
-void initFSTwistPrun3() {
-  fstwist_prun3 = new uint64_t[N_FSTWIST / 32 + 1]; // add + 1 to be safe
-  std::fill(fstwist_prun3, fstwist_prun3 + N_FSTWIST / 32 + 1, EMPTY_CELL);
-
-  int count = 1;
-  int depth = 0;
-  auto *done = new std::bitset<N_FSTWIST>(); // need to keep track of already expanded notes (table only stores mod 3)
-  bool backsearch = false;
-
-  setFSTwistPrun3(0, 0);
-  while (count < N_FSTWIST) {
-    CCoord c = 0; // increment this in the inner loop to avoid always recomputing the index
-    int depth3 = depth % 3;
-
-    // `fssym` needs to `CCoord` so that it also works in 5-face mode
-    for (CCoord fssym = 0; fssym < N_FSLICE_SYM; fssym++) {
-      Coord flip = FS_FLIP(fslice_raw[fssym]);
-      Coord slice = FS_SLICE(fslice_raw[fssym]);
-
-      for (Coord twist = 0; twist < N_TWIST; twist++, c++) {
-        if (!backsearch) {
-          // Quickly skip fully empty table cells in early iterations
-          if (c % 32 == 0 && fstwist_prun3[c / 32] == EMPTY_CELL) {
-            // Make sure `fssym` and `c` remain synced
-            int tmp = std::min(31, N_TWIST - twist - 1);
-            twist += tmp;
-            c += tmp;
-            continue;
-          }
-          if (done->test(c) || getFSTwistPrun3(c) != depth3)
-            continue;
-          done->set(c);
-        } else if (getFSTwistPrun3(c) != EMPTY2)
-          continue;
-
-        for (int m = 0; m < N_MOVES; m++) {
-          if ((all_movemask & MOVEBIT(m)) == 0)
-            continue;
-
-          Coord flip1 = flip_move[flip][m];
-          Coord slice1 = sliceMove(slice, m);
-          CCoord fslice1 = FSLICE(flip1, slice1);
-          Coord twist1 = twist_move[twist][m];
-
-          CCoord fssym1 = COORD(fslice_sym[fslice1]);
-          twist1 = conj_twist[twist1][SYM(fslice_sym[fslice1])];
-          CCoord c1 = FSTWIST(fssym1, twist1);
-
-          if (backsearch) {
-            if (getFSTwistPrun3(c1) != depth3)
-              continue;
-            setFSTwistPrun3(c, depth + 1);
-            count++;
-            break; // self-symmetries are not applicable during backsearch
-          } else if (getFSTwistPrun3(c1) != EMPTY2)
-            continue;
-     
-          setFSTwistPrun3(c1, depth + 1);
-          count++;
-            
-          int selfs = fslice_selfs[fssym1] >> 1;
-          for (int s = 1; selfs > 0; selfs >>= 1, s++) { // bit 0 is always on -> > 0 to save an iteration
-            if (selfs & 1) {
-              CCoord c2 = FSTWIST(fssym1, conj_twist[twist1][s]);
-              if (getFSTwistPrun3(c2) == EMPTY2) {
-                setFSTwistPrun3(c2, depth + 1);
-                done->set(c2); // expanding self-symmetries is redundant
-                count++;
-              }
-            }
-          }
-        }
-      }
-    }
-
-    depth++;
-    if (count > N_FSTWIST * BACKSEARCH_PERCENT)
-      backsearch = true;
-
-    std::cout << depth << " " << count << "\n";
-  }
-
-  delete done;
 }
 
 void initCornEdPrun() {

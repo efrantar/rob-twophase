@@ -69,4 +69,6 @@ void initConjUDEdges();
 void initFlipSliceSym();
 void initCPermSym();
 
+void initSym();
+
 #endif

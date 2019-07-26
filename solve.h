@@ -34,7 +34,7 @@ class TwoPhaseSolver {
     int udedges_depth; // individual variable as we only restore UDEDGES if the precheck did not fail
     int moves[N];
 
-    void phase1(int depth, int dist, int togo);
+    void phase1(int depth, int togo);
     bool phase2(int depth, int togo);
 
   public:

@@ -69,4 +69,6 @@ const int kEdgelets[][2] = {
 int faceToCubie(const std::string &s, CubieCube &cube);
 std::string cubieToFace(const CubieCube &cube);
 
+void initFace();
+
 #endif

@@ -51,19 +51,15 @@ void TwoPhaseSolver::solve(const CubieCube &cube) {
   cperm[0] = getCPerm(cube1);
   moves[0] = N_MOVES;
 
-  cperm_depth = 0;
-  udedges_depth = 0;
-
-  int dist = getFSTwistDist(flip[0], sslice[0], twist[0]);
-  for (int togo = dist; togo <= len; togo++) {
+  for (int togo = DIST(getFSTwistPrun(flip[0], sslice[0], twist[0])); togo <= len; togo++) {
     // Resetting here saves two `*_depth > 0` checks in every call
     cperm_depth = 0;
     udedges_depth = 0;
-    phase1(0, dist, togo);
+    phase1(0, togo);
   }
 }
 
-void TwoPhaseSolver::phase1(int depth, int dist, int togo) {
+void TwoPhaseSolver::phase1(int depth, int togo) {
   if (done)
     return;
 
@@ -93,22 +89,50 @@ void TwoPhaseSolver::phase1(int depth, int dist, int togo) {
     return;
   }
 
-  // Discard shorter phase 1 solutions -> loses optimality but slight speedup
-  if (dist == 0)
-    return;
+  // std::cout << DIST(getFSTwistPrun(flip[depth], sslice[depth], twist[depth])) << "\n";
+
+  MoveMask tmp =
+    getFSTwistMoves(flip[depth], sslice[depth], twist[depth], togo) & movemasks[moves[depth]];
+
+  /*
+  MoveMask test = 0;
   for (int m = 0; m < N_MOVES; m++) {
-    if ((movemasks[moves[depth]] & MOVEBIT(m)) == 0)
+    flip[depth + 1] = flip_move[flip[depth]][m];
+    sslice[depth + 1] = sslice_move[sslice[depth]][m];
+    twist[depth + 1] = twist_move[twist[depth]][m];
+    moves[depth + 1] = m;
+    if (DIST(getFSTwistPrun(flip[depth + 1], sslice[depth + 1], twist[depth + 1])) < togo)
+      test |= MOVEBIT(m);
+  }
+
+  int test1 = getFSTwistMoves(flip[depth], sslice[depth], twist[depth], togo);
+  if (test1 != test) {
+    std::cout << test1 << " " << test << getFSTwistMoves(flip[depth], sslice[depth], twist[depth], togo) << "\n";
+  }
+
+  flip[depth + 1] = FS_FLIP(fslice_raw[COORD(fslice_sym[FSLICE(flip[depth], SS_SLICE(sslice[depth]))])]);
+  sslice[depth + 1] = SSLICE(FS_SLICE(fslice_raw[COORD(fslice_sym[FSLICE(flip[depth], SS_SLICE(sslice[depth]))])]));
+  twist[depth + 1] = conj_twist[twist[depth]][SYM(fslice_sym[FSLICE(flip[depth], SS_SLICE(sslice[depth]))])];
+
+  for (int m = 0; m < N_MOVES; m++) {
+    flip[depth + 2] = flip_move[flip[depth + 1]][m];
+    sslice[depth + 2] = sslice_move[sslice[depth + 1]][m];
+    twist[depth + 2] = twist_move[twist[depth + 1]][m];
+    moves[depth + 2] = m;
+    std::cout << DIST(getFSTwistPrun(flip[depth + 2], sslice[depth + 2], twist[depth + 2])) << " " << m << "\n";
+  }
+  */
+
+  for (int m = 0; m < N_MOVES; m++) {
+    if ((tmp & MOVEBIT(m)) == 0)
       continue;
 
     flip[depth + 1] = flip_move[flip[depth]][m];
     sslice[depth + 1] = sslice_move[sslice[depth]][m];
     twist[depth + 1] = twist_move[twist[depth]][m];
+    moves[depth + 1] = m;
 
-    int dist1 = next_dist[dist][getFSTwistPrun3(flip[depth + 1], sslice[depth + 1], twist[depth + 1])];
-    if (dist1 < togo) {
-      moves[depth + 1] = m;
-      phase1(depth + 1, dist1, togo - 1);
-    }
+    phase1(depth + 1, togo - 1);
   }
 
   if (cperm_depth == depth)
@@ -239,6 +263,10 @@ int twophase(const CubieCube &cube, int max_depth1, int timelimit, std::vector<i
 
 // We persist only the pruning tables as files (the other ones can be generated on the fly quickly enough)
 void initTwophase(bool file) {
+  initFace();
+  initSym();
+  initPrun();
+
   initTwistMove();
   initFlipMove();
   initSSliceMove();
@@ -252,7 +280,7 @@ void initTwophase(bool file) {
   initCPermSym();
 
   if (!file) {
-    initFSTwistPrun3();
+    initFSTwistPrun();
     initCornEdPrun();
     initCornSlicePrun();
     return;
@@ -261,20 +289,20 @@ void initTwophase(bool file) {
   FILE *f = fopen(FILE_TWOPHASE, "rb");
 
   if (f == NULL) {
-    initFSTwistPrun3();
+    initFSTwistPrun();
     initCornEdPrun();
     initCornSlicePrun();
 
     f = fopen(FILE_TWOPHASE, "wb");
-    // Use `tmp` to avoid nasty warnings; not clean but we don't want to make this part to complicated
-    int tmp = fwrite(fstwist_prun3, sizeof(uint64_t), N_FSTWIST / 32 + 1, f);
+    // Use `tmp` to avoid nasty warnings; not clean but we don't want to make this part too complicated
+    int tmp = fwrite(fstwist_prun, sizeof(Prun), N_FSTWIST, f);
     tmp = fwrite(corned_prun, sizeof(uint8_t), N_CORNED, f);
     tmp = fwrite(cornslice_prun, sizeof(uint8_t), N_CORNSLICE, f);
   } else {
-    fstwist_prun3 = new uint64_t[N_FSTWIST / 32 + 1];
+    fstwist_prun = new Prun[N_FSTWIST];
     corned_prun = new uint8_t[N_CORNED];
     cornslice_prun = new uint8_t[N_CORNSLICE];
-    int tmp = fread(fstwist_prun3, sizeof(uint64_t), N_FSTWIST / 32 + 1, f);
+    int tmp = fread(fstwist_prun, sizeof(Prun), N_FSTWIST, f);
     tmp = fread(corned_prun, sizeof(uint8_t), N_CORNED, f);
     tmp = fread(cornslice_prun, sizeof(uint8_t), N_CORNSLICE, f);
   }

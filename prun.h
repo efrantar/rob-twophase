@@ -9,6 +9,9 @@
 #include "coord.h"
 #include "sym.h"
 
+#define AXIS_BITMASK ((1 << N_PER_AXIS) - 1)
+#define N_INFO 2
+
 #define N_FSTWIST (N_FSLICE_SYM * N_TWIST)
 #define N_CORNED (N_CPERM_SYM * N_UDEDGES2)
 #define N_CORNSLICE (N_CPERM * N_SSLICE2)
@@ -18,24 +21,27 @@
 #define CORNSLICE(cperm, sslice) (CCoord(cperm) * N_SSLICE2 + sslice)
 
 #define DIST(prun) (prun & 0xff)
-
-// Get new dist from current dist and mod 3 pruning value
-extern int (*next_dist)[3];
+#define OFF(key) (N_PER_AXIS * (key >> 1))
+#define INFO(key) (key & 1)
 
 typedef uint32_t Prun;
-extern Prun *fsttwist_prun;
+typedef uint8_t MMChunk;
+extern uint8_t mm_key[N_SYMS_SUB][N_AXES];
+extern MMChunk mm_map[2][N_INFO][1 << (N_PER_AXIS + 1)];
+extern Prun *fstwist_prun;
 
-extern uint64_t *fstwist_prun3;
 extern uint8_t *corned_prun; // full resolution; 16 entries per cell
 extern uint8_t *cornslice_prun; // phase 2 precheck; comparatively small -> just 1 entry per cell
 
-int getFSTwistDist(Coord flip, Coord sslice, Coord twist);
-int getFSTwistPrun3(Coord flip, Coord sslice, Coord twist);
+Prun getFSTwistPrun(Coord flip, Coord sslice, Coord twist);
+MoveMask getFSTwistMoves(Coord flip, Coord sslice, Coord twist, int togo);
 int getCornEdPrun(Coord cperm, Coord udedges);
 int getCornSlicePrun(Coord cperm, Coord sslice);
 
-void initFSTwistPrun3();
+void initFSTwistPrun();
 void initCornEdPrun();
 void initCornSlicePrun();
+
+void initPrun();
 
 #endif

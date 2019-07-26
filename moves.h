@@ -13,6 +13,7 @@
   #define N_MOVES2 10
   #define N_AXES 6
 #endif
+#define N_PER_AXIS (N_MOVES / N_AXES)
 
 #define MOVEBIT(m) (MoveMask(1) << (m))
 
