@@ -4,6 +4,13 @@
 #include <random>
 #include "coord.h"
 
+/*
+ * Due to mirrored corner orientations, properly carrying out corner multiplication (and inversion) involves several
+ * different cases. We avoid a sequence of if-statements by considerably faster (and also simpler) table-lookups.
+ * Edge orientation is easy enough to handle directly.
+ */
+
+// Multiplies two corner orientations
 int mul_coris[][6] = {
   {0, 1, 2, 3, 4, 5},
   {1, 2, 0, 4, 5, 3},
@@ -13,10 +20,12 @@ int mul_coris[][6] = {
   {5, 4, 3, 2, 1, 0}
 };
 
+// Inverts a corner orientation
 int inv_cori[] = {
   0, 2, 1, 3, 4, 5
 };
 
+/* Random generator setup */
 std::random_device device;
 std::mt19937 gen(device());
 
@@ -50,7 +59,7 @@ void inv(const CubieCube &cube, CubieCube &res) {
     res.eo[i] = cube.eo[res.ep[i]];
 }
 
-// #inversions % 2
+// Computes the parity of a permutation, i.e. #inversion % 2
 bool parity(const int perm[], int len) {
   int par = 0;
   for (int i = 0; i < len; i++) {
@@ -62,6 +71,7 @@ bool parity(const int perm[], int len) {
   return par & 1;
 }
 
+// A mirrored cube is not considered valid; it should only exist during intermediate results of a symmetry transform
 int check(const CubieCube &cube) {
   bool corners[N_CORNERS] = {};
   int co_sum = 0;
@@ -100,19 +110,21 @@ int check(const CubieCube &cube) {
   }
   
   if (parity(cube.cp, N_CORNERS) != parity(cube.ep, N_EDGES))
-    return 9; // corner and edge perm parity mismatch
+    return 9; // corner and edge permutation parity mismatch
   return 0;
 }
 
-void randomize(CubieCube &cube) {
+void shuffle(CubieCube &cube) {
   for (int i = 0; i < N_CORNERS; i++)
     cube.cp[i] = i;
   for (int i = 0; i < N_EDGES; i++)
     cube.ep[i] = i;
 
+  // We shuffle explicitly as we do not have a coordinate that encodes all edges
   std::shuffle(cube.cp, cube.cp + N_CORNERS, gen);
   std::shuffle(cube.ep, cube.ep + N_EDGES, gen);
   if (parity(cube.cp, N_CORNERS) != parity(cube.ep, N_EDGES))
+    // Any single swap of two elements flips the permutation parity
     std::swap(cube.cp[N_CORNERS - 2], cube.cp[N_CORNERS - 1]);
 
   setTwist(cube, std::uniform_int_distribution<Coord>(0, N_TWIST)(gen));
