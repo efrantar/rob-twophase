@@ -89,40 +89,8 @@ void TwoPhaseSolver::phase1(int depth, int togo) {
     return;
   }
 
-  // std::cout << DIST(getFSTwistPrun(flip[depth], sslice[depth], twist[depth])) << "\n";
-
   MoveMask tmp =
     getFSTwistMoves(flip[depth], sslice[depth], twist[depth], togo) & movemasks[moves[depth]];
-
-  /*
-  MoveMask test = 0;
-  for (int m = 0; m < N_MOVES; m++) {
-    flip[depth + 1] = flip_move[flip[depth]][m];
-    sslice[depth + 1] = sslice_move[sslice[depth]][m];
-    twist[depth + 1] = twist_move[twist[depth]][m];
-    moves[depth + 1] = m;
-    if (DIST(getFSTwistPrun(flip[depth + 1], sslice[depth + 1], twist[depth + 1])) < togo)
-      test |= MOVEBIT(m);
-  }
-  test &= all_movemask;
-
-  int test1 = getFSTwistMoves(flip[depth], sslice[depth], twist[depth], togo) & all_movemask;
-  if (test1 != test) {
-    std::cout << test1 << " " << test << getFSTwistMoves(flip[depth], sslice[depth], twist[depth], togo) << "\n";
-  }
-
-  flip[depth + 1] = FS_FLIP(fslice_raw[COORD(fslice_sym[FSLICE(flip[depth], SS_SLICE(sslice[depth]))])]);
-  sslice[depth + 1] = SSLICE(FS_SLICE(fslice_raw[COORD(fslice_sym[FSLICE(flip[depth], SS_SLICE(sslice[depth]))])]));
-  twist[depth + 1] = conj_twist[twist[depth]][SYM(fslice_sym[FSLICE(flip[depth], SS_SLICE(sslice[depth]))])];
-
-  for (int m = 0; m < N_MOVES; m++) {
-    flip[depth + 2] = flip_move[flip[depth + 1]][m];
-    sslice[depth + 2] = sslice_move[sslice[depth + 1]][m];
-    twist[depth + 2] = twist_move[twist[depth + 1]][m];
-    moves[depth + 2] = m;
-    std::cout << DIST(getFSTwistPrun(flip[depth + 2], sslice[depth + 2], twist[depth + 2])) << " " << m << "\n";
-  }
-  */
 
   for (int m = 0; m < N_MOVES; m++) {
     if ((tmp & MOVEBIT(m)) == 0)

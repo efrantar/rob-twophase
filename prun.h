@@ -10,7 +10,7 @@
 #include "sym.h"
 
 #define AXIS_BITMASK ((1 << N_PER_AXIS) - 1)
-#define N_INFO 2
+#define N_INFO 4
 #ifdef QUARTER
   #define N_PER_MOVE 2
 #else
@@ -26,11 +26,17 @@
 #define CORNSLICE(cperm, sslice) (CCoord(cperm) * N_SSLICE2 + sslice)
 
 #define DIST(prun) (prun & 0xff)
-#define OFF(key) (N_PER_AXIS * (key >> 1))
-#define INFO(key) (key & 1)
+#define OFF(key) (N_PER_AXIS * (key >> 2))
+#define INFO(key) (key & 0x3)
 
-typedef uint32_t Prun;
-typedef uint8_t MMChunk;
+#ifdef AXIAL
+  typedef uint64_t Prun;
+  typedef uint16_t MMChunk;
+#else
+  typedef uint32_t Prun;
+  typedef uint8_t MMChunk;
+#endif
+
 extern uint8_t mm_key[N_SYMS_SUB][N_AXES];
 extern MMChunk mm_map[2][N_INFO][1 << (N_PER_AXIS + 1)];
 extern Prun *fstwist_prun;

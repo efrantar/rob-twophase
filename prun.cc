@@ -13,12 +13,23 @@ uint8_t *cornslice_prun;
 uint8_t mm_key[N_SYMS_SUB][N_AXES];
 MMChunk mm_map[2][N_INFO][1 << (N_PER_AXIS + 1)];
 
-// TODO: AXIAL + QUARTER TURN mode!
+int rev(int bitmask, int len, int count = 1) {
+  int rev = 0;
+  for (int i = 0; i < len; i += count) {
+    rev = (rev << count) | (bitmask & ((1 << count) - 1));
+    bitmask >>= count;
+  }
+  return rev;
+}
+
 void initPrun() {
   for (int s = 0; s < N_SYMS_SUB; s++) {
     for (int ax = 0; ax < N_AXES; ax++) {
-    mm_key[s][ax] = (conj_move[N_PER_AXIS * ax][inv_sym[s]] / N_PER_AXIS) << 1;
-    mm_key[s][ax] |= conj_move[N_PER_AXIS * ax][inv_sym[s]] % N_PER_AXIS != 0;
+      mm_key[s][ax] = N_INFO * (conj_move[N_PER_AXIS * ax][inv_sym[s]] / N_PER_AXIS);
+      mm_key[s][ax] |= conj_move[N_PER_AXIS * ax][inv_sym[s]] % 3 != 0;
+      #ifdef AXIAL
+        mm_key[s][ax] |= (conj_move[N_PER_AXIS * ax][inv_sym[s]] % N_PER_AXIS >= 12) << 1;
+      #endif
     }
   }
 
@@ -29,16 +40,45 @@ void initPrun() {
         #ifndef QUARTER
           mm >>= 1;
         #endif
-        if (info & 1) {
-          int rev = 0;
-          for (int i = 0; i < N_PER_AXIS; i++) {
-            if ((all_movemask & MOVEBIT(i)) != 0) {
-              rev = (rev << N_PER_MOVE) | (mm & ((1 << N_PER_MOVE) - 1));
-              mm >>= N_PER_MOVE;
+
+        #if AXIAL
+          #ifdef QUARTER
+            if (info & 1) {
+              mm =
+                rev(mm, 4, 2) |
+                (rev(mm >> 4, 8, 2) << 4) |
+                (rev(mm >> 12, 4, 2) << 12)
+              ;
             }
-          }
-          mm = rev;
-        }
+            if (info & 2) {
+              int mm1 = (mm & 0xf) << 8;
+              for (int i = 0; i < 2; i++) {
+                for (int j = 0; j < 2; j++)
+                  mm1 |= ((mm >> 2 * (2 * i + j + 2)) & 0x3) << 2 * (2 * j + i);
+              }
+              mm = (mm1 << 4) | ((mm >> 12) & 0xf);
+            }
+          #else
+            if (info & 1) {
+              mm =
+                rev(mm, 3) |
+                (rev(mm >> 3, 9) << 3) |
+                (rev(mm >> 12, 3) << 12)
+              ;
+            }
+            if (info & 2) {
+              int mm1 = (mm & 0x7) << 9;
+              for (int i = 0; i < 3; i++) {
+                for (int j = 0; j < 3; j++)
+                  mm1 |= ((mm & (1 << 3 * i + j + 3)) != 0) << 3 * j + i;
+              }
+              mm = (mm1 << 3) | ((mm >> 12) & 0x7);
+            }
+          #endif
+        #else
+          if (info & 1)
+            mm = rev(mm, N_PER_AXIS, N_PER_MOVE);
+        #endif
 
       #ifdef QUARTER
         mm_map[0][info][chunk] = 0;
@@ -86,7 +126,7 @@ MoveMask getFSTwistMoves(Coord flip, Coord sslice, Coord twist, int togo) {
 
   MoveMask mm = 0;
   for (int ax = 0; ax < N_AXES; ax++) {
-    mm |= mm_map[delta][INFO(mm_key[s][ax])][prun & ((1 << (N_PER_AXIS + 1)) - 1)] << OFF(mm_key[s][ax]);
+    mm |= MoveMask(mm_map[delta][INFO(mm_key[s][ax])][prun & ((1 << (N_PER_AXIS + 1)) - 1)]) << OFF(mm_key[s][ax]);
     prun >>= N_PER_AXIS + 1;
   }
 
