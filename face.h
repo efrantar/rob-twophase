@@ -1,4 +1,4 @@
-/*
+/**
  * Face level:
  * The cube is represented by a 54-character string describing the colors at the corresponding facelet positions.
  * This representation is only used to more conveniently interface with the outside world.

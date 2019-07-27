@@ -1,4 +1,4 @@
-/*
+/**
  * Cubie level:
  * A cube is represented by the permutation and orientation of its 12 edge cubies (physical cube pieces) as well as
  * the permutation and orientation of its 8 corner cubies. This representation is primarily utilized to compute all

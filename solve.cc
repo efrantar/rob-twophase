@@ -265,16 +265,11 @@ int twophase(const CubieCube &cube, int max_depth1, int timelimit, std::vector<i
 // We persist only the pruning tables as files (the other ones can be generated on the fly quickly enough)
 void initTwophase(bool file) {
   initFace();
+  initCoord();
   initSym();
   initPrun();
 
-  initTwistMove();
-  initFlipMove();
-  initSSliceMove();
-  initEdges4Move();
-  initUDEdgesMove2();
-  initCPermMove();
-
+  initCoordMove();
   initConjTwist();
   initConjUDEdges();
   initFlipSliceSym();
