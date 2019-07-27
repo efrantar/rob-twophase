@@ -1,68 +1,15 @@
 # twophase
 
-This repository contains an efficient C++ implementation of Herbert Kociemba's two-phase algorithm for solving Rubik's cubes. 
-The solver is based on the most current algorithmic ideas (see [`RubiksCube-TwophaseSolver`](https://github.com/hkociemba/RubiksCube-TwophaseSolver)) and furthermore includes various smaller optimizations and programming tricks (partly inspired by [`min2phase`](https://github.com/cs0x7f/min2phase)).
-It features the full phase 1 and almost full phase 2 pruning tables with 16-way symmetry reduction, multithreaded parallel search in 6 directions as well as an optimal solving mode.
+This repository features a highly optimized C++ implementation of Herbert Kociemba's two-phase algorithm for finding close to optimal solutions to 3x3 Rubik's Cubes extremely quickly.
+It combines essentially all of the best tricks
+from [`RubiksCube-TwophaseSolver`](https://github.com/hkociemba/RubiksCube-TwophaseSolver), [`min2phase`](https://github.com/cs0x7f/min2phase) and [`cube20src`](https://github.com/rokicki/cube20src) (fast coordinates, 16-way symmetry reduction, huge phase 1 pruning table with moves, phase 2 prechecking, 6-thread parallel search and more) with several smaller improvements of my own aiming to push single solve performance on random cubes to the limit. 
+Furthermore, it includes several options to search for solutions that are particularly efficient to execute for cube-solving robots (like preferring consecutive moves on opposite faces which can be performed in parallel and preferring quarter- over half-turns).
 
-Even on moderate hardware, the solver usually manages to find 20 or less move solutions to random cubes in less than 1 millisecond on average.
-This probably makes it one of the fastest versions to date.
-
-## Usage
-
-Usually you will probably want to use this as an API. 
-The file `cube.h` provides 3 simple function for solving cubes with the twophase algorithm, optimally and for generating scrambles to unfiorm cubes.
-Their interfaces are completely decoupled from any internal structures and work solely with `std::string`s.
-A short example is shown below, refer to respective function documentation for details.
-
-```C++
-#include <string>
-#include "solve.h"
-
-int main() {
-  initTwophase(); // Initialize twophase solver, may take a few seconds
-  // Input cubes in face-cube representation, see `face.h` for details
-  std::string cube = "UDFUURRLDBFLURRDRUUFLLFRFDBRBRLDBUDLRBBFLBBUDDFFDBUFLL";
-  // Look for a solution with 20 or less moves and use at most 10ms computation time
-  std::string sol = twophaseStr(cube, 20, 10);
-  
-  initOptim(); // Initialize optimal solver, may take a few minutes
-  sol = optimStr(cube);
-  
-  // Generate a scrambling sequence leading to a uniformly random cube; take at most 10ms
-  sol = scrambleStr(10);
-}
-```
-
-A small CMD-application is also includes. It provides functionality to run benchmarks, solve individual cubes and generate scrambles.
-Run `./twophase` for more information.
-
-**Note:** The solver does generally not use any platform specific features and should therefore in theory be portable. 
-The makefile however links the library `pthread` and has only been tested on Linux.
+As far as I know, this is the "best" (in terms of average solving time for a fixed upper bound on the number of moves and average solution length when searching for a fixed amount of time) solver you can find online at the moment. 
+It also seems to be the only one specifically tuned for cube-solving robots. 
+However, all of these optimizations make the solver relatively resource intensive (especially for non-standard solving modes), hence if you just want to quickly (for human standards) find a decent solution to a Rubik's Cube, it might be a little overkill. 
+On the other hand, if you are interested in the current state of the art techniques for solving a cube as quickly as possible or if you are planning to beat the Guinness World Record for the fastest robot to solve a Rubik's Cube, this solver is most likely what you want to look at.
 
 ## Performance
 
-All benchmarks were performed with a fixed set of 10000 uniformly random cubes sampled cubes (`bench.cubes`) on an Intel(R) Core(TM) i7-4710HQ CPU @ 2.50GHz quad-core processor.
-
-**Note:** The solver likely performs even better on stronger hardware as it is considerably bottlenecked by only 4 cores (it fully supports up to 6) and relatively slow RAM access speed (the lookup tables are too large to fit into the cache).
-
-### Solving Time:
-
-| Moves | Avg [ms] | Min [ms] | Max [ms] |
-| ----- | -------- | -------- | -------- |
-| 20    | 0.739    | 0.075    | 144.913  |
-| 21    | 0.207    | 0.070    | 2.219    |
-| 30    | 0.218    | 0.076    | 1.798    |
-
-### Number of Moves:
-
-| Time [ms] | Avg Moves | Solved [%] |
-| --------- | --------- | ---------- |
-| 1         | 19.564    | 99.98      |
-| 5         | 19.261    | 100        |
-| 10        | 19.154    | 100        |
-| 50        | 18.835    | 100        |
-| 100       | 18.745    | 100        |
-
-### Optimal Solver:
-
-The performance of the optimal solver highly depends on the particular cube to be solved. Typically, cubes with solutions up to depth 15 take a few milliseconds, with depth 16 - 18 a few seconds to minutes, and 19 - 20 several minutes to a few hours.
+## Usage
