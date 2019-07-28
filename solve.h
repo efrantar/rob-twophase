@@ -29,8 +29,6 @@ class TwoPhaseSolver {
     Coord cperm[N];
     Coord udedges[N];
 
-    // Keep track how far CPERM and UEDGES/DEDGES have already been restored during earlier phase 1 solutions
-    int cperm_depth;
     int udedges_depth; // individual variable as we only restore UDEDGES if the precheck did not fail
     int moves[N];
 

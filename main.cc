@@ -36,25 +36,6 @@ bool checkSol(const CubieCube &cube, const std::vector<int> &sol) {
   return cube1 == kSolvedCube;
 }
 
-/*
-int cost(const std::vector<int> &sol) {
-  int cost = 0;
-
-  int i;
-  for (i = 0; i < sol.size() - 1; i++) {
-    if (abs(sol[i] / 3 - sol[i + 1] / 3) == 3) {
-      cost += std::max(sol[i] % 3 == 1 ? 2 : 1, sol[i + 1] % 3 == 1 ? 2 : 1);
-      i++;
-    } else
-      cost += sol[i] % 3 == 1 ? 2 : 1;
-  }
-  if (i < sol.size())
-    cost += sol[i] % 3 == 1 ? 2 : 1;
-
-  return cost;
-}
- */
-
 void benchTime(const std::vector<CubieCube> &cubes, int moves) {
   std::vector<double> times;
   int failed = 0;
@@ -94,7 +75,6 @@ void benchMoves(const std::vector<CubieCube> &cubes, int time) {
       failed++;
     else
       moves.push_back(sol.size());
-      // moves.push_back(cost(sol));
   }
 
   std::cout

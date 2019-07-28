@@ -52,8 +52,6 @@ void TwoPhaseSolver::solve(const CubieCube &cube) {
   moves[0] = N_MOVES;
 
   for (int togo = DIST(getFSTwistPrun(flip[0], sslice[0], twist[0])); togo <= len; togo++) {
-    // Resetting here saves two `*_depth > 0` checks in every call
-    cperm_depth = 0;
     udedges_depth = 0;
     phase1(0, togo);
   }
@@ -64,10 +62,6 @@ void TwoPhaseSolver::phase1(int depth, int togo) {
     return;
 
   if (togo == 0) {
-    for (int i = cperm_depth + 1; i <= depth; i++)
-      cperm[i] = cperm_move[cperm[i - 1]][moves[i]];
-    cperm_depth = depth - 1;
-
     if (getCornSlicePrun(cperm[depth], sslice[depth]) > len - 1 - depth)
       return;
 
@@ -99,14 +93,12 @@ void TwoPhaseSolver::phase1(int depth, int togo) {
     flip[depth + 1] = flip_move[flip[depth]][m];
     sslice[depth + 1] = sslice_move[sslice[depth]][m];
     twist[depth + 1] = twist_move[twist[depth]][m];
+    cperm[depth + 1] = cperm_move[cperm[depth]][m];
     moves[depth + 1] = m;
 
     phase1(depth + 1, togo - 1);
   }
 
-  if (cperm_depth == depth)
-    cperm_depth--;
-  // We need to check this individually as `cperm_depth` might be updated considerably more often
   if (udedges_depth == depth)
     udedges_depth--;
 }
