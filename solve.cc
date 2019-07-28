@@ -230,10 +230,7 @@ void initTwophase(bool file) {
   initPrun();
 
   initCoordMove();
-  initConjTwist();
-  initConjUDEdges();
-  initFlipSliceSym();
-  initCPermSym();
+  initSymTables();
 
   if (!file) {
     initFSTwistPrun();
