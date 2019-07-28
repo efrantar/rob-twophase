@@ -13,25 +13,22 @@
 #include <thread>
 
 #include "cubie.h"
-#include "coord.h"
 #include "face.h"
-#include "misc.h"
 #include "moves.h"
-#include "prun.h"
 #include "solve.h"
-#include "sym.h"
 
 #define BENCHFILE "bench.cubes"
 #define MAX_BENCHTIME 10000 // even the worst cubes should not take much more than a few 100ms to solve in 20 moves
-#define MAX_SCRAMBLETIME 10
 #define PRINT_EVERY 1000
 
 bool checkSol(const CubieCube &cube, const std::vector<int> &sol) {
   CubieCube cube1;
   CubieCube cube2;
 
-  copy(cube, cube1);
+  cube1 = cube;
   for (int m : sol) {
+    if (m >= N_MOVES)
+      return false;
     mul(cube1, move_cubes[m], cube2);
     std::swap(cube1, cube2);
   }
@@ -73,7 +70,7 @@ void benchMoves(const std::vector<CubieCube> &cubes, int time) {
     if (i % PRINT_EVERY == 0)
       std::cout << "Benchmarking ..." << std::endl;
     std::vector<int> sol;
-    twophase(cubes[i], 30, time, sol);
+    twophase(cubes[i], -1, time, sol);
     if (!checkSol(cubes[i], sol))
       failed++;
     else
@@ -89,42 +86,30 @@ void benchMoves(const std::vector<CubieCube> &cubes, int time) {
 
 int main(int argc, char *argv[]) {
   if (argc == 1) {
-    std::cout << "Call:" << std::endl
+    std::cout
+      << "Call:" << std::endl
       << "./twophase twophase FACECUBE MAX_MOVES TIME" << std::endl
-      << "./twophase optim FACECUBE MAX_MOVES TIME" << std::endl
       << "./twophase benchtime MAX_MOVES" << std::endl
       << "./twophase benchmoves TIME" << std::endl
-      << "./twophase scramble COUNT" << std::endl;
+    ;
     return 0;
   }
   std::string mode(argv[1]);
 
   std::cout << "Loading tables ..." << std::endl;
   auto tick = std::chrono::high_resolution_clock::now();
-  if (mode == "optim")
-    initOptim(true);
-  else
-    initTwophase(true);
+  initTwophase(true);
   auto tock = std::chrono::high_resolution_clock::now() - tick;
   std::cout
     << "Done. " << std::chrono::duration_cast<std::chrono::milliseconds>(tock).count() / 1000. << "s" << std::endl;
 
-  if (mode == "scramble") {
-    int count = std::stoi(argv[2]);
-    while (count-- > 0)
-      std::cout << scrambleStr(MAX_SCRAMBLETIME) << std::endl;
-  } else if (mode == "twophase" || mode == "optim") {
+  if (mode == "twophase") {
     auto tick = std::chrono::high_resolution_clock::now();
     if (mode == "twophase") {
       std::cout << twophaseStr(std::string(argv[2]), std::stoi(argv[3]), std::stoi(argv[4])) << std::endl;
       std::cout << std::chrono::duration_cast<std::chrono::microseconds>(
         std::chrono::high_resolution_clock::now() - tick
       ).count() / 1000. << "ms" << std::endl;
-    } else {
-      std::cout << optimStr(std::string(argv[2]), std::stoi(argv[3]), std::stoi(argv[4])) << std::endl;
-      std::cout << std::chrono::duration_cast<std::chrono::milliseconds>(
-        std::chrono::high_resolution_clock::now() - tick
-      ).count() / 60000. << "min" << std::endl;
     }
   } else {
     std::vector<CubieCube> cubes;

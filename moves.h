@@ -1,77 +1,34 @@
-/*
- * Move definitions
- */
-
 #ifndef MOVES_H_
 #define MOVES_H_
 
-#include <stdint.h>
 #include <string>
-#include <vector>
 #include "cubie.h"
 
-#define N_MOVES 18
-#define N_MOVES2 10
+#ifdef AXIAL
+  #define N_MOVES 45
+  #define N_MOVES2 21
+  #define N_AXES 3
+#else
+  #define N_MOVES 18
+  #define N_MOVES2 10
+  #define N_AXES 6
+#endif
+#define N_PER_AXIS (N_MOVES / N_AXES)
 
-// Order s.t. / 3 gives axis and % 3 power; X1 clockwise, X3 counter-clockwise
-#define U1 0
-#define U2 1
-#define U3 2
-#define R1 3
-#define R2 4
-#define R3 5
-#define F1 6
-#define F2 7
-#define F3 8
-#define D1 9
-#define D2 10
-#define D3 11
-#define L1 12
-#define L2 13
-#define L3 14
-#define B1 15
-#define B2 16
-#define B3 17
+#define MOVEBIT(m) (MoveMask(1) << (m))
 
-const std::string kMoveNames[] = {
-  "U", "U2", "U'", 
-  "R", "R2", "R'", 
-  "F", "F2", "F'", 
-  "D", "D2", "D'", 
-  "L", "L2", "L'", 
-  "B", "B2", "B'"
-};
+typedef uint64_t MoveMask;
 
-const int kPhase2Moves[] = {
-  U1, U2, U3, R2, F2, D1, D2, D3, L2, B2
-};
+extern std::string move_names[N_MOVES];
+extern int inv_move[N_MOVES];
+extern int split[N_MOVES]; // TODO: this is a bit ugly
+extern MoveMask movemasks[N_MOVES + 1];
+extern MoveMask all_movemask;
+extern MoveMask extra_movemask;
 
-const bool kIsPhase2Move[] = {
-  true, true, true, false, true, false,
-  false, true, false, true, true, true,
-  false, true, false, false, true, false
-};
+extern int moves2[N_MOVES2];
 
-const int kInvMove[] = {
-  U3, U2, U1, 
-  R3, R2, R1, 
-  F3, F2, F1, 
-  D3, D2, D1, 
-  L3, L2, L1, 
-  B3, B2, B1
-};
-
-// Used for jumping to the next axis in the solver
-const int kAxisEnd[] = {
-  U3, U3, U3,
-  R3, R3, R3,
-  F3, F3, F3,
-  D3, D3, D3,
-  L3, L3, L3,
-  B3, B3, B3
-};
-
-const CubieCube kUCube = { 
+const CubieCube kUCube = {
   {UBR, URF, UFL, ULB, DFR, DLF, DBL, DRB},
   {UB, UR, UF, UL, DR, DF, DL, DB, FR, FL, BL, BR},
   {}, {}

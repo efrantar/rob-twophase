@@ -2,8 +2,13 @@
 
 #include <string>
 #include <unordered_map>
-#include "misc.h"
 
+// True modulo function that also works properly for negative numbers
+int mod(int a, int m) {
+  return a > 0 ? a % m : (a % m + m) % m;
+}
+
+// Converts a cubelet and its orientation into a single unique code-number
 int encode(const std::string &cubelet, int ori) {
   int res = 0;
   for (int i = 0; i < cubelet.size(); i++)
@@ -11,11 +16,11 @@ int encode(const std::string &cubelet, int ori) {
   return res;
 }
 
-// Map code to cubie & ori
+// Map code to cubie ID and orientation
 std::unordered_map<int, std::pair<int, int>> corners;
 std::unordered_map<int, std::pair<int, int>> edges;
 
-static bool init() {
+void initFace() {
   for (int corner = 0; corner < N_CORNERS; corner++) {
     for (int ori = 0; ori < 3; ori++)
       corners[encode(kCornerNames[corner], ori)] = std::make_pair(corner, ori);
@@ -24,9 +29,7 @@ static bool init() {
     for (int ori = 0; ori < 2; ori++)
       edges[encode(kEdgeNames[edge], ori)] = std::make_pair(edge, ori);
   }
-  return true;
 }
-static bool inited = init();
 
 int faceToCubie(const std::string &s, CubieCube &cube) {
   for (int i = 0; i < N_FACELETS; i++) {
@@ -61,7 +64,7 @@ int faceToCubie(const std::string &s, CubieCube &cube) {
   return 0;
 }
 
-// Assumes `cube` to ve valid
+// Assumes the given cube to be valid
 std::string cubieToFace(const CubieCube &cube) {
   char s[N_FACELETS];
 
@@ -69,6 +72,7 @@ std::string cubieToFace(const CubieCube &cube) {
     s[9 * color + 4] = kColorNames[color];
   for (int corner = 0; corner < N_CORNERS; corner++) {
     for (int i = 0; i < 3; i++)
+      // Corner twist is defined clockwise
       s[kCornlets[corner][i]] = kCornerNames[cube.cp[corner]][mod(i - cube.co[corner], 3)];
   }
   for (int edge = 0; edge < N_EDGES; edge++) {
