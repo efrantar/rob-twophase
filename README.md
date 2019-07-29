@@ -11,15 +11,15 @@ On the other hand, if you are interested in the current state of the art techniq
 
 ## Performance
 
-| `-DQUARTER` | `-DAXIAL`  | `-DFACES5` | #Moves | Setup Time | Table Size |
-| :---------: | :--------: | :--------: | :----: | :--------: | :--------: |
-| -           | -          | -          |        |            |            |
-| YES         | -          | -          |        |            |            |
-| -           | YES        | -          |        |            |            |
-| YES         | YES        | -          |        |            |            |
-| -           | -          | YES        |        |            |            |
-| YES         | -          | YES        |        |            |            |
-| -           | YES        | YES        |        |            |            |
-| YES         | YES        | YES        |        |            |            |
+| `-DQUARTER` | `-DAXIAL`  | `-DFACES5` | #Moves    | Setup Time | Table Size |
+| :---------: | :--------: | :--------: | :-------: | :--------: | :--------: |
+| -           | -          | -          | **18.94** | 59s        | 676MB      |
+| YES         | -          | -          | **25.33** | 40s        | 676MB      |
+| -           | YES        | -          | **15.13** | 149s       | 1.2GB      |
+| YES         | YES        | -          | **20.86** | 104s       | 1.2GB      |
+| -           | -          | YES        | **21.06** | 211s       | 2.7GB      |
+| YES         | -          | YES        | **28.33** | 149s       | 2.7GB      |
+| -           | YES        | YES        | **17.27** | 510s       | 4.9GB      |
+| YES         | YES        | YES        | **23.64** | 346s       | 4.9GB      |
 
 ## Usage
