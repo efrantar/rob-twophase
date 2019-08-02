@@ -127,8 +127,8 @@ void shuffle(CubieCube &cube) {
     // Any single swap of two elements flips the permutation parity
     std::swap(cube.cp[N_CORNERS - 2], cube.cp[N_CORNERS - 1]);
 
-  setTwist(cube, std::uniform_int_distribution<Coord>(0, N_TWIST)(gen));
-  setFlip(cube, std::uniform_int_distribution<Coord>(0, N_FLIP)(gen));
+  setTwist(cube, std::uniform_int_distribution<int>(0, N_TWIST)(gen));
+  setFlip(cube, std::uniform_int_distribution<int>(0, N_FLIP)(gen));
 }
 
 bool operator==(const CubieCube &cube1, const CubieCube &cube2) {

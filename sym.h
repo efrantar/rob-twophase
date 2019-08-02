@@ -60,13 +60,9 @@
 #endif
 
 /* Macros for easily handling the sym-coordinates joined with their respective symmetry */
-#define SYMCOORD(coord, sym) (SymCoord(coord) * N_SYMS_SUB + sym)
+#define SYMCOORD(coord, sym) (N_SYMS_SUB * coord + sym)
 #define SYM(scoord) (scoord % N_SYMS_SUB)
 #define COORD(scoord) (scoord / N_SYMS_SUB)
-
-/* Custom table datatypes to waste as little space as possible */
-typedef uint32_t SymCoord;
-typedef uint16_t SelfSyms;
 
 /* `CubieCube`s representing the basic symmetries */
 const CubieCube kLR2Cube = {
@@ -99,16 +95,16 @@ extern int inv_sym[N_SYMS];
 extern int conj_move[N_MOVES][N_SYMS];
 
 /* Coordinate conjugation tables */
-extern Coord (*conj_twist)[N_SYMS_SUB];
-extern Coord (*conj_udedges)[N_SYMS_SUB];
+extern uint16_t (*conj_twist)[N_SYMS_SUB];
+extern uint16_t (*conj_udedges)[N_SYMS_SUB];
 
 /* Tables used for the symmetry reduction */
-extern SymCoord *fslice_sym;
-extern SymCoord *cperm_sym;
-extern CCoord *fslice_raw;
-extern Coord *cperm_raw;
-extern SelfSyms *fslice_selfs;
-extern SelfSyms *cperm_selfs;
+extern uint32_t *fslice_sym;
+extern uint32_t *cperm_sym;
+extern uint32_t *fslice_raw;
+extern uint16_t *cperm_raw;
+extern uint16_t *fslice_selfs;
+extern uint16_t *cperm_selfs;
 
 // Sets up all the basic data; to be called before accessing anything from this file
 void initSym();

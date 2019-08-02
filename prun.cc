@@ -101,62 +101,60 @@ void initPrun() {
   }
 }
 
-Prun getFSTwistPrun(Coord flip, Coord sslice, Coord twist) {
-  CCoord fslice = FSLICE(flip, SS_SLICE(sslice));
-  CCoord fstwist = FSTWIST(
-    COORD(fslice_sym[fslice]), conj_twist[twist][SYM(fslice_sym[fslice])]
-  );
-  return fstwist_prun[fstwist];
-}
-
-MoveMask getFSTwistMoves(Coord flip, Coord sslice, Coord twist, int togo) {
-  CCoord fslice = FSLICE(flip, SS_SLICE(sslice));
+int getFSTwistPrun(int flip, Edges4 sslice, int twist, int togo, MoveMask &mm) {
+  int fslice = FSLICE(flip, sslice.comb);
   int s = SYM(fslice_sym[fslice]);
-  CCoord fstwist = FSTWIST(
+  int fstwist = FSTWIST(
     COORD(fslice_sym[fslice]), conj_twist[twist][s]
   );
-  Prun prun = fstwist_prun[fstwist];
 
-  int delta = togo - DIST(prun);
-  if (delta < 0)
-    return 0;
-  if (delta > 1)
-    return all_movemask;
+  Prun prun = fstwist_prun[fstwist];
+  int dist = DIST(prun);
   prun >>= 8;
 
-  MoveMask mm = 0;
-  for (int ax = 0; ax < N_AXES; ax++) {
-    mm |= MoveMask(mm_map[delta][INFO(mm_key[s][ax])][prun & ((1 << (N_PER_AXIS + 1)) - 1)]) << OFF(mm_key[s][ax]);
-    prun >>= N_PER_AXIS + 1;
+  int delta = togo - dist;
+  if (delta < 0)
+    mm = 0;
+  else if (delta > 1)
+    mm = all_movemask;
+  else {
+    mm = 0;
+    for (int ax = 0; ax < N_AXES; ax++) {
+      mm |= MoveMask(mm_map[delta][INFO(mm_key[s][ax])][prun & ((1 << (N_PER_AXIS + 1)) - 1)]) << OFF(mm_key[s][ax]);
+      prun >>= N_PER_AXIS + 1;
+    }
   }
 
-  return mm;
+  return dist;
 }
 
-int getCornEdPrun(Coord cperm, Coord udedges) {
-  CCoord corned = CORNED(
-    COORD(cperm_sym[cperm]), conj_udedges[udedges][SYM(cperm_sym[cperm])]
+int getCornEdPrun(CPerm cperm, Edges4 uedges, Edges4 dedges) {
+  int tmp = cperm_sym[cperm.val()];
+  int corned = CORNED(
+    COORD(tmp), conj_udedges[mergeUDEdges2(uedges, dedges)][SYM(tmp)]
   );
   return corned_prun[corned];
 }
 
-int getCornSlicePrun(Coord cperm, Coord sslice) {
-  return cornslice_prun[CORNSLICE(cperm, sslice)];
+int getCornSlicePrun(CPerm cperm, Edges4 sslice) {
+  return cornslice_prun[CORNSLICE(cperm.val(), sslice.perm)];
 }
 
 void initFSTwistPrun() {
   fstwist_prun = new Prun[N_FSTWIST];
   std::fill(fstwist_prun, fstwist_prun + N_FSTWIST, EMPTY8);
 
+  Edges4 sslice1;
   fstwist_prun[0] = 0;
+
   for (int dist = 0, count = 0; count < N_FSTWIST; dist++) {
-    CCoord c = 0;
+    int c = 0;
 
-    for (CCoord fssym = 0; fssym < N_FSLICE_SYM; fssym++) {
-      Coord flip = FS_FLIP(fslice_raw[fssym]);
-      Coord slice = FS_SLICE(fslice_raw[fssym]);
+    for (int fssym = 0; fssym < N_FSLICE_SYM; fssym++) {
+      int flip = FS_FLIP(fslice_raw[fssym]);
+      Edges4 sslice(FS_SLICE(fslice_raw[fssym]), 0);
 
-      for (Coord twist = 0; twist < N_TWIST; twist++, c++) {
+      for (int twist = 0; twist < N_TWIST; twist++, c++) {
         if (DIST(fstwist_prun[c]) != dist)
           continue;
         count++;
@@ -168,14 +166,11 @@ void initFSTwistPrun() {
             continue;
           }
 
-          Coord flip1 = flip_move[flip][m];
-          Coord slice1 = sliceMove(slice, m);
-          CCoord fslice1 = FSLICE(flip1, slice1);
-          Coord twist1 = twist_move[twist][m];
-
-          CCoord fssym1 = COORD(fslice_sym[fslice1]);
-          twist1 = conj_twist[twist1][SYM(fslice_sym[fslice1])];
-          CCoord c1 = FSTWIST(fssym1, twist1);
+          moveSSlice(sslice, m, sslice1);
+          int fslice1 = FSLICE(move_flip[flip][m], sslice1.comb);
+          int fssym1 = COORD(fslice_sym[fslice1]);
+          int twist1 = conj_twist[move_twist[twist][m]][SYM(fslice_sym[fslice1])];
+          int c1 = FSTWIST(fssym1, twist1);
 
           if (fstwist_prun[c1] == EMPTY8)
             fstwist_prun[c1] = dist + 1;
@@ -184,7 +179,7 @@ void initFSTwistPrun() {
           int selfs = fslice_selfs[fssym1] >> 1;
           for (int s = 1; selfs > 0; selfs >>= 1, s++) { // bit 0 is always on -> > 0 to save an iteration
             if (selfs & 1) {
-              CCoord c2 = FSTWIST(fssym1, conj_twist[twist1][s]);
+              int c2 = FSTWIST(fssym1, conj_twist[twist1][s]);
               if (fstwist_prun[c2] == EMPTY8)
                 fstwist_prun[c2] = dist + 1;
             }
@@ -228,14 +223,24 @@ void initCornEdPrun() {
   corned_prun = new uint8_t[N_CORNED];
   std::fill(corned_prun, corned_prun + N_CORNED, EMPTY8);
 
+  Edges4 uedges;
+  Edges4 dedges;
+  Edges4 uedges1;
+  Edges4 dedges1;
+  CPerm cperm1;
+
   corned_prun[0] = 0;
   for (int dist = 0, count = 0; count < N_CORNED; dist++) {
-    CCoord c = 0;
-    for (Coord csym = 0; csym < N_CPERM_SYM; csym++) {
-      for (Coord udedges = 0; udedges < N_UDEDGES2; udedges++, c++) {
+    int c = 0;
+    for (int i = 0; i < N_CPERM_SYM; i++) {
+      CPerm cperm(cperm_raw[i]);
+
+      for (int j = 0; j < N_UDEDGES2; j++, c++) {
         if (corned_prun[c] != dist)
           continue;
         count++;
+
+        splitUDEdges2(j, uedges, dedges);
 
         for (int m = 0; m < N_MOVES2; m++) {
           int dist1 = dist + 1;
@@ -249,11 +254,13 @@ void initCornEdPrun() {
               continue;
           #endif
 
-          Coord corners1 = cperm_move[cperm_raw[csym]][moves2[m]];
-          Coord udedges1 = udedges_move2[udedges][m];
-          Coord csym1 = COORD(cperm_sym[corners1]);
-          udedges1 = conj_udedges[udedges1][SYM(cperm_sym[corners1])];
-          CCoord c1 = CORNED(csym1, udedges1);
+          moveCPerm(cperm, moves2[m], cperm1);
+          moveEdges4(uedges, moves2[m], uedges1);
+          moveEdges4(dedges, moves2[m], dedges1);
+          int tmp = cperm_sym[cperm1.val()];
+          int udedges1 = conj_udedges[mergeUDEdges2(uedges1, dedges1)][SYM(tmp)];
+          int csym1 = COORD(tmp);
+          int c1 = CORNED(csym1, udedges1);
 
           if (corned_prun[c1] <= dist1)
             continue;
@@ -262,7 +269,7 @@ void initCornEdPrun() {
           int selfs = cperm_selfs[csym1] >> 1;
           for (int s = 1; selfs > 0; selfs >>= 1, s++) {
             if (selfs & 1) {
-              CCoord c2 = CORNED(csym1, conj_udedges[udedges1][s]);
+              int c2 = CORNED(csym1, conj_udedges[udedges1][s]);
               if (corned_prun[c2] > dist1)
                 corned_prun[c2] = dist1;
             }
@@ -278,14 +285,22 @@ void initCornSlicePrun() {
   cornslice_prun = new uint8_t[N_CORNSLICE];
   std::fill(cornslice_prun, cornslice_prun + N_CORNSLICE, EMPTY8);
 
+  Edges4 sslice1;
+  CPerm cperm1;
+
   cornslice_prun[0] = 0;
   for (int dist = 0, count = 0; count < N_CORNSLICE; dist++) {
-    CCoord c = 0;
-    for (Coord cperm = 0; cperm < N_CPERM; cperm++) {
-      for (Coord sslice = 0; sslice < N_SSLICE2; sslice++, c++) {
+    int c = 0;
+
+    for (int i = 0; i < N_CPERM; i++) {
+      CPerm cperm(i);
+
+      for (int j = 0; j < N_SSLICE2; j++, c++) {
         if (cornslice_prun[c] != dist)
           continue;
         count++;
+
+        Edges4 sslice(j);
 
         for (int m = 0; m < N_MOVES2; m++) {
           int dist1 = dist + 1;
@@ -299,9 +314,10 @@ void initCornSlicePrun() {
               continue;
           #endif
 
-          CCoord c1 = CORNSLICE(
-            cperm_move[cperm][moves2[m]], sslice_move[sslice][moves2[m]]
-          );
+          moveCPerm(cperm, moves2[m], cperm1);
+          moveSSlice(sslice, moves2[m], sslice1);
+
+          int c1 = CORNSLICE(cperm1.val(), sslice1.perm);
           if (cornslice_prun[c1] > dist1)
             cornslice_prun[c1] = dist1;
         }

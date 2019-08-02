@@ -5,6 +5,7 @@
 #include <mutex>
 #include <vector>
 #include <sstream>
+#include <string.h>
 #include <thread>
 
 #include "coord.h"
@@ -13,6 +14,13 @@
 #include "moves.h"
 #include "sym.h"
 #include "prun.h"
+
+double time1 = 0;
+
+CubieCube cube1;
+std::mutex ready_mutex;
+std::condition_variable ready_var;
+bool ready;
 
 std::mutex mutex; // lock for writing solutions
 bool done; // signal solver shutdown
@@ -43,77 +51,95 @@ void TwoPhaseSolver::solve(const CubieCube &cube) {
     inv(tmp, cube1);
   }
 
-  flip[0] = getFlip(cube1);
-  twist[0] = getTwist(cube1);
-  sslice[0] = getSSlice(cube1);
-  uedges[0] = getUEdges(cube1);
-  dedges[0] = getDEdges(cube1);
-  cperm[0] = getCPerm(cube1);
-  moves[0] = N_MOVES;
+  int flip = getFlip(cube1);
+  int twist = getTwist(cube1);
+  Edges4 sslice(getSSlice(cube1));
+  Edges4 uedges(getUEdges(cube1));
+  Edges4 dedges(getDEdges(cube1));
+  CPerm cperm(getCPerm(cube1));
 
-  for (int togo = DIST(getFSTwistPrun(flip[0], sslice[0], twist[0])); togo <= len; togo++) {
-    udedges_depth = 0;
-    phase1(0, togo);
+  MoveMask mm;
+  for (int togo = getFSTwistPrun(flip, sslice, twist, 0, mm); togo <= len; togo++) {
+    phase1(0, togo, flip, twist, sslice, uedges, dedges, cperm, all_movemask);
+    /*
+    if (!done) {
+      mutex.lock();
+      std::cout << inv_ << " " << rot << " " << togo << " " << probes << "\n";
+      mutex.unlock();
+    }
+     */
+    // std::this_thread::yield();
   }
+  // mutex.lock();
+  // std::cout << "probes: " << inv_ << " " << rot << " " << probes << "\n";
+  // mutex.unlock();
 }
 
-void TwoPhaseSolver::phase1(int depth, int togo) {
+void TwoPhaseSolver::phase1(
+  int depth, int togo,
+  int flip, int twist, const Edges4 &sslice, const Edges4 &uedges, const Edges4 &dedges, const CPerm &cperm,
+  MoveMask movemask
+) {
   if (done)
     return;
 
   if (togo == 0) {
-    if (getCornSlicePrun(cperm[depth], sslice[depth]) > len - 1 - depth)
-      return;
-
-    for (int i = udedges_depth + 1; i <= depth; i++) {
-      uedges[i] = edges4_move[uedges[i - 1]][moves[i]];
-      dedges[i] = edges4_move[dedges[i - 1]][moves[i]];
-    }
-    udedges_depth = depth - 1;
-    udedges[depth] = UDEDGES(uedges[depth], dedges[depth]);
-
-    int tmp = std::max(
-      getCornSlicePrun(cperm[depth], sslice[depth]),
-      getCornEdPrun(cperm[depth], udedges[depth])
-    );
-    for (int togo1 = tmp; togo1 < len - depth; togo1++) {
-      if (phase2(depth, togo1))
+    probes++;
+    for (int togo1 = getCornEdPrun(cperm, uedges, dedges); togo1 < len - depth; togo1++) {
+      if (phase2(depth, togo1, sslice, uedges, dedges, cperm, movemask))
         return;
     }
     return;
   }
 
-  MoveMask tmp =
-    getFSTwistMoves(flip[depth], sslice[depth], twist[depth], togo) & movemasks[moves[depth]];
+  MoveMask mm;
+  int dist = getFSTwistPrun(flip, sslice, twist, togo, mm);
+  if (dist != togo && dist + togo < 5)
+    return;
+  mm &= movemask;
 
-  for (int m = 0; m < N_MOVES; m++) {
-    if ((tmp & MOVEBIT(m)) == 0)
-      continue;
+  depth++;
+  togo--;
 
-    flip[depth + 1] = flip_move[flip[depth]][m];
-    sslice[depth + 1] = sslice_move[sslice[depth]][m];
-    twist[depth + 1] = twist_move[twist[depth]][m];
-    cperm[depth + 1] = cperm_move[cperm[depth]][m];
-    moves[depth + 1] = m;
+  Edges4 sslice1;
+  Edges4 uedges1;
+  Edges4 dedges1;
+  CPerm cperm1;
 
-    phase1(depth + 1, togo - 1);
+  while (mm) {
+    int m = ffsll(mm) - 1;
+    mm &= mm - 1;
+
+    int flip1 = move_flip[flip][m];
+    int twist1 = move_twist[twist][m];
+    moveSSlice(sslice, m, sslice1);
+    moveEdges4(uedges, m, uedges1);
+    moveEdges4(dedges, m, dedges1);
+    moveCPerm(cperm, m, cperm1);
+    moves[depth - 1] = m;
+
+    phase1(depth, togo, flip1, twist1, sslice1, uedges1, dedges1, cperm1, movemasks[m]);
   }
-
-  if (udedges_depth == depth)
-    udedges_depth--;
 }
 
-bool TwoPhaseSolver::phase2(int depth, int togo) {
+bool TwoPhaseSolver::phase2(
+  int depth, int togo,
+  const Edges4 &sslice, const Edges4 &uedges, const Edges4 &dedges, const CPerm &cperm,
+  MoveMask movemask
+) {
   if (done)
-    return false;
+    return true;
 
   if (togo == 0) {
+    if (sslice.perm != 0 || cperm.val() != 0 || mergeUDEdges2(uedges, dedges) != 0)
+      return false;
+
     mutex.lock();
 
     if (depth < len) {
       sol.resize(depth);
       for (int i = 0; i < depth; i++)
-        sol[i] = moves[i + 1];
+        sol[i] = moves[i];
       len = depth; // update so that other threads can already search for shorter solutions
 
       if (inv_) {
@@ -128,15 +154,37 @@ bool TwoPhaseSolver::phase2(int depth, int togo) {
 
       if (depth <= max_depth) // keep searching if current solution exceeds max-depth
         done = true;
-
-      mutex.unlock();
-      return true;
     }
 
     mutex.unlock();
-    return false;
+    return true;
   }
 
+  Edges4 sslice1;
+  Edges4 uedges1;
+  Edges4 dedges1;
+  CPerm cperm1;
+
+  MoveMask mm = phase2_movemask & movemask;
+  while (mm) {
+    int m = ffsll(mm) - 1;
+    mm &= mm - 1;
+
+    moveSSlice(sslice, m, sslice1);
+    moveEdges4(uedges, m, uedges1);
+    moveEdges4(dedges, m, dedges1);
+    moveCPerm(cperm, m, cperm1);
+
+    if (getCornEdPrun(cperm1, uedges1, dedges1) < togo) {
+      moves[depth] = m;
+      if (phase2(depth + 1, togo - 1, sslice1, uedges1, dedges1, cperm1, movemasks[m]))
+        return true;
+    }
+  }
+
+  return false;
+
+  /*
   for (int m = 0; m < N_MOVES2; m++) {
     int depth1 = depth;
     int togo1 = togo;
@@ -152,12 +200,12 @@ bool TwoPhaseSolver::phase2(int depth, int togo) {
         continue;
     #endif
 
-    sslice[depth1 + 1] = sslice_move[sslice[depth]][moves2[m]];
-    cperm[depth1 + 1] = cperm_move[cperm[depth]][moves2[m]];
-    udedges[depth1 + 1] = udedges_move2[udedges[depth]][m];
+    moveSSlice(sslice[depth], moves2[m], sslice[depth1 + 1]);
+    moveCPerm(cperm[depth], moves2[m], cperm[depth1 + 1]);
+    moveEdges4(uedges[depth], moves2[m], uedges[depth1 + 1]);
+    moveEdges4(dedges[depth], moves2[m], dedges[depth1 + 1]);
 
-    int tmp = getCornEdPrun(cperm[depth1 + 1], udedges[depth1 + 1]);
-    if (std::max(tmp, getCornSlicePrun(cperm[depth1 + 1], sslice[depth1 + 1])) < togo1) {
+    if (getCornEdPrun(cperm[depth1 + 1], uedges[depth1 + 1], dedges[depth1 + 1]) < togo1) {
       moves[depth + 1] = moves2[m];
       #ifdef QUARTER
         if ((extra_movemask & (MoveMask(1) << moves2[m])) != 0) {
@@ -169,11 +217,31 @@ bool TwoPhaseSolver::phase2(int depth, int togo) {
         return true;
     }
   }
-
-  return false;
+   */
 }
 
 int twophase(const CubieCube &cube, int max_depth1, int timelimit, std::vector<int> &sol1) {
+  ready = false;
+
+  std::vector<std::thread> threads;
+  for (int rot = 0; rot < 3; rot++) {
+    #ifdef FACES5
+      if (rot > 1)
+        break;
+    #endif
+    for (int inv = 0; inv < 2; inv++) {
+      threads.push_back(std::thread([rot, inv]() {
+        {
+          std::unique_lock<std::mutex> lock(ready_mutex);
+          ready_var.wait(lock, []{ return ready; });
+          ready_var.notify_one();
+        }
+        TwoPhaseSolver solver(rot, (bool) inv);
+        solver.solve(cube1);
+      }));
+    }
+  }
+
   done = false;
 
   cont = false;
@@ -189,20 +257,20 @@ int twophase(const CubieCube &cube, int max_depth1, int timelimit, std::vector<i
   max_depth = max_depth1;
   len = max_depth > 0 ? max_depth + 1 : N; // initial reference value for pruning
 
-  std::vector<std::thread> threads;
-  for (int rot = 0; rot < 3; rot++) {
-    #ifdef FACES5
-      if (rot > 1)
-        break;
-    #endif
-    for (int inv = 0; inv < 2; inv++) {
-      TwoPhaseSolver solver(rot, (bool) inv);
-      threads.push_back(std::thread(&TwoPhaseSolver::solve, solver, cube));
-    }
+
+  cube1 = cube;
+  {
+    std::lock_guard<std::mutex> lock(ready_mutex);
+    ready = true;
+    ready_var.notify_one();
   }
 
+  auto tick = std::chrono::high_resolution_clock::now();
   for (int i = 0; i < threads.size(); i++)
     threads[i].join();
+  time1 += std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::high_resolution_clock::now() - tick).count() / 1000.;
+  // std::cout << std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::high_resolution_clock::now() - tick).count() / 1000. << "\n";
+
   // All of this is necessary for the timeout to work as expected
   {
     std::lock_guard<std::mutex> lock(wait);
@@ -229,7 +297,7 @@ void initTwophase(bool file) {
   initSym();
   initPrun();
 
-  initCoordMove();
+  initCoordTables();
   initSymTables();
 
   if (!file) {

@@ -21,9 +21,9 @@
 #define N_CORNED (N_CPERM_SYM * N_UDEDGES2)
 #define N_CORNSLICE (N_CPERM * N_SSLICE2)
 
-#define FSTWIST(fssym, twist) (CCoord(fssym) * N_TWIST + twist)
-#define CORNED(csym, udedges) (CCoord(csym) * N_UDEDGES2 + udedges)
-#define CORNSLICE(cperm, sslice) (CCoord(cperm) * N_SSLICE2 + sslice)
+#define FSTWIST(fssym, twist) (fssym * N_TWIST + twist)
+#define CORNED(csym, udedges) (csym * N_UDEDGES2 + udedges)
+#define CORNSLICE(cperm, sslice) (cperm * N_SSLICE2 + sslice)
 
 #define DIST(prun) (prun & 0xff)
 #define OFF(key) (N_PER_AXIS * (key >> 2))
@@ -44,10 +44,9 @@ extern Prun *fstwist_prun;
 extern uint8_t *corned_prun; // full resolution; 16 entries per cell
 extern uint8_t *cornslice_prun; // phase 2 precheck; comparatively small -> just 1 entry per cell
 
-Prun getFSTwistPrun(Coord flip, Coord sslice, Coord twist);
-MoveMask getFSTwistMoves(Coord flip, Coord sslice, Coord twist, int togo);
-int getCornEdPrun(Coord cperm, Coord udedges);
-int getCornSlicePrun(Coord cperm, Coord sslice);
+int getFSTwistPrun(int flip, Edges4 sslice, int twist, int togo, MoveMask &movemask);
+int getCornEdPrun(CPerm cperm, Edges4 uedges, Edges4 dedges);
+int getCornSlicePrun(CPerm cperm, Edges4 sslice);
 
 void initFSTwistPrun();
 void initCornEdPrun();

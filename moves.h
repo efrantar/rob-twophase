@@ -24,6 +24,7 @@ extern int inv_move[N_MOVES];
 extern int split[N_MOVES]; // TODO: this is a bit ugly
 extern MoveMask movemasks[N_MOVES + 1];
 extern MoveMask all_movemask;
+extern MoveMask phase2_movemask;
 extern MoveMask extra_movemask;
 
 extern int moves2[N_MOVES2];

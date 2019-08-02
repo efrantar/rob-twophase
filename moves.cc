@@ -9,6 +9,7 @@ int split[N_MOVES];
 MoveMask movemasks[N_MOVES + 1];
 MoveMask all_movemask = MOVEBIT(N_MOVES) - 1;
 MoveMask extra_movemask = 0;
+MoveMask phase2_movemask = 0;
 
 int moves2[N_MOVES2];
 CubieCube move_cubes[N_MOVES];
@@ -114,6 +115,9 @@ static bool init() {
     movemasks[m] &= all_movemask;
   }
   movemasks[N_MOVES] = all_movemask;
+
+  for (int m : moves2)
+    phase2_movemask |= MOVEBIT(m);
 
   return true;
 }
