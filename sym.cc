@@ -80,7 +80,7 @@ void initSym() {
     }
   }
 
-  for (int m = 0; m < N_MOVES; m++) {
+  for (int m = 0; m < N_MOVES + N_DOUBLE2; m++) {
     for (int s = 0; s < N_SYMS; s++) {
       mul(sym_cubes[s], move_cubes[m], tmp);
       mul(tmp, sym_cubes[inv_sym[s]], cube);
