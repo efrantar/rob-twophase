@@ -60,7 +60,7 @@ void TwoPhaseSolver::solve(const CubieCube &cube) {
 
   MoveMask mm;
   for (int togo = getFSTwistPrun(flip, sslice, twist, 0, mm); togo <= len; togo++) {
-    phase1(0, togo, flip, twist, sslice, uedges, dedges, cperm, all_movemask);
+    phase1(0, togo, flip, twist, sslice, uedges, dedges, cperm, phase1_moves);
     /*
     if (!done) {
       mutex.lock();
@@ -118,7 +118,7 @@ void TwoPhaseSolver::phase1(
     moveCPerm(cperm, m, cperm1);
     moves[depth - 1] = m;
 
-    phase1(depth, togo, flip1, twist1, sslice1, uedges1, dedges1, cperm1, movemasks[m]);
+    phase1(depth, togo, flip1, twist1, sslice1, uedges1, dedges1, cperm1, next_moves[m]);
   }
 }
 
@@ -165,7 +165,7 @@ bool TwoPhaseSolver::phase2(
   Edges4 dedges1;
   CPerm cperm1;
 
-  MoveMask mm = phase2_movemask & movemask;
+  MoveMask mm = phase2_moves & movemask;
   while (mm) {
     int m = ffsll(mm) - 1;
     mm &= mm - 1;
@@ -177,47 +177,12 @@ bool TwoPhaseSolver::phase2(
 
     if (getCornEdPrun(cperm1, uedges1, dedges1) < togo) {
       moves[depth] = m;
-      if (phase2(depth + 1, togo - 1, sslice1, uedges1, dedges1, cperm1, movemasks[m]))
+      if (phase2(depth + 1, togo - 1, sslice1, uedges1, dedges1, cperm1, next_moves[m]))
         return true;
     }
   }
 
   return false;
-
-  /*
-  for (int m = 0; m < N_MOVES2; m++) {
-    int depth1 = depth;
-    int togo1 = togo;
-
-    #ifdef QUARTER
-      if ((extra_movemask & MOVEBIT(moves2[m])) != 0) {
-        depth1++;
-        togo1--;
-      } else if ((movemasks[moves[depth]] & MOVEBIT(moves2[m])) == 0)
-        continue;
-    #else
-      if ((movemasks[moves[depth]] & MOVEBIT(moves2[m])) == 0)
-        continue;
-    #endif
-
-    moveSSlice(sslice[depth], moves2[m], sslice[depth1 + 1]);
-    moveCPerm(cperm[depth], moves2[m], cperm[depth1 + 1]);
-    moveEdges4(uedges[depth], moves2[m], uedges[depth1 + 1]);
-    moveEdges4(dedges[depth], moves2[m], dedges[depth1 + 1]);
-
-    if (getCornEdPrun(cperm[depth1 + 1], uedges[depth1 + 1], dedges[depth1 + 1]) < togo1) {
-      moves[depth + 1] = moves2[m];
-      #ifdef QUARTER
-        if ((extra_movemask & (MoveMask(1) << moves2[m])) != 0) {
-          moves[depth1] = split[moves2[m]];
-          moves[depth1 + 1] = split[moves2[m]];
-        }
-      #endif
-      if (phase2(depth1 + 1, togo1 - 1) == 1)
-        return true;
-    }
-  }
-   */
 }
 
 int twophase(const CubieCube &cube, int max_depth1, int timelimit, std::vector<int> &sol1) {
@@ -293,6 +258,7 @@ int twophase(const CubieCube &cube, int max_depth1, int timelimit, std::vector<i
 // We persist only the pruning tables as files (the other ones can be generated on the fly quickly enough)
 void initTwophase(bool file) {
   initFace();
+  initMoves();
   initCoord();
   initSym();
   initPrun();
@@ -303,7 +269,6 @@ void initTwophase(bool file) {
   if (!file) {
     initFSTwistPrun();
     initCornEdPrun();
-    initCornSlicePrun();
     return;
   }
 
@@ -312,20 +277,16 @@ void initTwophase(bool file) {
   if (f == NULL) {
     initFSTwistPrun();
     initCornEdPrun();
-    initCornSlicePrun();
 
     f = fopen(FILE_TWOPHASE, "wb");
     // Use `tmp` to avoid nasty warnings; not clean but we don't want to make this part too complicated
     int tmp = fwrite(fstwist_prun, sizeof(Prun), N_FSTWIST, f);
     tmp = fwrite(corned_prun, sizeof(uint8_t), N_CORNED, f);
-    tmp = fwrite(cornslice_prun, sizeof(uint8_t), N_CORNSLICE, f);
   } else {
     fstwist_prun = new Prun[N_FSTWIST];
     corned_prun = new uint8_t[N_CORNED];
-    cornslice_prun = new uint8_t[N_CORNSLICE];
     int tmp = fread(fstwist_prun, sizeof(Prun), N_FSTWIST, f);
     tmp = fread(corned_prun, sizeof(uint8_t), N_CORNED, f);
-    tmp = fread(cornslice_prun, sizeof(uint8_t), N_CORNSLICE, f);
   }
 
   fclose(f);

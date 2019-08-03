@@ -92,7 +92,7 @@ extern CubieCube sym_cubes[N_SYMS];
 // Invert a symmetry
 extern int inv_sym[N_SYMS];
 // Conjugate a move
-extern int conj_move[N_MOVES + N_DOUBLE2][N_SYMS];
+extern int conj_move[N_MOVES][N_SYMS];
 
 /* Coordinate conjugation tables */
 extern uint16_t (*conj_twist)[N_SYMS_SUB];

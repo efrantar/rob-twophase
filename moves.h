@@ -7,10 +7,10 @@
 
 #ifdef QUARTER
   #ifdef AXIAL
-    #define N_MOVES 24
+    #define N_MOVES 30
     #define N_DOUBLE2 6
   #else
-    #define N_MOVES 12
+    #define N_MOVES 16
     #define N_DOUBLE2 4
   #endif
 #else
@@ -21,16 +21,17 @@
   #endif
   #define N_DOUBLE2 0
 #endif
+#define N_MOVES1 (N_MOVES - N_DOUBLE2)
 
 #define MOVEBIT(m) (MoveMask(1) << m)
 
 typedef uint64_t MoveMask;
 
-extern CubieCube move_cubes[N_MOVES + N_DOUBLE2];
-extern std::string move_names[N_MOVES + N_DOUBLE2];
-extern int inv_move[N_MOVES + N_DOUBLE2];
+extern CubieCube move_cubes[N_MOVES];
+extern std::string move_names[N_MOVES];
+extern int inv_move[N_MOVES];
 
-extern MoveMask next_moves[N_MOVES + N_DOUBLE2];
+extern MoveMask next_moves[N_MOVES];
 extern MoveMask phase1_moves;
 extern MoveMask phase2_moves;
 
@@ -66,5 +67,7 @@ const CubieCube kBCube = {
   {0, 0, 1, 2, 0, 0, 2, 1},
   {0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 1, 1}
 };
+
+void initMoves();
 
 #endif

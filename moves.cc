@@ -1,10 +1,10 @@
 #include "sym.h"
 
-CubieCube move_cubes[N_MOVES + N_DOUBLE2];
-std::string move_names[N_MOVES + N_DOUBLE2];
-int inv_move[N_MOVES + N_DOUBLE2];
+CubieCube move_cubes[N_MOVES];
+std::string move_names[N_MOVES];
+int inv_move[N_MOVES];
 
-MoveMask next_moves[N_MOVES + N_DOUBLE2];
+MoveMask next_moves[N_MOVES];
 MoveMask phase1_moves;
 MoveMask phase2_moves;
 
@@ -41,8 +41,8 @@ void initMoves() {
   move_cubes1[12] = kFCube;
   move_cubes1[15] = kBCube;
 
-  for (int i = 0; i < 18; i++) {
-    mul(move_cubes1[i], move_cubes1[i], move_cubes[i + 1]);
+  for (int i = 0; i < 18; i += 3) {
+    mul(move_cubes1[i], move_cubes1[i], move_cubes1[i + 1]);
     mul(move_cubes1[i], move_cubes1[i + 1], move_cubes1[i + 2]);
   }
 
@@ -51,7 +51,7 @@ void initMoves() {
     int ax2 = ax1 + 3;
     for (int pow1 = 0; pow1 < 3; pow1++) {
       for (int pow2 = 0; pow2 < 3; pow2++) {
-        move_names1[i] = move_names1[ax1 + pow1] + move_names1[ax2 + pow2];
+        move_names1[i] = "(" + move_names1[ax1 + pow1] + " " + move_names1[ax2 + pow2] + ")";
         is_quarter[i] = is_quarter[ax1 + pow1] && is_quarter[ax2 + pow2];
         is_phase2[i] = is_phase2[ax1 + pow1] && is_phase2[ax2 + pow2];
         is_back[i] = is_back[ax1 + pow1] && is_back[ax2 + pow2];
