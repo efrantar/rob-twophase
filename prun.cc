@@ -40,20 +40,22 @@ void initPrun() {
   for (int s = 0; s < N_SYMS_SUB; s++) {
     for (int info = 0; info < 4; info++) {
       for (int chunk = 0; chunk < 256; chunk++) {
-        int mm1 = (chunk & 0xf) >> 1;
-        int mm2 = ((chunk >> 4) & 0xf) >> 1;
+        int chunk1 = chunk & 0xf;
+        int chunk2 = chunk >> 4;
+        if (info & 1)
+          std::swap(chunk1, chunk2);
 
+        int mm1 = chunk1 >> 1;
+        int mm2 = chunk2 >> 1;
         if (info & 2) {
           mm1 = reverse(mm1, 3);
           mm2 = reverse(mm2, 3);
         }
-        if (info & 1)
-          std::swap(mm1, mm2);
 
-        mm_map1[0][info][chunk] = (chunk & 1) ? 0 : ~mm1 & 0x7;
-        mm_map1[0][info][chunk] |= (chunk & 0x1f) ? 0 : (~mm2 & 0x7) << 3;
-        mm_map1[1][info][chunk] = (chunk & 1) ? ~mm1 & 0x7 : 0x7;
-        mm_map1[1][info][chunk] |= ((chunk & 0x1f) ? (~mm2 & 0x7) << 3 : 0x28);
+        mm_map1[0][info][chunk] = (chunk1 & 1) ? 0 : ~mm1 & 0x7;
+        mm_map1[0][info][chunk] |= (chunk2 & 1) ? 0 : (~mm2 & 0x7) << 3;
+        mm_map1[1][info][chunk] = (chunk1 & 1) ? ~mm1 & 0x7 : 0x7;
+        mm_map1[1][info][chunk] |= ((chunk2 & 1) ? (~mm2 & 0x7) << 3 : 0x38);
       }
     }
   }
@@ -78,7 +80,7 @@ int getFSTwistPrun(int flip, Edges4 sslice, int twist, int togo, MoveMask &mm) {
   else {
     mm = 0;
     for (int ax = 0; ax < 3; ax++) {
-      mm |= MoveMask(mm_map1[delta][INFO(mm_key[s][ax])][prun & 0xff]) << 8 * OFF(mm_key[s][ax]);
+      mm |= MoveMask(mm_map1[delta][INFO(mm_key[s][ax])][prun & 0xff]) << 6 * OFF(mm_key[s][ax]);
       prun >>= 8;
     }
   }

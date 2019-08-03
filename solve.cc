@@ -97,6 +97,7 @@ void TwoPhaseSolver::phase1(
   if (dist != togo && dist + togo < 5)
     return;
   mm &= movemask;
+  // std::cout << dist << "\n";
 
   depth++;
   togo--;
@@ -105,6 +106,26 @@ void TwoPhaseSolver::phase1(
   Edges4 uedges1;
   Edges4 dedges1;
   CPerm cperm1;
+
+  /*
+  MoveMask tmp = 0;
+  for (int m = 0; m < N_MOVES; m++) {
+    int flip1 = move_flip[flip][m];
+    int twist1 = move_twist[twist][m];
+    moveSSlice(sslice, m, sslice1);
+    moveEdges4(uedges, m, uedges1);
+    moveEdges4(dedges, m, dedges1);
+    moveCPerm(cperm, m, cperm1);
+
+    MoveMask tmp1;
+    if (getFSTwistPrun(flip1, sslice1, twist1, 0, tmp1) <= togo)
+      tmp |= MOVEBIT(m);
+  }
+  tmp &= movemask;
+
+  if (mm != tmp)
+    std::cout << getFSTwistPrun(flip, sslice, twist, togo + 1, mm) << "\n";
+  */
 
   while (mm) {
     int m = ffsll(mm) - 1;
