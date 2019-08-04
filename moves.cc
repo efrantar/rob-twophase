@@ -119,10 +119,10 @@ void initMoves() {
       move_names[index[m]] = move_names1[m];
       move_cubes[index[m]] = move_cubes1[m];
 
-      next_moves[m] = 0;
+      next_moves[index[m]] = 0;
       for (int m1 = 0; m1 < max; m1++) {
         if (index[m1] != -1 && (skip_moves[m] & MOVEBIT(m1)) == 0)
-          next_moves[m] |= MOVEBIT(index[m1]);
+          next_moves[index[m]] |= MOVEBIT(index[m1]);
       }
     }
   }

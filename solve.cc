@@ -109,7 +109,7 @@ void TwoPhaseSolver::phase1(
 
   /*
   MoveMask tmp = 0;
-  for (int m = 0; m < N_MOVES; m++) {
+  for (int m = 0; m < N_MOVES - N_DOUBLE2; m++) {
     int flip1 = move_flip[flip][m];
     int twist1 = move_twist[twist][m];
     moveSSlice(sslice, m, sslice1);
@@ -195,6 +195,20 @@ bool TwoPhaseSolver::phase2(
     moveEdges4(uedges, m, uedges1);
     moveEdges4(dedges, m, dedges1);
     moveCPerm(cperm, m, cperm1);
+
+    #ifdef QUARTER
+      int tmp = m - (N_MOVES - N_DOUBLE2);
+      if (tmp >= 0) {
+        if (getCornEdPrun(cperm1, uedges1, dedges1) < togo - 1) {
+          int split = (tmp < 4) ? 4 + 2 * tmp : 16 + 4 * (tmp - 4);
+          moves[depth] = split;
+          moves[depth + 1] = split;
+          if (phase2(depth + 2, togo - 2, sslice1, uedges1, dedges1, cperm1, next_moves[m]))
+            return true;
+        }
+        continue;
+      }
+    #endif
 
     if (getCornEdPrun(cperm1, uedges1, dedges1) < togo) {
       moves[depth] = m;

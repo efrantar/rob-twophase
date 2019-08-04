@@ -5,6 +5,12 @@
 #include <queue>
 #include <string.h>
 
+#ifdef QUARTER
+  #define PER_AXIS 4
+#else
+  #define PER_AXIS 6
+#endif
+
 #define EMPTY 0xff
 
 uint8_t mm_key[N_SYMS_SUB][3];
@@ -24,27 +30,36 @@ int reverse(int bitmask, int len, int step = 1) {
 }
 
 void initPrun() {
-  int per_axis = 6;
-  #ifdef QUARTER
-    per_axis = 4;
-  #endif
-
   for (int s = 0; s < N_SYMS_SUB; s++) {
     for (int ax = 0; ax < 3; ax++) {
-      mm_key[s][ax] = (conj_move[per_axis * ax][inv_sym[s]] / per_axis) << 2; // offset
-      mm_key[s][ax] |= (conj_move[per_axis * ax][inv_sym[s]] % (per_axis / 2) != 0) << 1; // invert
-      mm_key[s][ax] |= conj_move[per_axis * ax][inv_sym[s]] % (per_axis) >= (per_axis / 2); // flip
+      mm_key[s][ax] = (conj_move[PER_AXIS * ax][inv_sym[s]] / PER_AXIS) << 2; // offset
+      mm_key[s][ax] |= (conj_move[PER_AXIS * ax][inv_sym[s]] % (PER_AXIS / 2) != 0) << 1; // invert
+      mm_key[s][ax] |= conj_move[PER_AXIS * ax][inv_sym[s]] % PER_AXIS >= (PER_AXIS / 2); // flip
     }
   }
 
-  for (int s = 0; s < N_SYMS_SUB; s++) {
-    for (int info = 0; info < 4; info++) {
-      for (int chunk = 0; chunk < 256; chunk++) {
-        int chunk1 = chunk & 0xf;
-        int chunk2 = chunk >> 4;
-        if (info & 1)
-          std::swap(chunk1, chunk2);
+  for (int info = 0; info < 4; info++) {
+    for (int chunk = 0; chunk < 256; chunk++) {
+      int chunk1 = chunk & 0xf;
+      int chunk2 = chunk >> 4;
+      if (info & 1)
+        std::swap(chunk1, chunk2);
 
+      #ifdef QUARTER
+        if (info & 2) {
+          chunk1 = reverse(chunk1, 4, 2);
+          chunk2 = reverse(chunk2, 4, 2);
+        }
+        int chunk3 = (chunk2 << 4) | chunk1;
+
+        mm_map1[0][info][chunk] = 0;
+        mm_map1[1][info][chunk] = 0;
+        for (int i = 0; i < 4; i++) {
+          mm_map1[0][info][chunk] |= ((chunk3 & 0x3) == 0) << i;
+          mm_map1[1][info][chunk] |= ((chunk3 & 0x3) <= 1) << i;
+          chunk3 >>= 2;
+        }
+      #else
         int mm1 = chunk1 >> 1;
         int mm2 = chunk2 >> 1;
         if (info & 2) {
@@ -56,7 +71,7 @@ void initPrun() {
         mm_map1[0][info][chunk] |= (chunk2 & 1) ? 0 : (~mm2 & 0x7) << 3;
         mm_map1[1][info][chunk] = (chunk1 & 1) ? ~mm1 & 0x7 : 0x7;
         mm_map1[1][info][chunk] |= ((chunk2 & 1) ? (~mm2 & 0x7) << 3 : 0x38);
-      }
+      #endif
     }
   }
 }
@@ -80,7 +95,8 @@ int getFSTwistPrun(int flip, Edges4 sslice, int twist, int togo, MoveMask &mm) {
   else {
     mm = 0;
     for (int ax = 0; ax < 3; ax++) {
-      mm |= MoveMask(mm_map1[delta][INFO(mm_key[s][ax])][prun & 0xff]) << 6 * OFF(mm_key[s][ax]);
+      int tmp = mm_key[s][ax];
+      mm |= MoveMask(mm_map1[delta][INFO(tmp)][prun & 0xff]) << PER_AXIS * OFF(tmp);
       prun >>= 8;
     }
   }
@@ -116,7 +132,7 @@ void initFSTwistPrun() {
         count++;
 
         int deltas[N_MOVES];
-        for (int m = 0; m < N_MOVES; m++) {
+        for (int m = 0; m < N_MOVES - N_DOUBLE2; m++) {
           #ifdef FACES5
             if ((phase1_moves & MOVEBIT(m)) == 0) {
               deltas[m] = 0;
@@ -146,10 +162,8 @@ void initFSTwistPrun() {
 
         Prun prun = 0;
         #ifdef QUARTER
-          for (int m = N_MOVES - 1; m >= 0; m--) {
-            if ((all_movemask & MOVEBIT(m)) != 0)
+          for (int m = N_MOVES - N_DOUBLE2 - 1; m >= 0; m--)
               prun = (prun << 2) | (deltas[m] + 1);
-          }
         #else
           for (int ax = 5; ax >= 0; ax--) {
             bool away = false;
@@ -207,7 +221,7 @@ void initCornEdPrun() {
 
           int dist1 = dist + 1;
           #ifdef QUARTER
-            if (m > N_MOVES - N_DOUBLE2)
+            if (m >= N_MOVES - N_DOUBLE2)
               dist1++;
           #endif
 
