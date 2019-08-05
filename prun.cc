@@ -7,10 +7,8 @@
 
 #ifdef QUARTER
   #define PER_AXIS 4
-  #define PER_AXIS_AX 4
 #else
   #define PER_AXIS 6
-  #define PER_AXIS_AX 9
 #endif
 
 #define EMPTY 0xff
@@ -18,7 +16,11 @@
 uint8_t mm_key[N_SYMS_SUB][3];
 uint8_t mm_map1[2][4][256];
 #ifdef AXIAL
-  uint16_t mm_map2[2][4][1024];
+  #ifdef QUARTER
+    uint8_t mm_map2[2][4][256];
+  #else
+    uint16_t mm_map2[2][4][1024];
+  #endif
 #endif
 
 Prun *fstwist_prun;
@@ -80,29 +82,52 @@ void initPrun() {
   }
 
   #ifdef AXIAL
-  for (int info = 0; info < 4; info++) {
-    for (int chunk = 0; chunk < 1024; chunk++) {
-      #ifdef QUARTER
-            // TODO
-      #else
-        int mm = chunk >> 1;
+    #ifdef QUARTER
+      for (int info = 0; info < 4; info++) {
+        for (int chunk = 0; chunk < 256; chunk++) {
+          int chunk1 = chunk;
 
-        if (info & 1) {
-          int mm1 = 0;
-          for (int i = 0; i < 3; i++) {
-            for (int j = 0; j < 3; j++)
-              mm1 |= ((mm & (1 << 3 * i + j)) != 0) << 3 * j + i;
+          if (info & 1) {
+            int chunk2 = 0;
+            for (int i = 0; i < 2; i++) {
+              for (int j = 0; j < 2; j++)
+                chunk2 |= ((chunk1 >> 2 * (2 * i + j)) & 0x3) << 2 * (2 * j + i);
+            }
+            chunk1 = chunk2;
           }
-          mm = mm1;
-        }
-        if (info & 2)
-          mm = reverse(mm, 9);
+          if (info & 2)
+            chunk1 = reverse(chunk1, 8, 2);
 
-        mm_map2[0][info][chunk] = (chunk & 1) ? 0 : ~mm & 0x1ff;
-        mm_map2[1][info][chunk] = (chunk & 1) ? ~mm & 0x1ff : 0x1ff;
-      #endif
-    }
-  }
+          mm_map2[0][info][chunk] = 0;
+          mm_map2[1][info][chunk] = 0;
+          for (int i = 0; i < 4; i++) {
+            mm_map2[0][info][chunk] |= ((chunk1 & 0x3) == 0) << i;
+            mm_map2[1][info][chunk] |= ((chunk1 & 0x3) <= 1) << i;
+            chunk1 >>= 2;
+          }
+        }
+      }
+    #else
+      for (int info = 0; info < 4; info++) {
+        for (int chunk = 0; chunk < 1024; chunk++) {
+          int mm = chunk >> 1;
+
+          if (info & 1) {
+            int mm1 = 0;
+            for (int i = 0; i < 3; i++) {
+              for (int j = 0; j < 3; j++)
+                mm1 |= ((mm >> 3 * i + j) & 1) << 3 * j + i;
+            }
+            mm = mm1;
+          }
+          if (info & 2)
+            mm = reverse(mm, 9);
+
+          mm_map2[0][info][chunk] = (chunk & 1) ? 0 : ~mm & 0x1ff;
+          mm_map2[1][info][chunk] = (chunk & 1) ? ~mm & 0x1ff : 0x1ff;
+        }
+      }
+    #endif
   #endif
 }
 
@@ -132,8 +157,13 @@ int getFSTwistPrun(int flip, Edges4 sslice, int twist, int togo, MoveMask &mm) {
       mm |= MoveMask(mm_map1[delta][INFO(tmp)][prun & 0xff]) << PER_AXIS * OFF(tmp);
       prun >>= 8;
       #ifdef AXIAL
-        mm |= MoveMask(mm_map2[delta][INFO(tmp)][prun1 & 0x3ff]) << 18 + PER_AXIS_AX * OFF(tmp);
-        prun1 >>= 10;
+        #ifdef QUARTER
+          mm |= MoveMask(mm_map2[delta][INFO(tmp)][prun1 & 0xff]) << 12 + 4 * OFF(tmp);
+          prun1 >>= 8;
+        #else
+        mm |= MoveMask(mm_map2[delta][INFO(tmp)][prun1 & 0x3ff]) << 18 + 9 * OFF(tmp);
+          prun1 >>= 10;
+        #endif
       #endif
     }
   }
@@ -199,7 +229,7 @@ void initFSTwistPrun() {
 
         Prun prun = 0;
         #ifdef QUARTER
-          for (int m = N_MOVES - N_DOUBLE2 - 1; m >= 0; m--)
+          for (int m = N_MOVES1 - 1; m >= 0; m--)
               prun = (prun << 2) | (deltas[m] + 1);
         #else
           #ifdef AXIAL

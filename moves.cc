@@ -24,14 +24,14 @@ void initMoves() {
     true, false, true, true, false, true,
     true, false, true, true, false, true
   };
-  bool is_phase2[45] = {
+  bool in_phase2[45] = {
     true, true, true, true, true, true,
     false, true, false, false, true, false,
     false, true, false, false, true, false
   };
-  bool is_back[45] = {};
+  bool uses_back[45] = {};
   for (int m = 15; m < 18; m++)
-    is_back[m] = true;
+    uses_back[m] = true;
 
   CubieCube move_cubes1[45];
   move_cubes1[0] = kUCube;
@@ -53,8 +53,8 @@ void initMoves() {
       for (int pow2 = 0; pow2 < 3; pow2++) {
         move_names1[i] = "(" + move_names1[ax1 + pow1] + " " + move_names1[ax2 + pow2] + ")";
         is_quarter[i] = is_quarter[ax1 + pow1] && is_quarter[ax2 + pow2];
-        is_phase2[i] = is_phase2[ax1 + pow1] && is_phase2[ax2 + pow2];
-        is_back[i] = is_back[ax1 + pow1] && is_back[ax2 + pow2];
+        in_phase2[i] = in_phase2[ax1 + pow1] && in_phase2[ax2 + pow2];
+        uses_back[i] = uses_back[ax1 + pow1] || uses_back[ax2 + pow2];
         mul(move_cubes1[ax1 + pow1], move_cubes1[ax2 + pow2], move_cubes1[i]);
         i++;
       }
@@ -87,6 +87,12 @@ void initMoves() {
     for (int m = 0; m < 45; m++) {
       if (is_quarter[m])
         skip_moves[m] ^= MOVEBIT(m);
+    }
+    for (int m = 18; m < 45; m++) {
+      int tmp1 = (m - 18) / 9;
+      int tmp2 = (m - 18) % 9;
+      skip_moves[m] ^= MOVEBIT(6 * tmp1 + (tmp2 / 3));
+      skip_moves[m] ^= MOVEBIT(6 * tmp1 + 3 + tmp2 % 3);
     }
   #endif
 
@@ -142,12 +148,12 @@ void initMoves() {
   for (int m = 0; m < max; m++) {
     if (index[m] != -1) {
       #ifdef FACES5
-        if (is_back[m])
+        if (uses_back[m])
           continue;
       #endif
       if (index[m] < i)
         phase1_moves |= MOVEBIT(index[m]);
-      if (is_phase2[m])
+      if (in_phase2[m])
         phase2_moves |= MOVEBIT(index[m]);
     }
   }

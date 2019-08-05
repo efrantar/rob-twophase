@@ -46,7 +46,7 @@
 #endif
 #define N_MOVES1 (N_MOVES - N_DOUBLE2)
 
-#define MOVEBIT(m) (MoveMask(1) << m)
+#define MOVEBIT(m) (MoveMask(1) << (m))
 
 typedef uint64_t MoveMask;
 

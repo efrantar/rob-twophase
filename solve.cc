@@ -110,7 +110,7 @@ void TwoPhaseSolver::phase1(
 
   /*
   MoveMask tmp = 0;
-  for (int m = 0; m < N_MOVES - N_DOUBLE2; m++) {
+  for (int m = 0; m < N_MOVES1; m++) {
     int flip1 = move_flip[flip][m];
     int twist1 = move_twist[twist][m];
     moveSSlice(sslice, m, sslice1);
@@ -126,7 +126,7 @@ void TwoPhaseSolver::phase1(
 
   if (mm != tmp)
     std::cout << "Error: " << getFSTwistPrun(flip, sslice, twist, togo + 1, mm) << "\n";
-*/
+  */
 
   while (mm) {
     int m = ffsll(mm) - 1;
@@ -240,16 +240,13 @@ int twophase(const CubieCube &cube, int max_depth1, int timelimit, std::vector<i
         TwoPhaseSolver solver(rot, (bool) inv);
         solver.solve(cube1);
       }));
-      // break;
     }
-    // break;
   }
 
   done = false;
 
   cont = false;
   ret = 0;
-  // timelimit = 1000000;
   std::thread timeout([timelimit]() {
     std::unique_lock<std::mutex> lock(wait);
     notify.wait_for(lock, std::chrono::milliseconds(timelimit), []{ return cont; });
