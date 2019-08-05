@@ -13,27 +13,28 @@
 
 #define FILE_TWOPHASE "twophase.tbl"
 
+extern double time1;
+
 // Class as we want to search in parallel from multiple starting positions and every search needs its own variables
 class TwoPhaseSolver {
   
   private:
     int rot;
     bool inv_; // to work around shadowing `inv()`
-
-    Coord flip[N];
-    Coord sslice[N];
-    Coord twist[N];
-
-    Coord uedges[N];
-    Coord dedges[N];
-    Coord cperm[N];
-    Coord udedges[N];
-
-    int udedges_depth; // individual variable as we only restore UDEDGES if the precheck did not fail
     int moves[N];
+    int probes = 0;
 
-    void phase1(int depth, int togo);
-    bool phase2(int depth, int togo);
+    void phase1(
+      int depth, int togo,
+      int flip, int twist, const Edges4 &sslice, const Edges4 &uedges, const Edges4 &dedges, const CPerm &cperm,
+      MoveMask movemask
+    );
+
+    bool phase2(
+      int depth, int togo,
+      const Edges4 &sslice, const Edges4 &uedges, const Edges4 &dedges, const CPerm &cperm,
+      MoveMask movemask
+    );
 
   public:
     TwoPhaseSolver(int rot, bool inv);

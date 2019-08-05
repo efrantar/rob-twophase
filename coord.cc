@@ -3,255 +3,297 @@
 #include <algorithm>
 #include <bitset>
 #include <stdint.h>
+
 #include "cubie.h"
 #include "moves.h"
 
-#define N_PERM4 24 // 4!
-#define N_C12K4 495 // binomial(12, 4)
+#define N_C12K4 495
+#define N_C8K4 70
+#define N_PERM4 24
+#define N_PERM8 40320
 
-Coord (*twist_move)[N_MOVES];
-Coord (*flip_move)[N_MOVES];
-Coord (*sslice_move)[N_MOVES];
-Coord (*edges4_move)[N_MOVES];
-Coord (*udedges_move2)[N_MOVES2];
-Coord (*cperm_move)[N_MOVES];
+uint16_t (*move_flip)[N_MOVES];
+uint16_t (*move_twist)[N_MOVES];
 
-/*
- * To encode 4-element permutations, we represent them as 8-bit integers (2-bits encoding the element at every
- * position) and then index into an array which contains a unique number between 0 and 4! - 1. Decoding works exactly
- * the other way around.
- */
-uint8_t enc_perm4[1 << (4 * 2)];
-uint8_t dec_perm4[N_PERM4];
+uint16_t edges4_move[N_C12K4][N_MOVES];
+uint16_t cperm4_move[N_C8K4][N_MOVES];
+uint8_t mul_perms[N_PERM4][N_PERM4];
 
-/*
- * The positions of 4 edges are encoded by a bitmask of length 12 with exactly 4 ones indicating the positions the
- * edges. These two arrays convert between such a bitmask and a unique number between 0 and binomial(12, 4) - 1.
- */
-uint16_t enc_comb4[1 << N_EDGES];
-uint16_t dec_comb4[N_C12K4];
+uint8_t enc_perm[1 << (4 * 2)];
+uint8_t dec_perm[N_PERM4];
+uint16_t enc_comb[1 << N_EDGES];
+uint16_t dec_comb[N_C12K4];
+
+Edges4::Edges4(int edges4) {
+  set(edges4);
+}
+
+int Edges4::val() const {
+  return N_PERM4 * comb + perm;
+}
+
+void Edges4::set(int edges4) {
+  comb = edges4 / N_PERM4;
+  perm = edges4 % N_PERM4;
+}
+
+CPerm::CPerm(int cperm) {
+  set(cperm);
+}
+
+void CPerm::set(int cperm) {
+  comb1 = (cperm / N_PERM4) / N_PERM4;
+  perm1 = (cperm / N_PERM4) % N_PERM4;
+  comb2 = enc_comb[0xff & ~dec_comb[comb1]];
+  perm2 = cperm % N_PERM4;
+}
+
+int CPerm::val() const {
+  return N_PERM4 * (N_PERM4 * comb1 + perm1) + perm2;
+}
+
+int binarizePerm4(int perm4[]) {
+  int bin = 0;
+  for (int i = 3; i >= 0; i--)
+    bin = (bin << 2) | perm4[i];
+  return bin;
+}
+
+void unbinarizePerm4(int perm4[], int bin) {
+  for (int i = 0; i < 4; i++) {
+    perm4[i] = 0x3 & bin;
+    bin >>= 2;
+  }
+}
 
 void initCoord() {
   int perm[] = {0, 1, 2, 3};
   for (int i = 0; i < N_PERM4; i++) {
-    int tmp = 0;
-    for (int j = 3; j >= 0; j--) // the lowest index should be the least significant bit
-      tmp = (tmp << 2) | perm[j];
-    enc_perm4[tmp] = i;
-    dec_perm4[i] = tmp;
+    int tmp = binarizePerm4(perm);
+    enc_perm[tmp] = i;
+    dec_perm[i] = tmp;
     std::next_permutation(perm, perm + 4);
   }
 
   int j = 0;
   for (int i = 0; i < (1 << N_EDGES); i++) {
-    // Not the fastest, but doing this ~4000 times is very much negligible compared to the move-table setup
     if (std::bitset<N_EDGES>(i).count() == 4) {
-      enc_comb4[i] = j;
-      dec_comb4[j] = i;
+      enc_comb[i] = j;
+      dec_comb[j] = i;
       j++;
+    }
+  }
+
+  int perm1[4];
+  int perm2[4];
+  int perm3[4];
+  for (int i = 0; i < N_PERM4; i++) {
+    unbinarizePerm4(perm1, dec_perm[i]);
+    for (int j = 0; j < N_PERM4; j++) {
+      unbinarizePerm4(perm2, dec_perm[j]);
+      for (int k = 0; k < 4; k++)
+        perm3[k] = perm1[perm2[k]];
+      mul_perms[i][j] = enc_perm[binarizePerm4(perm3)];
     }
   }
 }
 
-// Computes the orientation coordinate
-Coord getOri(const int oris[], int len, int n_oris) {
-  Coord val = 0;
-  for (int i = 0; i < len - 1; i++) // last value can be reconstructed by parity
+int getOri(const int oris[], int len, int n_oris) {
+  int val = 0;
+  for (int i = 0; i < len - 1; i++)
     val = n_oris * val + oris[i];
   return val;
 }
 
-// Encodes the position and permutation of 4 consecutive edges given by the mask
-int getEdges4(const int edges[], int mask, int min_edge, bool inv) {
-  int comb = 0;
-  int perm = 0;
-
-  for (int i = N_EDGES - 1; i >= 0; i--) { // solved permutation should lead to 0 coord
-    if ((mask & (1 << edges[i])) != 0) {
-      comb |= 1 << i;
-      perm = (perm << 2) | (edges[i] - min_edge);
-    }
-  }
-
-  // For SSLICE we want the bitmask 0xf00 (i.e. phase 1 solved) to be mapped to 0, hence the parameter `inv`
-  return N_PERM4 * (inv ? (N_C12K4 - 1) - enc_comb4[comb] : enc_comb4[comb]) + enc_perm4[perm];
-}
-
-// Computes the coordinate of an 8-element permutation
-Coord getPerm8(const int perm[]) {
-  int comb = 0;
-  int perm1 = 0;
-  int perm2 = 0;
-
-  for (int i = 7; i >= 0; i--) {
-    if (perm[i] < 4) {
-      perm1 = (perm1 << 2) | perm[i];
-      comb |= 1 << i;
-    }
-    else
-      perm2 = (perm2 << 2) | (perm[i] - 4);
-  }
-
-  // Combine position and permutation of elements 0 - 3 with the permutation of elements 4 - 7
-  return N_PERM4 * (N_PERM4 * enc_comb4[comb] + enc_perm4[perm1]) + enc_perm4[perm2];
-}
-
-// Decodes an orientation coordinate
-void setOri(Coord val, int oris[], int len, int n_oris) {
+void setOri(int val, int oris[], int len, int n_oris) {
   int par = 0;
   for (int i = len - 2; i >= 0; i--) {
     oris[i] = val % n_oris;
     par += oris[i];
     val /= n_oris;
   }
-  // Reconstruct last orientation by using the fact that the parity % number of orientations must always be 0
   oris[len - 1] = (n_oris - par % n_oris) % n_oris;
 }
 
-// Decoded the position and permutation of 4 edges
-int setEdges4(Coord val, int edges[], int min_edge, bool inv) {
-  // N_C12K4 - 1 - (N_C12K4 - 1 - val) = val
-  int comb = dec_comb4[inv ? (N_C12K4 - 1) - val / N_PERM4 : val / N_PERM4];
-  int perm = dec_perm4[val % N_PERM4];
+void getCombPerm(int &comb, int &perm, const int cubies[], int len, int mask, int min_cubie) {
+  comb = 0;
+  perm = 0;
 
-  int cubie = 0;
-  for (int i = 0; i < N_EDGES; i++) {
-    if (cubie == min_edge)
-      cubie += 4;
-    if ((comb & (1 << i)) != 0) {
-      edges[i] = (perm & 0x3) + min_edge;
-      perm >>= 2;
-    } else
-      edges[i] = cubie++; // the other slots should also be filled so that the result is a valid edge permutation
-  }
-}
-
-// Decodes a permutation of 8 elements
-void setPerm8(Coord val, int perm[]) {
-  int comb = dec_comb4[(val / N_PERM4) / N_PERM4];
-  int perm1 = dec_perm4[(val / N_PERM4) % N_PERM4];
-  int perm2 = dec_perm4[val % N_PERM4];
-
-  for (int i = 0; i < 8; i++) {
-    if ((comb & (1 << i)) != 0) {
-      perm[i] = perm1 & 0x3;
-      perm1 >>= 2;
-    } else {
-      perm[i] = (perm2 & 0x3) + 4;
-      perm2 >>= 2;
+  for (int i = len - 1; i >= 0; i--) {
+    if ((mask & (1 << cubies[i])) != 0) {
+      comb |= 1 << i;
+      perm = (perm << 2) | (cubies[i] - min_cubie);
     }
   }
+
+  comb = enc_comb[comb];
+  perm = enc_perm[perm];
 }
 
-Coord getTwist(const CubieCube &cube) {
+void setCombPerm(int comb, int perm, int cubies[], int len, int min_cubie, bool fill) {
+  comb = dec_comb[comb];
+  perm = dec_perm[perm];
+
+  int cubie = 0;
+  for (int i = 0; i < len; i++) {
+    if (cubie == min_cubie)
+      cubie += 4;
+    if ((comb & (1 << i)) != 0) {
+      cubies[i] = (perm & 0x3) + min_cubie;
+      perm >>= 2;
+    } else if (fill)
+      cubies[i] = cubie++;
+  }
+}
+
+int getTwist(const CubieCube &cube) {
   return getOri(cube.co, N_CORNERS, 3);
 }
 
-Coord getFlip(const CubieCube &cube) {
-  return getOri(cube.eo, N_EDGES, 2);
-}
-
-Coord getSSlice(const CubieCube &cube) {
-  // `inv` must be true so that the position part of SSLICE is 0 in phase 2
-  return getEdges4(cube.ep, 0xf00, FR, true);
-}
-
-Coord getUEdges(const CubieCube &cube) {
-  return getEdges4(cube.ep, 0x00f, UR, false);
-}
-
-Coord getDEdges(const CubieCube &cube) {
-  return getEdges4(cube.ep, 0x0f0, DR, false);
-}
-
-Coord getUDEdges(const CubieCube &cube) {
-  return getPerm8(cube.ep); // only the first 8 elements will be considered
-}
-
-Coord getCPerm(const CubieCube &cube) {
-  return getPerm8(cube.cp);
-}
-
-void setTwist(CubieCube &cube, Coord twist) {
+void setTwist(CubieCube &cube, int twist) {
   setOri(twist, cube.co, N_CORNERS, 3);
 }
 
-void setFlip(CubieCube &cube, Coord flip) {
+int getFlip(const CubieCube &cube) {
+  return getOri(cube.eo, N_EDGES, 2);
+}
+
+void setFlip(CubieCube &cube, int flip) {
   setOri(flip, cube.eo, N_EDGES, 2);
 }
 
-void setSSlice(CubieCube &cube, Coord sslice) {
-  setEdges4(sslice, cube.ep, FR, true);
+int getSSlice(const CubieCube &cube) {
+  Edges4 sslice;
+  getCombPerm(sslice.comb, sslice.perm, cube.ep, N_EDGES, 0xf00, FR);
+  sslice.comb = (N_C12K4 - 1) - sslice.comb;
+  return sslice.val();
 }
 
-void setUEdges(CubieCube &cube, Coord uedges) {
-  setEdges4(uedges, cube.ep, UR, false);
+void setSlice(CubieCube &cube, int slice) {
+  setCombPerm((N_C12K4 - 1) - slice, 0, cube.ep, N_EDGES, FR, true);
 }
 
-void setDEdges(CubieCube &cube, Coord dedges) {
-  setEdges4(dedges, cube.ep, DR, false);
+int getUEdges(const CubieCube &cube) {
+  Edges4 uedges;
+  getCombPerm(uedges.comb, uedges.perm, cube.ep, N_EDGES, 0x00f, UR);
+  return uedges.val();
 }
 
-void setUDEdges(CubieCube &cube, Coord udedges) {
-  // Make sure that the result is always valid edge permutation
+int getDEdges(const CubieCube &cube) {
+  Edges4 dedges;
+  getCombPerm(dedges.comb, dedges.perm, cube.ep, N_EDGES, 0x0f0, DR);
+  return dedges.val();
+}
+
+int getUDEdges2(const CubieCube &cube) {
+  return N_PERM4 * getUEdges(cube) + getDEdges(cube) % N_PERM4;
+}
+
+void setUDEdges2(CubieCube &cube, int udedges) {
+  Edges4 uedges;
+  Edges4 dedges;
+  splitUDEdges2(udedges, uedges, dedges);
+  setCombPerm(uedges.comb, uedges.perm, cube.ep, N_EDGES, UR, false);
+  setCombPerm(dedges.comb, dedges.perm, cube.ep, N_EDGES, DR, false);
   for (int i = FR; i < N_EDGES; i++)
     cube.ep[i] = i;
-  setPerm8(udedges, cube.ep);
 }
 
-void setCPerm(CubieCube &cube, Coord cperm) {
-  setPerm8(cperm, cube.cp); // only the first 8 elements will be touched
+int getCPerm(const CubieCube &cube) {
+  CPerm cperm;
+  getCombPerm(cperm.comb1, cperm.perm1, cube.cp, N_CORNERS, 0x0f, URF);
+  getCombPerm(cperm.comb2, cperm.perm2, cube.cp, N_CORNERS, 0xf0, DFR);
+  return cperm.val();
 }
 
-// Generates the move-table for a coordinate
+void setCPerm(CubieCube &cube, int cperm) {
+  CPerm cperm1(cperm);
+  setCombPerm(cperm1.comb1, cperm1.perm1, cube.cp, N_CORNERS, URF, false);
+  setCombPerm(cperm1.comb2, cperm1.perm2, cube.cp, N_CORNERS, DFR, false);
+}
+
+int getFSlice(const CubieCube &cube) {
+  return N_FLIP * (getSSlice(cube) / N_PERM4) + getFlip(cube);
+}
+
+void moveSSlice(const Edges4 &sslice, int move, Edges4 &sslice1) {
+  int tmp = edges4_move[(N_C12K4 - 1) - sslice.comb][move];
+  sslice1.comb = (N_C12K4 - 1) - (tmp >> 5);
+  sslice1.perm = mul_perms[sslice.perm][tmp & 0x1f];
+}
+
+void moveEdges4(const Edges4 &edges4, int move, Edges4 &moved) {
+  int tmp = edges4_move[edges4.comb][move];
+  moved.comb = tmp >> 5;
+  moved.perm = mul_perms[edges4.perm][tmp & 0x1f];
+}
+
+void moveCPerm(const CPerm &cperm, int move, CPerm &cperm1) {
+  int tmp = cperm4_move[cperm.comb1][move];
+  cperm1.comb1 = tmp >> 5;
+  cperm1.perm1 = mul_perms[cperm.perm1][tmp & 0x1f];
+  tmp = cperm4_move[cperm.comb2][move];
+  cperm1.comb2 = tmp >> 5;
+  cperm1.perm2 = mul_perms[cperm.perm2][tmp & 0x1f];
+}
+
+int mergeUDEdges2(const Edges4 &uedges, const Edges4 &dedges) {
+  return N_PERM4 * uedges.val() + dedges.perm;
+}
+
+void splitUDEdges2(int udedges, Edges4 &uedges, Edges4 &dedges) {
+  uedges.set(udedges / N_PERM4);
+  dedges.comb = enc_comb[0xff & ~dec_comb[uedges.comb]];
+  dedges.perm = udedges % N_PERM4;
+}
+
 void initMoveCoord(
-  Coord (**coord_move)[N_MOVES], 
+  uint16_t (**move_coord)[N_MOVES],
   int n_coords,
-  Coord (*getCoord)(const CubieCube &),
-  void (*setCoord)(CubieCube &, Coord),
+  int (*getCoord)(const CubieCube &),
+  void (*setCoord)(CubieCube &, int),
   void (*mul)(const CubieCube &, const CubieCube &, CubieCube &)
 ) {
-  auto coord_move1 = new Coord[n_coords][N_MOVES];
+  auto move_coord1 = new uint16_t[n_coords][N_MOVES];
 
-  CubieCube cube1;
+  CubieCube cube1 = kSolvedCube;;
   CubieCube cube2;
-
-  cube1 = kSolvedCube; // properly initialize all 4 arrays so that multiplication will always work
-  for (Coord c = 0; c < n_coords; c++) {
+  for (int c = 0; c < n_coords; c++) {
     setCoord(cube1, c);
     for (int m = 0; m < N_MOVES; m++) {
       mul(cube1, move_cubes[m], cube2);
-      coord_move1[c][m] = getCoord(cube2);
+      move_coord1[c][m] = getCoord(cube2);
     }
   }
 
-  *coord_move = coord_move1;
+  *move_coord = move_coord1;
 }
 
-void initCoordMove() {
-  initMoveCoord(&twist_move, N_TWIST, getTwist, setTwist, mulCorners);
-  initMoveCoord(&flip_move, N_FLIP, getFlip, setFlip, mulEdges);
-  initMoveCoord(&sslice_move, N_SSLICE, getSSlice, setSSlice, mulEdges);
-  // We use UEDGES to initialize the EDGES4 coord (DEDGES would be exactly the same)
-  initMoveCoord(&edges4_move, N_EDGES4, getUEdges, setUEdges, mulEdges);
-  initMoveCoord(&cperm_move, N_CPERM, getCPerm, setCPerm, mulCorners);
+void initCoordTables() {
+  initMoveCoord(&move_twist, N_TWIST, getTwist, setTwist, mulCorners);
+  initMoveCoord(&move_flip, N_FLIP, getFlip, setFlip, mulEdges);
 
-  /* The UDEDGES move-table should only contain phase 2 moves, hence a little code duplication */
-  udedges_move2 = new Coord[N_UDEDGES2][N_MOVES2];
-
-  CubieCube cube1;
+  CubieCube cube1 = kSolvedCube;
   CubieCube cube2;
 
-  cube1 = kSolvedCube;
-  for (Coord c = 0; c < N_UDEDGES2; c++) {
-    setUDEdges(cube1, c);
-    for (int m = 0; m < N_MOVES2; m++) {
-      mulEdges(cube1, move_cubes[moves2[m]], cube2);
-      udedges_move2[c][m] = getUDEdges(cube2);
+  for (int comb = 0; comb < N_C12K4; comb++) {
+    setCombPerm(comb, 0, cube1.ep, N_EDGES, UR, true);
+    for (int m = 0; m < N_MOVES; m++) {
+      mulEdges(cube1, move_cubes[m], cube2);
+      int comb1;
+      int perm1;
+      getCombPerm(comb1, perm1, cube2.ep, N_EDGES, 0x00f, UR);
+      edges4_move[comb][m] = (comb1 << 5) | perm1;
     }
   }
-}
-
-Coord sliceMove(Coord slice, int move) {
-  return SS_SLICE(sslice_move[SSLICE(slice)][move]);
+  for (int comb = 0; comb < N_C8K4; comb++) {
+    setCombPerm(comb, 0, cube1.cp, N_CORNERS, URF, true);
+    for (int m = 0; m < N_MOVES; m++) {
+      mulCorners(cube1, move_cubes[m], cube2);
+      int comb1;
+      int perm1;
+      getCombPerm(comb1, perm1, cube2.cp, N_CORNERS, 0x0f, URF);
+      cperm4_move[comb][m] = (comb1 << 5) | perm1;
+    }
+  }
 }
