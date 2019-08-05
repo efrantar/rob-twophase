@@ -1,3 +1,26 @@
+/**
+ * Obviously, one key question when implementing a Rubik's cube solver is how to realize cube moves. While actually
+ * carrying out the moves on cubie-level is implemented in "cubie.cc" and the move-lookup tables used throughout the
+ * solving process are computed in "coord.cc", several important global definitions are stated in this file.
+ * Especially, since we support several different metrics this information it not that trivial to set up and hence
+ * it is cleaner to decouple it into its own file.
+ *
+ * In total, the solver supports, three different solving modes which strongly affect which moves are considered when
+ * searching for a solution. In the `QUARTER` metric, 180 degree turns (double moves) are considered twice as expensive
+ * as quarter-turns. When using `AXIAL` any two consecutive rotations on parallel faces are treated as a single move.
+ * Ultimately, the `FACES5` mode strictly restricts the solver to only turning 5 faces, i.e. a solution will never
+ * contain any B-moves. All of these options can be combined arbitrarily.
+ *
+ * On the lowest level we represent cube-moves by `CubieCube`s. Move `m` can then by applied to a cube `c` simply by
+ * multiplying the corresponding `CubieCube` representations (see also "cubie.cc"). We only define the 6 basic
+ * axis-moves here and build all other required compound moves (such as double moves on the same axis) during the
+ * setup routine. Note that we generally only want to define the moves applicable in the given metric (rather than
+ * masking out invalid moves) since the number of moves affects critical loops that are executed millions of times and
+ * also the sizes of several tables. This however makes the setup a bit tricky.
+ *
+ * TODO: discuss move-masks
+ */
+
 #ifndef MOVES_H_
 #define MOVES_H_
 

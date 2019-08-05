@@ -30,7 +30,7 @@
  * representative to itself. The `*_selfs` tables collect those as they are also important for generating correct
  * pruning tables.
  *
- * At last, to considerably decrease table size, we do not perform symmetry reduction on a combined coordinate
+ * At last, to considerably decrease table size, we do not perform symmetry reduction on a huge combined coordinate
  * (consisting of say `c1` and `c2`), but rather only symmetry reduce `c1` (using the tables mentioned in the previous
  * paragraph) and then conjugate `c2` before merging them together again. Therefore we also need `conj_*` tables.
  *

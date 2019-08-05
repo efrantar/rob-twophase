@@ -97,6 +97,7 @@ void TwoPhaseSolver::phase1(
   if (dist != togo && dist + togo < 5)
     return;
   mm &= movemask;
+
   // std::cout << dist << "\n";
 
   depth++;
@@ -124,8 +125,8 @@ void TwoPhaseSolver::phase1(
   tmp &= movemask;
 
   if (mm != tmp)
-    std::cout << getFSTwistPrun(flip, sslice, twist, togo + 1, mm) << "\n";
-  */
+    std::cout << "Error: " << getFSTwistPrun(flip, sslice, twist, togo + 1, mm) << "\n";
+*/
 
   while (mm) {
     int m = ffsll(mm) - 1;
@@ -239,13 +240,16 @@ int twophase(const CubieCube &cube, int max_depth1, int timelimit, std::vector<i
         TwoPhaseSolver solver(rot, (bool) inv);
         solver.solve(cube1);
       }));
+      // break;
     }
+    // break;
   }
 
   done = false;
 
   cont = false;
   ret = 0;
+  // timelimit = 1000000;
   std::thread timeout([timelimit]() {
     std::unique_lock<std::mutex> lock(wait);
     notify.wait_for(lock, std::chrono::milliseconds(timelimit), []{ return cont; });

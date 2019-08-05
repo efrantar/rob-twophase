@@ -27,7 +27,9 @@
 
 extern uint8_t mm_key[N_SYMS_SUB][3];
 extern uint8_t mm_map1[2][4][256];
-extern uint16_t mm_map2[2][4][1024];
+#ifdef AXIAL
+  extern uint16_t mm_map2[2][4][1024];
+#endif
 extern Prun *fstwist_prun;
 
 extern uint8_t *corned_prun;

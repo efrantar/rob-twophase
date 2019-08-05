@@ -7,15 +7,19 @@
 
 #ifdef QUARTER
   #define PER_AXIS 4
+  #define PER_AXIS_AX 4
 #else
   #define PER_AXIS 6
+  #define PER_AXIS_AX 9
 #endif
 
 #define EMPTY 0xff
 
 uint8_t mm_key[N_SYMS_SUB][3];
 uint8_t mm_map1[2][4][256];
-uint16_t mm_map2[2][4][1024];
+#ifdef AXIAL
+  uint16_t mm_map2[2][4][1024];
+#endif
 
 Prun *fstwist_prun;
 uint8_t *corned_prun;
@@ -74,6 +78,32 @@ void initPrun() {
       #endif
     }
   }
+
+  #ifdef AXIAL
+  for (int info = 0; info < 4; info++) {
+    for (int chunk = 0; chunk < 1024; chunk++) {
+      #ifdef QUARTER
+            // TODO
+      #else
+        int mm = chunk >> 1;
+
+        if (info & 1) {
+          int mm1 = 0;
+          for (int i = 0; i < 3; i++) {
+            for (int j = 0; j < 3; j++)
+              mm1 |= ((mm & (1 << 3 * i + j)) != 0) << 3 * j + i;
+          }
+          mm = mm1;
+        }
+        if (info & 2)
+          mm = reverse(mm, 9);
+
+        mm_map2[0][info][chunk] = (chunk & 1) ? 0 : ~mm & 0x1ff;
+        mm_map2[1][info][chunk] = (chunk & 1) ? ~mm & 0x1ff : 0x1ff;
+      #endif
+    }
+  }
+  #endif
 }
 
 int getFSTwistPrun(int flip, Edges4 sslice, int twist, int togo, MoveMask &mm) {
@@ -94,10 +124,17 @@ int getFSTwistPrun(int flip, Edges4 sslice, int twist, int togo, MoveMask &mm) {
     mm = phase1_moves;
   else {
     mm = 0;
+    #ifdef AXIAL
+      Prun prun1 = prun >> 24;
+    #endif
     for (int ax = 0; ax < 3; ax++) {
       int tmp = mm_key[s][ax];
       mm |= MoveMask(mm_map1[delta][INFO(tmp)][prun & 0xff]) << PER_AXIS * OFF(tmp);
       prun >>= 8;
+      #ifdef AXIAL
+        mm |= MoveMask(mm_map2[delta][INFO(tmp)][prun1 & 0x3ff]) << 18 + PER_AXIS_AX * OFF(tmp);
+        prun1 >>= 10;
+      #endif
     }
   }
 
@@ -165,6 +202,25 @@ void initFSTwistPrun() {
           for (int m = N_MOVES - N_DOUBLE2 - 1; m >= 0; m--)
               prun = (prun << 2) | (deltas[m] + 1);
         #else
+          #ifdef AXIAL
+            for (int ax = 3; ax >= 0; ax--) {
+              bool away = false;
+              for (int i = 18 + 9 * ax; i < 18 + 9 * (ax + 1); i++) {
+                if (deltas[i] != 0) {
+                  if (deltas[i] > 0)
+                    away = true;
+                  break;
+                }
+              }
+
+              int tmp = 0;
+              for (int i = 18 + 9 * (ax + 1) - 1; i >= 18 + 9 * ax; i--)
+                tmp = (tmp | (away ? deltas[i] : deltas[i] + 1)) << 1;
+              tmp |= away;
+
+              prun = (prun << 10) | tmp;
+            }
+          #endif
           for (int ax = 5; ax >= 0; ax--) {
             bool away = false;
             for (int i = 3 * ax; i < 3 * (ax + 1); i++) {
