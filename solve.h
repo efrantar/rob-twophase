@@ -21,13 +21,18 @@ class TwoPhaseSolver {
   private:
     int rot;
     bool inv_; // to work around shadowing `inv()`
+
+    Edges4 uedges[N];
+    Edges4 dedges[N];
+    CPerm cperm[N];
+    int cperm_depth;
+    int edges_depth;
+
     int moves[N];
     int probes = 0;
 
     void phase1(
-      int depth, int togo,
-      int flip, int twist, const Edges4 &sslice, const Edges4 &uedges, const Edges4 &dedges, const CPerm &cperm,
-      MoveMask movemask
+      int depth, int togo, int flip, int twist, const Edges4 &sslice, MoveMask movemask
     );
 
     bool phase2(

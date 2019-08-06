@@ -54,13 +54,15 @@ void TwoPhaseSolver::solve(const CubieCube &cube) {
   int flip = getFlip(cube1);
   int twist = getTwist(cube1);
   Edges4 sslice(getSSlice(cube1));
-  Edges4 uedges(getUEdges(cube1));
-  Edges4 dedges(getDEdges(cube1));
-  CPerm cperm(getCPerm(cube1));
+  uedges[0].set(getUEdges(cube1));
+  dedges[0].set(getDEdges(cube1));
+  cperm[0].set(getCPerm(cube1));
 
   MoveMask mm;
   for (int togo = getFSTwistPrun(flip, sslice, twist, 0, mm); togo <= len; togo++) {
-    phase1(0, togo, flip, twist, sslice, uedges, dedges, cperm, phase1_moves);
+    cperm_depth = 0;
+    edges_depth = 0;
+    phase1(0, togo, flip, twist, sslice, phase1_moves);
     /*
     if (!done) {
       mutex.lock();
@@ -76,17 +78,28 @@ void TwoPhaseSolver::solve(const CubieCube &cube) {
 }
 
 void TwoPhaseSolver::phase1(
-  int depth, int togo,
-  int flip, int twist, const Edges4 &sslice, const Edges4 &uedges, const Edges4 &dedges, const CPerm &cperm,
-  MoveMask movemask
+  int depth, int togo, int flip, int twist, const Edges4 &sslice, MoveMask movemask
 ) {
-  if (done)
-    return;
-
   if (togo == 0) {
-    probes++;
-    for (int togo1 = getCornEdPrun(cperm, uedges, dedges); togo1 < len - depth; togo1++) {
-      if (phase2(depth, togo1, sslice, uedges, dedges, cperm, movemask))
+    for (int i = cperm_depth + 1; i <= depth; i++)
+      moveCPerm(cperm[i - 1], moves[i - 1], cperm[i]);
+    cperm_depth = depth - 1;
+    CPerm cperm1 = cperm[depth];
+
+    int tmp = getCornSlicePrun(cperm1, sslice);
+    if (tmp >= len - depth)
+      return;
+
+    for (int i = edges_depth + 1; i <= depth; i++) {
+      moveEdges4(uedges[i - 1], moves[i - 1], uedges[i]);
+      moveEdges4(dedges[i - 1], moves[i - 1], dedges[i]);
+    }
+    edges_depth = depth - 1;
+    Edges4 uedges1 = uedges[depth];
+    Edges4 dedges1 = dedges[depth];
+
+    for (int togo1 = std::max(getCornEdPrun(cperm1, uedges1, dedges1), tmp); togo1 < len - depth; togo1++) {
+      if (phase2(depth, togo1, sslice, uedges1, dedges1, cperm1, movemask))
         return;
     }
     return;
@@ -94,53 +107,48 @@ void TwoPhaseSolver::phase1(
 
   MoveMask mm;
   int dist = getFSTwistPrun(flip, sslice, twist, togo, mm);
-  if (dist != togo && dist + togo < 5)
-    return;
-  mm &= movemask;
+  if (dist == togo || dist + togo >= 5) {
+    mm &= movemask;
 
-  // std::cout << dist << "\n";
+    depth++;
+    togo--;
+    Edges4 sslice1;
+    int flip2;
+    int twist2;
+    Edges4 sslice2;
 
-  depth++;
-  togo--;
+    while (mm && !done) {
+      int m = ffsll(mm) - 1;
+      mm &= mm - 1;
 
-  Edges4 sslice1;
-  Edges4 uedges1;
-  Edges4 dedges1;
-  CPerm cperm1;
+      if (mm != 0) {
+        int m1 = ffsll(mm) - 1;
 
-  /*
-  MoveMask tmp = 0;
-  for (int m = 0; m < N_MOVES1; m++) {
-    int flip1 = move_flip[flip][m];
-    int twist1 = move_twist[twist][m];
-    moveSSlice(sslice, m, sslice1);
-    moveEdges4(uedges, m, uedges1);
-    moveEdges4(dedges, m, dedges1);
-    moveCPerm(cperm, m, cperm1);
+        flip2 = move_flip[flip][m1];
+        twist2 = move_twist[twist][m1];
+        moveSSlice(sslice, m1, sslice2);
 
-    MoveMask tmp1;
-    if (getFSTwistPrun(flip1, sslice1, twist1, 0, tmp1) <= togo)
-      tmp |= MOVEBIT(m);
-  }
-  tmp &= movemask;
+        int fslice = FSLICE(flip2, sslice2.comb);
+        int s = SYM(fslice_sym[fslice]);
+        int fstwist = FSTWIST(
+          COORD(fslice_sym[fslice]), conj_twist[twist2][s]
+        );
 
-  if (mm != tmp)
-    std::cout << "Error: " << getFSTwistPrun(flip, sslice, twist, togo + 1, mm) << "\n";
-  */
+        __builtin_prefetch(&fstwist_prun[fstwist], 0);
+      }
 
-  while (mm) {
-    int m = ffsll(mm) - 1;
-    mm &= mm - 1;
+      int flip1 = move_flip[flip][m];
+      int twist1 = move_twist[twist][m];
+      moveSSlice(sslice, m, sslice1);
+      moves[depth - 1] = m;
 
-    int flip1 = move_flip[flip][m];
-    int twist1 = move_twist[twist][m];
-    moveSSlice(sslice, m, sslice1);
-    moveEdges4(uedges, m, uedges1);
-    moveEdges4(dedges, m, dedges1);
-    moveCPerm(cperm, m, cperm1);
-    moves[depth - 1] = m;
+      phase1(depth, togo, flip1, twist1, sslice1, next_moves[m]);
+    }
 
-    phase1(depth, togo, flip1, twist1, sslice1, uedges1, dedges1, cperm1, next_moves[m]);
+    if (cperm_depth == depth - 1)
+      cperm_depth--;
+    if (edges_depth == depth - 1)
+      edges_depth--;
   }
 }
 
@@ -149,9 +157,6 @@ bool TwoPhaseSolver::phase2(
   const Edges4 &sslice, const Edges4 &uedges, const Edges4 &dedges, const CPerm &cperm,
   MoveMask movemask
 ) {
-  if (done)
-    return true;
-
   if (togo == 0) {
     if (sslice.perm != 0 || cperm.val() != 0 || mergeUDEdges2(uedges, dedges) != 0)
       return false;
@@ -188,7 +193,7 @@ bool TwoPhaseSolver::phase2(
   CPerm cperm1;
 
   MoveMask mm = phase2_moves & movemask;
-  while (mm) {
+  while (mm && !done) {
     int m = ffsll(mm) - 1;
     mm &= mm - 1;
 
@@ -218,7 +223,7 @@ bool TwoPhaseSolver::phase2(
     }
   }
 
-  return false;
+  return done;
 }
 
 int twophase(const CubieCube &cube, int max_depth1, int timelimit, std::vector<int> &sol1) {
@@ -305,6 +310,7 @@ void initTwophase(bool file) {
   if (!file) {
     initFSTwistPrun();
     initCornEdPrun();
+    initCornSlicePrun();
     return;
   }
 
@@ -313,16 +319,20 @@ void initTwophase(bool file) {
   if (f == NULL) {
     initFSTwistPrun();
     initCornEdPrun();
+    initCornSlicePrun();
 
     f = fopen(FILE_TWOPHASE, "wb");
     // Use `tmp` to avoid nasty warnings; not clean but we don't want to make this part too complicated
     int tmp = fwrite(fstwist_prun, sizeof(Prun), N_FSTWIST, f);
     tmp = fwrite(corned_prun, sizeof(uint8_t), N_CORNED, f);
+    tmp = fwrite(cornslice_prun, sizeof(uint8_t), N_CORNSLICE, f);
   } else {
     fstwist_prun = new Prun[N_FSTWIST];
     corned_prun = new uint8_t[N_CORNED];
+    cornslice_prun = new uint8_t[N_CORNSLICE];
     int tmp = fread(fstwist_prun, sizeof(Prun), N_FSTWIST, f);
     tmp = fread(corned_prun, sizeof(uint8_t), N_CORNED, f);
+    tmp = fread(cornslice_prun, sizeof(uint8_t), N_CORNSLICE, f);
   }
 
   fclose(f);

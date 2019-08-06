@@ -25,6 +25,7 @@ uint8_t mm_map1[2][4][256];
 
 Prun *fstwist_prun;
 uint8_t *corned_prun;
+uint8_t *cornslice_prun;
 
 int reverse(int bitmask, int len, int step = 1) {
   int rev = 0;
@@ -179,6 +180,10 @@ int getCornEdPrun(CPerm cperm, Edges4 uedges, Edges4 dedges) {
   return corned_prun[corned];
 }
 
+int getCornSlicePrun(CPerm cperm, Edges4 sslice) {
+  return cornslice_prun[CORNSLICE(cperm.val(), sslice.perm)];
+}
+
 void initFSTwistPrun() {
   fstwist_prun = new Prun[N_FSTWIST];
   std::fill(fstwist_prun, fstwist_prun + N_FSTWIST, EMPTY);
@@ -199,7 +204,7 @@ void initFSTwistPrun() {
         count++;
 
         int deltas[N_MOVES];
-        for (int m = 0; m < N_MOVES - N_DOUBLE2; m++) {
+        for (int m = 0; m < N_MOVES1; m++) {
           #ifdef FACES5
             if ((phase1_moves & MOVEBIT(m)) == 0) {
               deltas[m] = 0;
@@ -300,10 +305,9 @@ void initCornEdPrun() {
 
         splitUDEdges2(j, uedges, dedges);
 
-        MoveMask mm = phase2_moves;
-        while (mm) {
-          int m = ffsll(mm) - 1;
-          mm &= mm - 1;
+        for (int m = 0; m < N_MOVES; m++) {
+          if ((phase2_moves & MOVEBIT(m)) == 0)
+            continue;
 
           int dist1 = dist + 1;
           #ifdef QUARTER
@@ -331,6 +335,50 @@ void initCornEdPrun() {
                 corned_prun[c2] = dist1;
             }
           }
+        }
+      }
+    }
+    std::cout << dist << " " << count << "\n";
+  }
+}
+
+void initCornSlicePrun() {
+  cornslice_prun = new uint8_t[N_CORNSLICE];
+  std::fill(cornslice_prun, cornslice_prun + N_CORNSLICE, EMPTY);
+
+  Edges4 sslice1;
+  CPerm cperm1;
+
+  cornslice_prun[0] = 0;
+  for (int dist = 0, count = 0; count < N_CORNSLICE; dist++) {
+    int c = 0;
+
+    for (int i = 0; i < N_CPERM; i++) {
+      CPerm cperm(i);
+
+      for (int j = 0; j < N_SSLICE2; j++, c++) {
+        if (cornslice_prun[c] != dist)
+          continue;
+        count++;
+
+        Edges4 sslice(j);
+
+        for (int m = 0; m < N_MOVES; m++) {
+          if ((phase2_moves & MOVEBIT(m)) == 0)
+            continue;
+
+          int dist1 = dist + 1;
+          #ifdef QUARTER
+            if (m >= N_MOVES1)
+              dist1++;
+          #endif
+
+          moveCPerm(cperm, m, cperm1);
+          moveSSlice(sslice, m, sslice1);
+
+          int c1 = CORNSLICE(cperm1.val(), sslice1.perm);
+          if (cornslice_prun[c1] > dist1)
+            cornslice_prun[c1] = dist1;
         }
       }
     }
