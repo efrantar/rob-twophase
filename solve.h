@@ -5,15 +5,16 @@
 #ifndef SOLVE_H_
 #define SOLVE_H_
 
+#include <condition_variable>
+#include <mutex>
 #include <string>
+#include <thread>
 #include <vector>
 #include "coord.h"
 
 #define N 50 // longer solutions will not be found in any metric
 
 #define FILE_TWOPHASE "twophase.tbl"
-
-extern double time1;
 
 // Class as we want to search in parallel from multiple starting positions and every search needs its own variables
 class TwoPhaseSolver {
@@ -47,8 +48,9 @@ class TwoPhaseSolver {
 
 };
 
-// Low level API
-int twophase(const CubieCube &cube, int max_depth, int timelimit, std::vector<int> &sol);
+void prepareSolve();
+int solve(const CubieCube &cube, int max_depth, int timelimit, std::vector<int> &sol);
+void waitForFinish();
 
 /**
  * Initializes the twophase solver by generating / loading all move and pruning tables. Note that this may take
@@ -86,6 +88,9 @@ void initTwophase(bool file = true);
  * - CubieError 9: parity error
  * - SolveError 2: no solution found within the timelimit
  */
-std::string twophaseStr(std::string cube, int max_depth = -1, int timelimit = 10);
+std::string twophase(
+  std::string cube, int max_depth = -1, int timelimit = 10,
+  bool prepare = true, bool wait = true
+);
 
 #endif

@@ -15,25 +15,23 @@
 #include "sym.h"
 #include "prun.h"
 
-double time1 = 0;
-
-CubieCube cube1;
-std::mutex ready_mutex;
-std::condition_variable ready_var;
-bool ready;
-
 std::mutex mutex; // lock for writing solutions
 bool done; // signal solver shutdown
 std::vector<int> sol; // global shared solution
 
+int len; // length of current best solution
+int max_depth; // stop as soon as a solution with at most this depth is found
+
+std::vector<std::thread> threads;
+CubieCube cube1;
+std::mutex start_mutex;
+std::condition_variable start_var;
+bool start;
+
 // Various variables necessary to actually realize a simple timeout ...
 std::mutex wait;
 std::condition_variable notify;
-bool cont;
 int ret;
-
-int len; // length of current best solution
-int max_depth; // stop as soon as a solution with at most this depth is found
 
 TwoPhaseSolver::TwoPhaseSolver(int rot1, bool inv1) {
   rot = rot1;
@@ -63,18 +61,7 @@ void TwoPhaseSolver::solve(const CubieCube &cube) {
     cperm_depth = 0;
     edges_depth = 0;
     phase1(0, togo, flip, twist, sslice, phase1_moves);
-    /*
-    if (!done) {
-      mutex.lock();
-      std::cout << inv_ << " " << rot << " " << togo << " " << probes << "\n";
-      mutex.unlock();
-    }
-     */
-    // std::this_thread::yield();
   }
-  // mutex.lock();
-  // std::cout << "probes: " << inv_ << " " << rot << " " << probes << "\n";
-  // mutex.unlock();
 }
 
 void TwoPhaseSolver::phase1(
@@ -113,29 +100,10 @@ void TwoPhaseSolver::phase1(
     depth++;
     togo--;
     Edges4 sslice1;
-    int flip2;
-    int twist2;
-    Edges4 sslice2;
 
     while (mm && !done) {
       int m = ffsll(mm) - 1;
       mm &= mm - 1;
-
-      if (mm != 0) {
-        int m1 = ffsll(mm) - 1;
-
-        flip2 = move_flip[flip][m1];
-        twist2 = move_twist[twist][m1];
-        moveSSlice(sslice, m1, sslice2);
-
-        int fslice = FSLICE(flip2, sslice2.comb);
-        int s = SYM(fslice_sym[fslice]);
-        int fstwist = FSTWIST(
-          COORD(fslice_sym[fslice]), conj_twist[twist2][s]
-        );
-
-        __builtin_prefetch(&fstwist_prun[fstwist], 0);
-      }
 
       int flip1 = move_flip[flip][m];
       int twist1 = move_twist[twist][m];
@@ -179,8 +147,11 @@ bool TwoPhaseSolver::phase2(
           sol[i] = conj_move[sol[i]][ROT_SYM * rot];
       }
 
-      if (depth <= max_depth) // keep searching if current solution exceeds max-depth
+      if (depth <= max_depth) { // keep searching if current solution exceeds max-depth
+        std::lock_guard<std::mutex> lock(wait);
         done = true;
+        notify.notify_one();
+      }
     }
 
     mutex.unlock();
@@ -226,67 +197,60 @@ bool TwoPhaseSolver::phase2(
   return done;
 }
 
-int twophase(const CubieCube &cube, int max_depth1, int timelimit, std::vector<int> &sol1) {
-  ready = false;
+void prepareSolve() {
+  waitForFinish();
+  threads.clear();
 
-  std::vector<std::thread> threads;
+  start = false;
+
   for (int rot = 0; rot < 3; rot++) {
     #ifdef FACES5
       if (rot > 1)
         break;
     #endif
     for (int inv = 0; inv < 2; inv++) {
-      threads.push_back(std::thread([rot, inv]() {
-        {
-          std::unique_lock<std::mutex> lock(ready_mutex);
-          ready_var.wait(lock, []{ return ready; });
-          ready_var.notify_one();
-        }
+      std::thread thread([rot, inv]() {
         TwoPhaseSolver solver(rot, (bool) inv);
+        {
+          std::unique_lock<std::mutex> lock(start_mutex);
+          start_var.wait(lock, []{ return start; });
+        }
         solver.solve(cube1);
-      }));
+      });
+      threads.push_back(std::move(thread));
     }
   }
+}
 
+void waitForFinish() {
+  for (std::thread& thread : threads)
+    thread.join();
+}
+
+int solve(const CubieCube &cube, int max_depth1, int timelimit, std::vector<int> &sol1) {
   done = false;
-
-  cont = false;
-  ret = 0;
-  std::thread timeout([timelimit]() {
-    std::unique_lock<std::mutex> lock(wait);
-    notify.wait_for(lock, std::chrono::milliseconds(timelimit), []{ return cont; });
-    done = true;
-    ret++;
-  }); // timeout thread
-
   sol.clear();
   max_depth = max_depth1;
-  len = max_depth > 0 ? max_depth + 1 : N; // initial reference value for pruning
-
+  len = max_depth > 0 ? max_depth + 1 : N;
 
   cube1 = cube;
   {
-    std::lock_guard<std::mutex> lock(ready_mutex);
-    ready = true;
-    ready_var.notify_one();
+    std::lock_guard<std::mutex> lock(start_mutex);
+    start = true;
+    start_var.notify_all();
   }
 
-  auto tick = std::chrono::high_resolution_clock::now();
-  for (int i = 0; i < threads.size(); i++)
-    threads[i].join();
-  time1 += std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::high_resolution_clock::now() - tick).count() / 1000.;
-  // std::cout << std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::high_resolution_clock::now() - tick).count() / 1000. << "\n";
-
-  // All of this is necessary for the timeout to work as expected
+  ret = 0;
   {
-    std::lock_guard<std::mutex> lock(wait);
-    cont = true;
-    if (ret == 0)
-      ret--;
+    std::unique_lock<std::mutex> lock(wait);
+    notify.wait_for(lock, std::chrono::milliseconds(timelimit), []{ return done; });
+    if (!done) {
+      done = true;
+      ret++;
+    }
   }
-  notify.notify_one();
-  timeout.join();
 
+  std::lock_guard<std::mutex> lock(mutex);
   if (sol.size() == len) {
     sol1.resize(len);
     for (int i = 0; i < len; i++)
@@ -348,7 +312,7 @@ std::string solToStr(const std::vector<int> &sol) {
   return ss.str();
 }
 
-std::string twophaseStr(std::string s, int max_depth, int timelimit) {
+std::string twophase(std::string s, int max_depth, int timelimit, bool prepare, bool wait) {
   CubieCube cube;
   int err = faceToCubie(s, cube);
   if (err)
@@ -356,7 +320,12 @@ std::string twophaseStr(std::string s, int max_depth, int timelimit) {
   if ((err = check(cube)))
     return "CubieError " + std::to_string(err);
 
+  if (prepare)
+    prepareSolve();
   std::vector<int> sol;
-  int ret = twophase(cube, max_depth, timelimit, sol);
+  int ret = solve(cube, max_depth, timelimit, sol);
+  if (wait)
+    waitForFinish();
+
   return ret == 0 ? solToStr(sol) : "SolveError " + std::to_string(ret);
 }

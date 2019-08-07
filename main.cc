@@ -44,9 +44,10 @@ void benchTime(const std::vector<CubieCube> &cubes, int moves) {
     if (i % PRINT_EVERY == 0)
       std::cout << "Benchmarking ..." << std::endl;
 
-    auto tick = std::chrono::high_resolution_clock::now();
+    prepareSolve();
     std::vector<int> sol;
-    twophase(cubes[i], moves, MAX_BENCHTIME, sol);
+    auto tick = std::chrono::high_resolution_clock::now();
+    solve(cubes[i], moves, MAX_BENCHTIME, sol);
     auto tock = std::chrono::high_resolution_clock::now() - tick;
 
     if (!checkSol(cubes[i], sol) || sol.size() > moves)
@@ -54,6 +55,7 @@ void benchTime(const std::vector<CubieCube> &cubes, int moves) {
     else
       times.push_back(std::chrono::duration_cast<std::chrono::microseconds>(tock).count() / 1000.);
   }
+  waitForFinish();
 
   std::cout
     << "Average: " << std::accumulate(times.begin(), times.end(), 0.) / times.size()
@@ -70,52 +72,20 @@ void benchMoves(const std::vector<CubieCube> &cubes, int time) {
     if (i % PRINT_EVERY == 0)
       std::cout << "Benchmarking ..." << std::endl;
     std::vector<int> sol;
-    twophase(cubes[i], -1, time, sol);
+    prepareSolve();
+    solve(cubes[i], -1, time, sol);
     if (!checkSol(cubes[i], sol))
       failed++;
     else
       moves.push_back(sol.size());
   }
+  waitForFinish();
 
   std::cout
     << "Average: " << std::accumulate(moves.begin(), moves.end(), 0.) / moves.size()
     << " Min: " << *std::min_element(moves.begin(), moves.end())
     << " Max: " << *std::max_element(moves.begin(), moves.end())
     << " Failed: " << failed << std::endl;
-}
-
-int rec(int depth, int i1, int i2, int i3, int i4, int i5) {
-  if (depth == 9)
-    return 1;
-  int tmp = i1 + i2 + i3 + i4 + i5;
-  int i11 = i1 + 1;
-  int i21 = i2 + 1;
-  int i31 = i3 + 1;
-  int i41 = i4 + 1;
-  int i51 = i5 + 1;
-  for (int i = 0; i < 10; i++)
-    tmp += rec(depth + 1, i11, i21, i31, i41, i51);
-  return tmp;
-}
-
-int i1[10];
-int i2[10];
-int i3[10];
-int i4[10];
-int i5[10];
-
-int rec1(int depth) {
-  if (depth == 9)
-    return 1;
-  int tmp = i1[depth] + i2[depth] + i3[depth] + i4[depth] + i5[depth];
-  i1[depth + 1] = i1[depth] + 1;
-  i2[depth + 1] = i2[depth] + 1;
-  i3[depth + 1] = i3[depth] + 1;
-  i4[depth + 1] = i4[depth] + 1;
-  i5[depth + 1] = i5[depth] + 1;
-  for (int i = 0; i < 10; i++)
-    tmp += rec1(depth + 1);
-  return tmp;
 }
 
 int main(int argc, char *argv[]) {
@@ -184,7 +154,7 @@ int main(int argc, char *argv[]) {
   if (mode == "twophase") {
     auto tick = std::chrono::high_resolution_clock::now();
     if (mode == "twophase") {
-      std::cout << twophaseStr(std::string(argv[2]), std::stoi(argv[3]), std::stoi(argv[4])) << std::endl;
+      std::cout << twophase(std::string(argv[2]), std::stoi(argv[3]), std::stoi(argv[4])) << std::endl;
       std::cout << std::chrono::duration_cast<std::chrono::microseconds>(
         std::chrono::high_resolution_clock::now() - tick
       ).count() / 1000. << "ms" << std::endl;
@@ -206,7 +176,6 @@ int main(int argc, char *argv[]) {
       benchTime(cubes, std::stoi(argv[2]));
     else if (mode == "benchmoves")
       benchMoves(cubes, std::stoi(argv[2]));
-    std::cout << time1 / 10000 << "\n";
   }
 
   return 0;
