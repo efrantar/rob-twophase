@@ -21,6 +21,8 @@
 #define MAX_BENCHTIME 10000 // even the worst cubes should not take much more than a few 100ms to solve in 20 moves
 #define PRINT_EVERY 1000
 
+#define WARMUP_CUBE "UDFUURRLDBFLURRDRUUFLLFRFDBRBRLDBUDLRBBFLBBUDDFFDBUFLL"
+
 bool checkSol(const CubieCube &cube, const std::vector<int> &sol) {
   CubieCube cube1;
   CubieCube cube2;
@@ -136,7 +138,8 @@ int main(int argc, char *argv[]) {
   if (argc == 1) {
     std::cout
       << "Call:" << std::endl
-      << "./twophase twophase FACECUBE MAX_MOVES TIME" << std::endl
+      << "./twophase solve FACECUBE MAX_MOVES TIME" << std::endl
+      << "./twophase interactive" << std::endl
       << "./twophase benchtime MAX_MOVES" << std::endl
       << "./twophase benchmoves TIME" << std::endl
     ;
@@ -151,31 +154,48 @@ int main(int argc, char *argv[]) {
   std::cout
     << "Done. " << std::chrono::duration_cast<std::chrono::milliseconds>(tock).count() / 1000. << "s" << std::endl;
 
-  if (mode == "twophase") {
+  if (mode == "solve") {
     auto tick = std::chrono::high_resolution_clock::now();
-    if (mode == "twophase") {
-      std::cout << twophase(std::string(argv[2]), std::stoi(argv[3]), std::stoi(argv[4])) << std::endl;
+    std::cout << twophase(std::string(argv[2]), std::stoi(argv[3]), std::stoi(argv[4])) << std::endl;
+    std::cout << std::chrono::duration_cast<std::chrono::microseconds>(
+      std::chrono::high_resolution_clock::now() - tick
+    ).count() / 1000. << "ms" << std::endl;
+  } else if (mode == "interactive") {
+    std::ios_base::sync_with_stdio(false);
+    twophase(WARMUP_CUBE, -1, 100);
+
+    std::string cube;
+    int len;
+    int timelimit;
+
+    while (std::cin) {
+      prepareSolve();
+      std::cout << "Ready!" << std::endl;
+      std::cin >> cube >> len >> timelimit;
+      auto tick = std::chrono::high_resolution_clock::now();
+      std::cout << twophase(cube, len, timelimit, false, false) << std::endl;
       std::cout << std::chrono::duration_cast<std::chrono::microseconds>(
         std::chrono::high_resolution_clock::now() - tick
       ).count() / 1000. << "ms" << std::endl;
     }
+    waitForFinish();
   } else {
-    std::vector<CubieCube> cubes;
+      std::vector<CubieCube> cubes;
 
-    std::ifstream file;
-    file.open(BENCHFILE);
-    std::string s;
+      std::ifstream file;
+      file.open(BENCHFILE);
+      std::string s;
 
-    while (std::getline(file, s)) {
-      CubieCube c;
-      faceToCubie(s, c);
-      cubes.push_back(c);
-    }
+      while (std::getline(file, s)) {
+        CubieCube c;
+        faceToCubie(s, c);
+        cubes.push_back(c);
+      }
 
-    if (mode == "benchtime")
-      benchTime(cubes, std::stoi(argv[2]));
-    else if (mode == "benchmoves")
-      benchMoves(cubes, std::stoi(argv[2]));
+      if (mode == "benchtime")
+        benchTime(cubes, std::stoi(argv[2]));
+      else if (mode == "benchmoves")
+        benchMoves(cubes, std::stoi(argv[2]));
   }
 
   return 0;

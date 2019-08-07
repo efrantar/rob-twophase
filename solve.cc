@@ -199,8 +199,6 @@ bool TwoPhaseSolver::phase2(
 
 void prepareSolve() {
   waitForFinish();
-  threads.clear();
-
   start = false;
 
   for (int rot = 0; rot < 3; rot++) {
@@ -225,6 +223,7 @@ void prepareSolve() {
 void waitForFinish() {
   for (std::thread& thread : threads)
     thread.join();
+  threads.clear();
 }
 
 int solve(const CubieCube &cube, int max_depth1, int timelimit, std::vector<int> &sol1) {
