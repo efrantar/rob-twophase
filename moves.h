@@ -18,7 +18,10 @@
  * masking out invalid moves) since the number of moves affects critical loops that are executed millions of times and
  * also the sizes of several tables. This however makes the setup a bit tricky.
  *
- * TODO: discuss move-masks
+ * The final important thing defined in this class are the move-masks. During search we do not want to explore
+ * maneuvers that we know right away cannot be optimal, for example ones that contain consecutive moves on the same
+ * face. Therefore we define for every move a bit-mask indicating allowed follow-up moves. Furthermore, we also
+ * specify masks marking all the phase 1 and the phase 2 moves (the former is necessary for the 5-face mode).
  */
 
 #ifndef MOVES_H_
@@ -30,8 +33,8 @@
 
 #ifdef QUARTER
   #ifdef AXIAL
-    #define N_MOVES 30
-    #define N_DOUBLE2 6
+    #define N_MOVES 30 // total number of moves
+    #define N_DOUBLE2 6 // number of double moves in phase 2 (needed for the quarter-turn metric)
   #else
     #define N_MOVES 16
     #define N_DOUBLE2 4
@@ -44,20 +47,23 @@
   #endif
   #define N_DOUBLE2 0
 #endif
+// number of phase 1 moves; only differs from `N_MOVES` when `QUARTER` is defined
 #define N_MOVES1 (N_MOVES - N_DOUBLE2)
 
+// Produces a move-mask where exactly the given bit is on
 #define MOVEBIT(m) (MoveMask(1) << (m))
 
-typedef uint64_t MoveMask;
+typedef uint64_t MoveMask; // since we never store a large number of move-masks, we simply use 64 bits in all modes
 
-extern CubieCube move_cubes[N_MOVES];
-extern std::string move_names[N_MOVES];
-extern int inv_move[N_MOVES];
+extern CubieCube move_cubes[N_MOVES]; // `CubieCube`s representing the moves
+extern std::string move_names[N_MOVES]; // names of the moves
+extern int inv_move[N_MOVES]; // index of the inverse move
 
-extern MoveMask next_moves[N_MOVES];
-extern MoveMask phase1_moves;
-extern MoveMask phase2_moves;
+extern MoveMask next_moves[N_MOVES]; // move-masks for permitted successor moves
+extern MoveMask phase1_moves; // move-mask with all phase 1 moves
+extern MoveMask phase2_moves; // move-mask with all phase 2 moves
 
+/* Basic face moves in their `CubieCube` representation */
 const CubieCube kUCube = {
   {UBR, URF, UFL, ULB, DFR, DLF, DBL, DRB},
   {UB, UR, UF, UL, DR, DF, DL, DB, FR, FL, BL, BR},
@@ -91,6 +97,7 @@ const CubieCube kBCube = {
   {0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 1, 1}
 };
 
+// Initializes all move-related tables; to be called before accessing anything from this file
 void initMoves();
 
 #endif
