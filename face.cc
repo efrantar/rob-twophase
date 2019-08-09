@@ -1,3 +1,13 @@
+/**
+ * This file implements the actual conversion between the face- and cubie-representation of a Rubik's Cube.
+ *
+ * Converting from a `CubieCube` to a face-cube is rather easy, one just needs a map of all cubies to the corresponding
+ * facelet (sticker) locations. The other way around is a bit trickier (especially to do efficiently). We do this
+ * by building all the physical cubie positions (called cubelets) (we do however not know which actual cubie resides
+ * there upfront), uniquely encoding them as a single number and then looking up the corresponding cubie index and its
+ * orientation from a map. The code also includes face-level error-checking.
+ */
+
 #include "face.h"
 
 #include <string>

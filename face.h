@@ -1,10 +1,9 @@
 /**
- * Face level:
- * The cube is represented by a 54-character string describing the colors at the corresponding facelet positions.
- * This representation is only used to more conveniently interface with the outside world.
- */
-
-/*
+ * Since `CubieCube`s (especially the orientation part) are quite tricky to deal with, we use a more convenient
+ * representation to interface with the outside world, the face-cube. Having defined an ordering over all 54 stickers
+ * on the physical cube, a list of the colors for each sticker (in terms of the faces U, R, F, D, L and B not the
+ * actual cube colors) uniquely specifies any cube-state.
+ *
  * The facelet positions are defined as shown in the folded-up Rubik's cube depicted below.
  *
  *          +--+-----+
@@ -31,7 +30,10 @@
  * and the facelets within a face sorted by their index, i.e. U1U2U3U4U5U6U7U8U9R1R2... where U1, U2, ... are the
  * colors of the corresponding facelets.
  *
- * Note that facelet X5 (i.e. the center sticker of face X) must always be of color X.
+ * Note that facelet X5 (i.e. the center sticker of face X) must always be of color X. It also does not matter which
+ * of the actual cube colors (like red, orange, etc.) is assigned to which face, the assignment must only be consistent
+ * with respect to the neighborhood relations, i.e. for example if white is considered as the F-face, then yellow must
+ * be B (as it is always on the opposite side on a physical cube).
  */
 
 #ifndef FACE_H_
