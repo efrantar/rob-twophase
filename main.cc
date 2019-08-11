@@ -7,10 +7,8 @@
 #include <fstream>
 #include <iostream>
 #include <numeric>
-#include <stdlib.h>
 #include <string>
 #include <vector>
-#include <thread>
 
 #include "cubie.h"
 #include "face.h"
@@ -91,50 +89,6 @@ void benchMoves(const std::vector<CubieCube> &cubes, int time) {
 }
 
 int main(int argc, char *argv[]) {
-  /*
-  auto tick = std::chrono::high_resolution_clock::now();
-  std::cout << rec1(0) << "\n";
-  std::cout << std::chrono::duration_cast<std::chrono::microseconds>(
-    std::chrono::high_resolution_clock::now() - tick
-  ).count() / 1000. << "ms" << std::endl;
-*/
-  /*
-  int SIZE = 50000;
-
-  int *test = new int[SIZE];
-  for (int i = 0; i < SIZE; i++)
-    test[i] = rand();
-
-  int indices[1000000];
-  for (int i = 0; i < 1000000; i++)
-    indices[i] = rand() % SIZE;
-
-  auto tick = std::chrono::high_resolution_clock::now();
-
-  int tmp = 0;
-  for (int i = 0; i < 1000000; i++)
-    tmp += i;
-
-  if (tmp == 0)
-    std::cout << tmp << "\n";
-
-  std::cout << std::chrono::duration_cast<std::chrono::microseconds>(
-    std::chrono::high_resolution_clock::now() - tick
-  ).count() / 1000. << "ms" << std::endl;
-
-  int sum = 0;
-  for (int i : indices)
-    sum += test[i];
-
-  if (sum == 0)
-    std::cout << sum << "\n";
-
-  std::cout << std::chrono::duration_cast<std::chrono::microseconds>(
-    std::chrono::high_resolution_clock::now() - tick
-  ).count() / 1000. << "ms" << std::endl;
-  exit(0);
-  */
-
   if (argc == 1) {
     std::cout
       << "Call:" << std::endl

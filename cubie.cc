@@ -1,14 +1,25 @@
+/**
+ * Multiplication of two `CubieCube`s works exactly akin to mathematically multiplying two permutations, i.e.
+ * applying the second permutation to the first. Say for example we want to compute the element at position `i` in the
+ * result of multiplying permutations `a` and `b`. Then we first look up which element `j` of `b` is in position `i`
+ * before determining the result as the element located at position `j` in `a`. In words, we replace the element in
+ * `b` at position `i` with the element it is replaced by in `a`, we "chain" the permutations.
+ *
+ * To determine the correct corresponding cubie orientation we have to combine the orientations of `i` in `b` and `j`
+ * in `a` (for edges this is an addition modulo 2 and for corners modulo 3). Due to mirrored corner orientations (see
+ * "sym.h"), properly carrying out corner multiplication (and inversion) involves several different cases. We avoid a
+ * sequence of if-statements by considerably faster (and also simpler) table-lookups. Edge orientation is easy enough
+ * to handle directly.
+ *
+ * The utilities in this class are used primarily by "coord.cc" and "sym.cc" for tables generation. After that point
+ * they are hardly used by the solver anymore in favor of much more efficient coordinate representations.
+ */
+
 #include "cubie.h"
 
 #include <algorithm>
 #include <random>
 #include "coord.h"
-
-/*
- * Due to mirrored corner orientations, properly carrying out corner multiplication (and inversion) involves several
- * different cases. We avoid a sequence of if-statements by considerably faster (and also simpler) table-lookups.
- * Edge orientation is easy enough to handle directly.
- */
 
 // Multiplies two corner orientations
 int mul_coris[][6] = {

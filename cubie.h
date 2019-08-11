@@ -1,8 +1,26 @@
 /**
- * Cubie level:
- * A cube is represented by the permutation and orientation of its 12 edge cubies (physical cube pieces) as well as
- * the permutation and orientation of its 8 corner cubies. This representation is primarily utilized to compute all
- * kinds of lookup-tables.
+ * The main representation underlying the theory of this solver is the so called `CubieCube`. There are Rubik's Cube
+ * is represented by the permutation of its 12 edges cubies (physical cubie pieces) and its 8 corner cubies as well
+ * as the corresponding orientations. Note however that the solver does not directly operate on `CubieCube`s but
+ * rather only on much faster lookup-tables that were generated based on this representation.
+ *
+ * Permutations are handled in a way that every cubie position on the solved cube is assigned a number, then it is
+ * stored in which position every cubie resides, i.e. cubie `x` is in position `Y` and so on. Since a cubie in some
+ * slot (position) is not always oriented in the same way, we also need to track its orientation. An edge can be
+ * "flipped" twice and a corner can be "twisted" 3 times, hence there are a total of 2 edge- and 3 corner-orientations.
+ * These are carefully defined such that they preserve very particular properties (most importantly that all of them
+ * are 0 in a phase 1 solution, see als "solve.h"). Please refer to Kociemba's description for a precise definition.
+ *
+ * For this representation to be useful, we need to be able to (efficiently) manipulate them. Therefore this file
+ * defines several functions for carrying out cube-moves. Notice how we call those `mulX()` since their internal
+ * mechanics follow the mathematical "multiplication" of permutations. Furthermore, we define those functions of the
+ * form `f(a, b, c)` resulting in `c = a * b`, since those are called many many times during table generation and we
+ * explicitly want to manage all resources involved including where the result is to be stored. We provide separate
+ * functions for manipulating corners and edges since some coordinates (see coord.cc) only depend on either cubie type
+ * and considering the other would just be a waste.
+ *
+ * Finally, this file also contains some more convenience functions like validating, randomizing or printing a
+ * `CubieCube` object.
  */
 
 #ifndef CUBIE_H_
