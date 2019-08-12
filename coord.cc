@@ -2,23 +2,33 @@
 
 #include <algorithm>
 #include <bitset>
-#include <stdint.h>
+#include <cstdint>
 
 #include "cubie.h"
 #include "moves.h"
 
-#define N_C12K4 495
-#define N_C8K4 70
-#define N_PERM4 24
-#define N_PERM8 40320
+#define N_C12K4 495 // binom(12, 4)
+#define N_C8K4 70 // binom(8, 4)
+#define N_PERM4 24 // 4!
 
 uint16_t (*move_flip)[N_MOVES];
 uint16_t (*move_twist)[N_MOVES];
 
+/*
+ * Set of tables used for performing edge and corner coordinate moves. The `*_move` tables store how a move affects
+ * the given 4-cubie-combination as well as in the last 5 bits how it affects their permutation. `mul_perms` multiplies
+ * two permutations given by their index.
+ */
 uint16_t edges4_move[N_C12K4][N_MOVES];
 uint16_t cperm4_move[N_C8K4][N_MOVES];
 uint8_t mul_perms[N_PERM4][N_PERM4];
 
+/*
+ * Set of tables used for en- and decoding edge and corner coordinates. `enc_perm` compresses a 4-element permutation
+ * encoded as an 8-bit integer with 2 bits used for every element to a number from 0 - 23, `dec_perm` does the inverse.
+ * `enc_comb` maps a 4-element combination encoded in form of a bitmask with exactly 4 bits on (indicating where the
+ * elements are located) to a number between 0 - 494, `dec_comb` is again for decompression.
+ */
 uint8_t enc_perm[1 << (4 * 2)];
 uint8_t dec_perm[N_PERM4];
 uint16_t enc_comb[1 << N_EDGES];
@@ -44,6 +54,8 @@ CPerm::CPerm(int cperm) {
 void CPerm::set(int cperm) {
   comb1 = (cperm / N_PERM4) / N_PERM4;
   perm1 = (cperm / N_PERM4) % N_PERM4;
+  // The bitmask of the position of corners DFR to DRB is not redundantly encoded in the coordinate value and must
+  // hence be computed explicitly
   comb2 = enc_comb[0xff & ~dec_comb[comb1]];
   perm2 = cperm % N_PERM4;
 }
@@ -52,6 +64,7 @@ int CPerm::val() const {
   return N_PERM4 * (N_PERM4 * comb1 + perm1) + perm2;
 }
 
+// Converts a 4-element permutation into an 8-bit number using 2 bits to represent every element
 int binarizePerm4(int perm4[]) {
   int bin = 0;
   for (int i = 3; i >= 0; i--)
@@ -59,6 +72,7 @@ int binarizePerm4(int perm4[]) {
   return bin;
 }
 
+// Inverse of `binarizePerm4()`
 void unbinarizePerm4(int perm4[], int bin) {
   for (int i = 0; i < 4; i++) {
     perm4[i] = 0x3 & bin;
@@ -66,6 +80,7 @@ void unbinarizePerm4(int perm4[], int bin) {
   }
 }
 
+// Initializes the `enc_*`, `dec_*` and `mul_perms` arrays
 void initCoord() {
   int perm[] = {0, 1, 2, 3};
   for (int i = 0; i < N_PERM4; i++) {
@@ -98,13 +113,15 @@ void initCoord() {
   }
 }
 
+// Computes an orientation coordinate
 int getOri(const int oris[], int len, int n_oris) {
   int val = 0;
-  for (int i = 0; i < len - 1; i++)
+  for (int i = 0; i < len - 1; i++) // skip the last orientation as it can be reconstructed by parity
     val = n_oris * val + oris[i];
   return val;
 }
 
+// Decodes an orientation coordinate
 void setOri(int val, int oris[], int len, int n_oris) {
   int par = 0;
   for (int i = len - 2; i >= 0; i--) {
@@ -112,9 +129,12 @@ void setOri(int val, int oris[], int len, int n_oris) {
     par += oris[i];
     val /= n_oris;
   }
+  // Reconstruct last element by using the fact that the orientation parity (for a solvable cube) must always be 0
   oris[len - 1] = (n_oris - par % n_oris) % n_oris;
 }
 
+// Computes the combination and permutation coordinate for the set of 4 cubies indicated by the bitmask `mask` with
+// `min_cubie` being the one of minimal value
 void getCombPerm(int &comb, int &perm, const int cubies[], int len, int mask, int min_cubie) {
   comb = 0;
   perm = 0;
@@ -130,6 +150,8 @@ void getCombPerm(int &comb, int &perm, const int cubies[], int len, int mask, in
   perm = enc_perm[perm];
 }
 
+// Decodes a combination and permutation coordinate for the 4 consecutive cubies starting with `min_cubie`. `fill`
+// indicates whether or not the unspecified locations should be filled up to form a full valid cubie permutation.
 void setCombPerm(int comb, int perm, int cubies[], int len, int min_cubie, bool fill) {
   comb = dec_comb[comb];
   perm = dec_perm[perm];
@@ -165,6 +187,7 @@ void setFlip(CubieCube &cube, int flip) {
 int getSSlice(const CubieCube &cube) {
   Edges4 sslice;
   getCombPerm(sslice.comb, sslice.perm, cube.ep, N_EDGES, 0xf00, FR);
+  // As SLICE must be 0 in phase 2, hence the combination coordinate must be inverted
   sslice.comb = (N_C12K4 - 1) - sslice.comb;
   return sslice.val();
 }
@@ -194,7 +217,9 @@ void setUDEdges2(CubieCube &cube, int udedges) {
   Edges4 dedges;
   splitUDEdges2(udedges, uedges, dedges);
   setCombPerm(uedges.comb, uedges.perm, cube.ep, N_EDGES, UR, false);
+  // Note that `fill == true` would override UEDGES set in the previous line
   setCombPerm(dedges.comb, dedges.perm, cube.ep, N_EDGES, DR, false);
+  // The result should always be a fully valid edge permutation, hence we need to also set the slice-edges
   for (int i = FR; i < N_EDGES; i++)
     cube.ep[i] = i;
 }
@@ -217,6 +242,7 @@ int getFSlice(const CubieCube &cube) {
 }
 
 void moveSSlice(const Edges4 &sslice, int move, Edges4 &sslice1) {
+  // We need to undo the inversion of the combination part to use the normal move-tables
   int tmp = edges4_move[(N_C12K4 - 1) - sslice.comb][move];
   sslice1.comb = (N_C12K4 - 1) - (tmp >> 5);
   sslice1.perm = mul_perms[sslice.perm][tmp & 0x1f];
@@ -256,7 +282,7 @@ void initMoveCoord(
 ) {
   auto move_coord1 = new uint16_t[n_coords][N_MOVES];
 
-  CubieCube cube1 = kSolvedCube;;
+  CubieCube cube1 = kSolvedCube; // otherwise `mul()`s can easily crash
   CubieCube cube2;
   for (int c = 0; c < n_coords; c++) {
     setCoord(cube1, c);
@@ -269,6 +295,7 @@ void initMoveCoord(
   *move_coord = move_coord1;
 }
 
+// Initializes all tables used for performing coordinate moves
 void initCoordTables() {
   initMoveCoord(&move_twist, N_TWIST, getTwist, setTwist, mulCorners);
   initMoveCoord(&move_flip, N_FLIP, getFlip, setFlip, mulEdges);
