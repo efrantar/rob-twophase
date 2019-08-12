@@ -3,17 +3,34 @@
 #include <algorithm>
 #include <bitset>
 #include <queue>
-#include <string.h>
 
+// Number of moves per axis
 #ifdef QUARTER
   #define PER_AXIS 4
 #else
   #define PER_AXIS 6
 #endif
 
-#define EMPTY 0xff
+#define EMPTY 0xff // empty pruning table entry
+
+/*
+ * While we can simply reduce by symmetry when looking up the number of moves required moves to solve some cube-state,
+ * we cannot just use the effect of the moves encoded in the pruning table. Those were only computed for the symmetric
+ * state and hence we have to "undo" the symmetry reduction for the moves to get their proper effect on our actual
+ * cube position.
+ *
+ * A symmetry can affect the moves in the following ways: changing the faces, inverting the directions and flipping
+ * axes. `mm_key` stores for every symmetry and axis an integer encoding those effects where bit 0 indicates a flip,
+ * bit 1 an inversion and the remainder the new axis it is mapped to. Based on this information and how many moves
+ * remain we can quickly map an axis to the proper movemask for the current state in the search with arrays `mm_map1`
+ * (for standard moves) and `mm_map2` (for axial ones).
+ */
+
+#define OFF(key) (key >> 2) // which axis it is mapped to
+#define INFO(key) (key & 0x3) // whether to flip and/or invert the axis
 
 uint8_t mm_key[N_SYMS_SUB][3];
+// We only lookup here when the difference between the distance and the moves to go is <= 1
 uint8_t mm_map1[2][4][256];
 #ifdef AXIAL
   #ifdef QUARTER
@@ -27,6 +44,7 @@ Prun *fstwist_prun;
 uint8_t *corned_prun;
 uint8_t *cornslice_prun;
 
+// Reverses a bitmask in consisting of length `step` blocks
 int reverse(int bitmask, int len, int step = 1) {
   int rev = 0;
   for (int i = 0; i < len; i += step) {
@@ -37,6 +55,7 @@ int reverse(int bitmask, int len, int step = 1) {
 }
 
 void initPrun() {
+  // Compute the table for symmetry mapping
   for (int s = 0; s < N_SYMS_SUB; s++) {
     for (int ax = 0; ax < 3; ax++) {
       mm_key[s][ax] = (conj_move[PER_AXIS * ax][inv_sym[s]] / PER_AXIS) << 2; // offset
@@ -45,15 +64,20 @@ void initPrun() {
     }
   }
 
+  /*
+   * While quite a bit of code is repeated here, doing it this way rather than with tons of variables and #ifdefs
+   * helps readability and also makes this much easier to get right.
+   */
+
   for (int info = 0; info < 4; info++) {
     for (int chunk = 0; chunk < 256; chunk++) {
       int chunk1 = chunk & 0xf;
       int chunk2 = chunk >> 4;
-      if (info & 1)
+      if (info & 1) // axis flip; just swap the chunks as faces on the same axis are always encoded consecutively
         std::swap(chunk1, chunk2);
 
       #ifdef QUARTER
-        if (info & 2) {
+        if (info & 2) { // inversion of the moves means an inversion of the bit-pattern
           chunk1 = reverse(chunk1, 4, 2);
           chunk2 = reverse(chunk2, 4, 2);
         }
@@ -62,6 +86,7 @@ void initPrun() {
         mm_map1[0][info][chunk] = 0;
         mm_map1[1][info][chunk] = 0;
         for (int i = 0; i < 4; i++) {
+          // 0 represents -1, i.e. moves that get us closer to solved
           mm_map1[0][info][chunk] |= ((chunk3 & 0x3) == 0) << i;
           mm_map1[1][info][chunk] |= ((chunk3 & 0x3) <= 1) << i;
           chunk3 >>= 2;
@@ -77,7 +102,7 @@ void initPrun() {
         mm_map1[0][info][chunk] = (chunk1 & 1) ? 0 : ~mm1 & 0x7;
         mm_map1[0][info][chunk] |= (chunk2 & 1) ? 0 : (~mm2 & 0x7) << 3;
         mm_map1[1][info][chunk] = (chunk1 & 1) ? ~mm1 & 0x7 : 0x7;
-        mm_map1[1][info][chunk] |= ((chunk2 & 1) ? (~mm2 & 0x7) << 3 : 0x38);
+        mm_map1[1][info][chunk] |= ((chunk2 & 1) ? (~mm2 & 0x7) << 3 : 0x38); // 0x38 == 0x7 << 3
       #endif
     }
   }
@@ -88,6 +113,8 @@ void initPrun() {
         for (int chunk = 0; chunk < 256; chunk++) {
           int chunk1 = chunk;
 
+          // Axial moves are stored in the following order A1B1 A1B2 A2B1 A2B2 (in QTM, in HTM there are more moves of
+          // course), hence an axis flip has to result in A1B1 A2B1 A1B2 A2B2.
           if (info & 1) {
             int chunk2 = 0;
             for (int i = 0; i < 2; i++) {
@@ -133,6 +160,11 @@ void initPrun() {
 }
 
 int getFSTwistPrun(int flip, Edges4 sslice, int twist, int togo, MoveMask &mm) {
+  /*
+   * When we have a cube with coordinates C and D and we symmetry reduce C by symmetry S to C', then this also
+   * affects D. More concretely, we need to compute D' as = conj(D) = S * D * S^-1 s.t. applying S as S^-1 * C * S
+   * (which is how we get from C' to C) yields the original D again.
+   */
   int fslice = FSLICE(flip, sslice.comb);
   int s = SYM(fslice_sym[fslice]);
   int fstwist = FSTWIST(
@@ -145,20 +177,25 @@ int getFSTwistPrun(int flip, Edges4 sslice, int twist, int togo, MoveMask &mm) {
 
   int delta = togo - dist;
   if (delta < 0)
-    mm = 0;
+    mm = 0; // unsolvable in `togo` moves
   else if (delta > 1)
-    mm = phase1_moves;
+    mm = phase1_moves; // always solvable in `togo` moves no matter what we do
   else {
     mm = 0;
     #ifdef AXIAL
       Prun prun1 = prun >> 24;
     #endif
+    /*
+     * We again choose an a bit more verbose approach for decoding in the various metrics as it is much easier to
+     * get right and to understand.
+     */
     for (int ax = 0; ax < 3; ax++) {
       int tmp = mm_key[s][ax];
       mm |= MoveMask(mm_map1[delta][INFO(tmp)][prun & 0xff]) << PER_AXIS * OFF(tmp);
       prun >>= 8;
       #ifdef AXIAL
         #ifdef QUARTER
+          // Don't forget that axial moves always come after standard ones
           mm |= MoveMask(mm_map2[delta][INFO(tmp)][prun1 & 0xff]) << 12 + 4 * OFF(tmp);
           prun1 >>= 8;
         #else
@@ -192,7 +229,7 @@ void initFSTwistPrun() {
   fstwist_prun[0] = 0;
 
   for (int dist = 0, count = 0; count < N_FSTWIST; dist++) {
-    int c = 0;
+    int c = 0; // always incrementing the full index saves millions of multiplications in the innermost loop
 
     for (int fssym = 0; fssym < N_FSLICE_SYM; fssym++) {
       int flip = FS_FLIP(fslice_raw[fssym]);
@@ -207,7 +244,7 @@ void initFSTwistPrun() {
         for (int m = 0; m < N_MOVES1; m++) {
           #ifdef FACES5
             if ((phase1_moves & MOVEBIT(m)) == 0) {
-              deltas[m] = 0;
+              deltas[m] = 0; // as the B-moves are still encoded in FACES5 mode, we cannot leave them undefined
               continue;
             }
           #endif
@@ -222,8 +259,9 @@ void initFSTwistPrun() {
             fstwist_prun[c1] = dist + 1;
           deltas[m] = DIST(fstwist_prun[c1]) - dist;
 
+          // Handle self-symmetries
           int selfs = fslice_selfs[fssym1] >> 1;
-          for (int s = 1; selfs > 0; selfs >>= 1, s++) { // bit 0 is always on -> > 0 to save an iteration
+          for (int s = 1; selfs > 0; selfs >>= 1, s++) { // as bit 0 is always on we use > 0 to save an iteration
             if (selfs & 1) {
               int c2 = FSTWIST(fssym1, conj_twist[twist1][s]);
               if (fstwist_prun[c2] == EMPTY)
@@ -234,17 +272,27 @@ void initFSTwistPrun() {
 
         Prun prun = 0;
         #ifdef QUARTER
+          // In QTM there is enough space to simply encode the effect of every move in 2 bits
           for (int m = N_MOVES1 - 1; m >= 0; m--)
               prun = (prun << 2) | (deltas[m] + 1);
         #else
+          /*
+           * Every move can affect the number of remaining moves either by -1, 0 or +1. Unfortunately there is not
+           * enough space in a pruning entry to use 2 bits per move. However fortunately, it is impossible that two
+           * moves on the same face (or axis in case of axial moves) cause changes of +1 and -1 respectively. Hence,
+           * for every face (axis) we use 1 bit to indicate whether the lowest value `l` is -1 (bit = 0) or 0 (bit = 1)
+           * and then 1 bit per move where 0 indicates = `l` and `1` means > `l`.
+           */
           #ifdef AXIAL
+            // Note that the axial move should be last in the encoding, hence we have to add them first when using the
+            // << technique
             for (int ax = 3; ax >= 0; ax--) {
-              bool away = false;
+              bool away = false; // first bit of the axis encoding
               for (int i = 18 + 9 * ax; i < 18 + 9 * (ax + 1); i++) {
                 if (deltas[i] != 0) {
                   if (deltas[i] > 0)
                     away = true;
-                  break;
+                  break; // we can immediately stop once we have found a value != 0
                 }
               }
 
@@ -282,6 +330,13 @@ void initFSTwistPrun() {
   }
 }
 
+/*
+ * At least for the standard half-turn and the quarter-turn metric it would theoretically be possible to store (almost)
+ * the entire table with just 4 bits per entry. However as in the latter case the final bit always has to be
+ * reconstructed by the cube parity hence requiring further handling and #ifdef switches throughout the solver and as
+ * the wasted space is generally dwarfed by the phase1 table size anyways, we just keep it simple for now and always
+ * use a bit more space.
+ */
 void initCornEdPrun() {
   corned_prun = new uint8_t[N_CORNED];
   std::fill(corned_prun, corned_prun + N_CORNED, EMPTY);
@@ -311,8 +366,8 @@ void initCornEdPrun() {
 
           int dist1 = dist + 1;
           #ifdef QUARTER
-            if (m >= N_MOVES - N_DOUBLE2)
-              dist1++;
+            if (m >= N_MOVES1)
+              dist1++; // a phase 2 double move costs 2 in the quarter-turn metric
           #endif
 
           moveCPerm(cperm, m, cperm1);
@@ -342,6 +397,7 @@ void initCornEdPrun() {
   }
 }
 
+// This is the only pruning table defined purely on raw coordinates, hence no symmetry reductions are necessary
 void initCornSlicePrun() {
   cornslice_prun = new uint8_t[N_CORNSLICE];
   std::fill(cornslice_prun, cornslice_prun + N_CORNSLICE, EMPTY);
