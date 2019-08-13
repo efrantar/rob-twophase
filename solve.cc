@@ -5,7 +5,7 @@
 #include <mutex>
 #include <vector>
 #include <sstream>
-#include <string.h>
+#include <cstring>
 #include <thread>
 
 #include "coord.h"
@@ -24,13 +24,12 @@ int max_depth; // stop as soon as a solution with at most this depth is found
 
 std::vector<std::thread> threads;
 std::vector<TwoPhaseSolver> solvers;
-int dists[6];
-std::mutex start;
+int dists[6]; // current min dist that has not been tried for this axis yet; used for thread scheduling
+std::mutex start; // different lock than `mutex` for task assignment to minimize interference with solving threads
 
-// Various variables necessary to actually realize a simple timeout ...
+// Variables used to realize a simple timeout
 std::mutex wait;
 std::condition_variable notify;
-int ret;
 
 TwoPhaseSolver::TwoPhaseSolver(int rot1, bool inv1, const CubieCube &cube) {
   rot = rot1;
@@ -42,7 +41,7 @@ TwoPhaseSolver::TwoPhaseSolver(int rot1, bool inv1, const CubieCube &cube) {
   mul(sym_cubes[inv_sym[ROT_SYM * rot]], cube, tmp);
   mul(tmp, sym_cubes[ROT_SYM * rot], cube1);
   if (inv_) {
-    CubieCube tmp = cube1;
+    tmp = cube1; // results should be in `cube1` hence we need to copy
     inv(tmp, cube1);
   }
 
@@ -55,12 +54,12 @@ TwoPhaseSolver::TwoPhaseSolver(int rot1, bool inv1, const CubieCube &cube) {
 }
 
 int TwoPhaseSolver::lower_bound() {
-    MoveMask mm;
+    MoveMask mm; // just a dummy
     return getFSTwistPrun(flip, sslice, twist, 0, mm);
 }
 
 void TwoPhaseSolver::solve(int togo) {
-  edges_depth = 0;
+  edges_depth = 0; // always need to reset as it might be negative after a previous search
   phase1(0, togo, flip, twist, sslice, cperm, phase1_moves);
 }
 
@@ -69,7 +68,7 @@ void TwoPhaseSolver::phase1(
 ) {
   if (togo == 0) {
     int tmp = getCornSlicePrun(cperm, sslice);
-    if (tmp >= len - depth)
+    if (tmp >= len - depth) // phase 2 precheck, only reconstruct edges if successful
       return;
 
     for (int i = edges_depth + 1; i <= depth; i++) {
@@ -82,14 +81,14 @@ void TwoPhaseSolver::phase1(
 
     for (int togo1 = std::max(getCornEdPrun(cperm, uedges1, dedges1), tmp); togo1 < len - depth; togo1++) {
       if (phase2(depth, togo1, sslice, uedges1, dedges1, cperm, movemask))
-        return;
+        return; // once we have found a phase 2 solution, there cannot be any shorter ones -> quit
     }
     return;
   }
 
   MoveMask mm;
   int dist = getFSTwistPrun(flip, sslice, twist, togo, mm);
-  if (dist == togo || dist + togo >= 5) {
+  if (dist == togo || dist + togo >= 5) { // small optimization to avoid exploring too similar solutions
     mm &= movemask;
 
     depth++;
@@ -98,8 +97,8 @@ void TwoPhaseSolver::phase1(
     CPerm cperm1;
 
     while (mm && !done) {
-      int m = ffsll(mm) - 1;
-      mm &= mm - 1;
+      int m = ffsll(mm) - 1; // get rightmost move index (`ffsll()` uses 1-based indexing)
+      mm &= mm - 1; // delete rightmost bit
 
       int flip1 = move_flip[flip][m];
       int twist1 = move_twist[twist][m];
@@ -110,6 +109,9 @@ void TwoPhaseSolver::phase1(
       phase1(depth, togo, flip1, twist1, sslice1, cperm1, next_moves[m]);
     }
 
+    // We always want to maintain the maximum number of already reconstructed EDGES coordinates, hence we only
+    // decrement when the depth level gets lower than the current valid index (note that we will typically also
+    // visit other deeper branches in between that might not have an effect on this)
     if (edges_depth == depth - 1)
       edges_depth--;
   }
@@ -121,6 +123,9 @@ bool TwoPhaseSolver::phase2(
   MoveMask movemask
 ) {
   if (togo == 0) {
+    // As the phase 2 pruning table is not 100% exact, we might be able to get here without actually solving the cube.
+    // This has essentially no effect on the performance (especially as the solver only spends a small fraction of
+    // time in phase 2 anyways) but we need to check it here before registering a solution
     if (sslice.perm != 0 || cperm.val() != 0 || mergeUDEdges2(uedges, dedges) != 0)
       return false;
 
@@ -137,12 +142,13 @@ bool TwoPhaseSolver::phase2(
           sol[i] = inv_move[sol[i]];
         std::reverse(sol.begin(), sol.end());
       }
-      if (rot > 0) {
+      if (rot > 0) { // we need to "undo" the original symmetry transformation by conjugating moves
         for (int i = 0; i < depth; i++)
           sol[i] = conj_move[sol[i]][ROT_SYM * rot];
       }
 
       if (depth <= max_depth) { // keep searching if current solution exceeds max-depth
+        // Notify the timeout thread that a solution has been found (it should not wait any longer)
         std::lock_guard<std::mutex> lock(wait);
         done = true;
         notify.notify_one();
@@ -150,7 +156,7 @@ bool TwoPhaseSolver::phase2(
     }
 
     mutex.unlock();
-    return true;
+    return true; // we cannot find any better solution, hence return true if even our solution was not accepted
   }
 
   Edges4 sslice1;
@@ -169,9 +175,15 @@ bool TwoPhaseSolver::phase2(
     moveCPerm(cperm, m, cperm1);
 
     #ifdef QUARTER
+      // As we never want to leave the set of phase 2 cubes (which we would by doing only a quarter-turn on an axis
+      // for which only double-moves are permitted), we need special handling of the double moves. The simplest way
+      // to do this is to treat a double moves simply as if two consecutive quarter-turns were added to the current
+      // search path.
       int tmp = m - (N_MOVES - N_DOUBLE2);
       if (tmp >= 0) {
         if (getCornEdPrun(cperm1, uedges1, dedges1) < togo - 1) {
+          // Transform double move into corresponding simple move; a bit hacky but it avoids having to define any
+          // additional global tables that are never used anywhere else
           int split = (tmp < 4) ? 4 + 2 * tmp : 16 + 4 * (tmp - 4);
           moves[depth] = split;
           moves[depth + 1] = split;
@@ -185,17 +197,17 @@ bool TwoPhaseSolver::phase2(
     if (getCornEdPrun(cperm1, uedges1, dedges1) < togo) {
       moves[depth] = m;
       if (phase2(depth + 1, togo - 1, sslice1, uedges1, dedges1, cperm1, next_moves[m]))
-        return true;
+        return true; // return as soon as we have a solution
     }
   }
 
-  return done;
+  return done; // stop as early as possible
 }
 
 void prepareSolve(int n_threads) {
   waitForFinish();
 
-  start.lock();
+  start.lock(); // lock here on the main thread to prevent worker threads from starting to solve
   done = false;
 
   for (int i = 0; i < n_threads; i++) {
@@ -203,6 +215,8 @@ void prepareSolve(int n_threads) {
       while (!done) {
         start.lock();
         int i = 0;
+        // We always want to work on the most promising search directions, i.e. those with the shortest feasible
+        // phase 1 depths still unexplored
         for (int j = 1; j < solvers.size(); j++) {
           if (dists[j]  < dists[i])
             i = j;
@@ -212,18 +226,19 @@ void prepareSolve(int n_threads) {
 
         if (togo >= len)
           break;
+        // We cannot concurrently do two searches with the same solver object, hence we need to copy
         TwoPhaseSolver solver = solvers[i];
         solver.solve(togo);
       }
     });
-    threads.push_back(std::move(thread));
+    threads.push_back(std::move(thread)); // we don't want to duplicate any resources -> move
   }
 }
 
 void waitForFinish() {
   for (std::thread& thread : threads)
     thread.join();
-  threads.clear();
+  threads.clear(); // threads are now useless
 }
 
 int solve(const CubieCube &cube, int max_depth1, int timelimit, std::vector<int> &sol1) {
@@ -234,6 +249,7 @@ int solve(const CubieCube &cube, int max_depth1, int timelimit, std::vector<int>
   solvers.clear();
   for (int rot = 0; rot < 3; rot++) {
     #ifdef FACES5
+      // We can unfortunately only use 2 rotational symmetries in 5-face mode
       if (rot > 1)
         break;
     #endif
@@ -246,17 +262,18 @@ int solve(const CubieCube &cube, int max_depth1, int timelimit, std::vector<int>
 
   start.unlock();
 
-  ret = 0;
+  int ret = 0; // 1 indicates timeout, 2 no solution of desired length found
   {
     std::unique_lock<std::mutex> lock(wait);
     notify.wait_for(lock, std::chrono::milliseconds(timelimit), []{ return done; });
     if (!done) {
+      // if get here, this was a timeout
       done = true;
       ret++;
     }
   }
 
-  std::lock_guard<std::mutex> lock(mutex);
+  std::lock_guard<std::mutex> lock(mutex); // need to make sure no thread is still trying to write something
   if (sol.size() == len) {
     sol1.resize(len);
     for (int i = 0; i < len; i++)
