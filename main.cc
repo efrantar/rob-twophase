@@ -2,6 +2,8 @@
  * Main program; Simple CMD interface for benchmarks, solving and scrambling
  */
 
+// TODO: make n_threads a parameter
+
 #include <algorithm>
 #include <chrono>
 #include <fstream>
@@ -20,6 +22,8 @@
 #define PRINT_EVERY 1000
 
 #define WARMUP_CUBE "UDFUURRLDBFLURRDRUUFLLFRFDBRBRLDBUDLRBBFLBBUDDFFDBUFLL"
+
+#define N_THREADS 12
 
 bool checkSol(const CubieCube &cube, const std::vector<int> &sol) {
   CubieCube cube1;
@@ -44,7 +48,7 @@ void benchTime(const std::vector<CubieCube> &cubes, int moves) {
     if (i % PRINT_EVERY == 0)
       std::cout << "Benchmarking ..." << std::endl;
 
-    prepareSolve();
+    prepareSolve(N_THREADS);
     std::vector<int> sol;
     auto tick = std::chrono::high_resolution_clock::now();
     solve(cubes[i], moves, MAX_BENCHTIME, sol);
@@ -72,7 +76,7 @@ void benchMoves(const std::vector<CubieCube> &cubes, int time) {
     if (i % PRINT_EVERY == 0)
       std::cout << "Benchmarking ..." << std::endl;
     std::vector<int> sol;
-    prepareSolve();
+    prepareSolve(N_THREADS);
     solve(cubes[i], -1, time, sol);
     if (!checkSol(cubes[i], sol))
       failed++;
@@ -116,18 +120,18 @@ int main(int argc, char *argv[]) {
     ).count() / 1000. << "ms" << std::endl;
   } else if (mode == "interactive") {
     std::ios_base::sync_with_stdio(false);
-    twophase(WARMUP_CUBE, -1, 100);
+    twophase(WARMUP_CUBE, -1, 100, true, true, N_THREADS);
 
     std::string cube;
     int len;
     int timelimit;
 
     while (std::cin) {
-      prepareSolve();
+      prepareSolve(N_THREADS);
       std::cout << "Ready!" << std::endl;
       std::cin >> cube >> len >> timelimit;
       auto tick = std::chrono::high_resolution_clock::now();
-      std::cout << twophase(cube, len, timelimit, false, false) << std::endl;
+      std::cout << twophase(cube, len, timelimit, false, false, N_THREADS) << std::endl;
       std::cout << std::chrono::duration_cast<std::chrono::microseconds>(
         std::chrono::high_resolution_clock::now() - tick
       ).count() / 1000. << "ms" << std::endl;

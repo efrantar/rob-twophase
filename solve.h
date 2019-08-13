@@ -23,32 +23,33 @@ class TwoPhaseSolver {
     int rot;
     bool inv_; // to work around shadowing `inv()`
 
+    int flip;
+    int twist;
+    Edges4 sslice;
+    CPerm cperm;
     Edges4 uedges[N];
     Edges4 dedges[N];
-    CPerm cperm[N];
-    int cperm_depth;
     int edges_depth;
 
     int moves[N];
-    int probes = 0;
 
     void phase1(
-      int depth, int togo, int flip, int twist, const Edges4 &sslice, MoveMask movemask
+      int depth, int togo, int flip, int twist, Edges4 sslice, CPerm cperm, MoveMask movemask
     );
 
     bool phase2(
       int depth, int togo,
-      const Edges4 &sslice, const Edges4 &uedges, const Edges4 &dedges, const CPerm &cperm,
+      Edges4 sslice, Edges4 uedges, Edges4 dedges, CPerm cperm,
       MoveMask movemask
     );
 
   public:
-    TwoPhaseSolver(int rot, bool inv);
-    void solve(const CubieCube &cube);
-
+    TwoPhaseSolver(int rot, bool inv, const CubieCube &cube);
+    int lower_bound();
+    void solve(int togo);
 };
 
-void prepareSolve();
+void prepareSolve(int n_threads);
 int solve(const CubieCube &cube, int max_depth, int timelimit, std::vector<int> &sol);
 void waitForFinish();
 
@@ -90,7 +91,7 @@ void initTwophase(bool file = true);
  */
 std::string twophase(
   std::string cube, int max_depth = -1, int timelimit = 10,
-  bool prepare = true, bool wait = true
+  bool prepare = true, bool wait = true, int n_threads = 1
 );
 
 #endif

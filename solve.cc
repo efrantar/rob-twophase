@@ -23,25 +23,22 @@ int len; // length of current best solution
 int max_depth; // stop as soon as a solution with at most this depth is found
 
 std::vector<std::thread> threads;
-CubieCube cube1;
-std::mutex start_mutex;
-std::condition_variable start_var;
-bool start;
+std::vector<TwoPhaseSolver> solvers;
+int dists[6];
+std::mutex start;
 
 // Various variables necessary to actually realize a simple timeout ...
 std::mutex wait;
 std::condition_variable notify;
 int ret;
 
-TwoPhaseSolver::TwoPhaseSolver(int rot1, bool inv1) {
+TwoPhaseSolver::TwoPhaseSolver(int rot1, bool inv1, const CubieCube &cube) {
   rot = rot1;
   inv_ = inv1;
-}
 
-void TwoPhaseSolver::solve(const CubieCube &cube) {
   CubieCube cube1;
-
   CubieCube tmp;
+
   mul(sym_cubes[inv_sym[ROT_SYM * rot]], cube, tmp);
   mul(tmp, sym_cubes[ROT_SYM * rot], cube1);
   if (inv_) {
@@ -49,31 +46,29 @@ void TwoPhaseSolver::solve(const CubieCube &cube) {
     inv(tmp, cube1);
   }
 
-  int flip = getFlip(cube1);
-  int twist = getTwist(cube1);
-  Edges4 sslice(getSSlice(cube1));
+  flip = getFlip(cube1);
+  twist = getTwist(cube1);
+  sslice.set(getSSlice(cube1));
+  cperm.set(getCPerm(cube1));
   uedges[0].set(getUEdges(cube1));
   dedges[0].set(getDEdges(cube1));
-  cperm[0].set(getCPerm(cube1));
+}
 
-  MoveMask mm;
-  for (int togo = getFSTwistPrun(flip, sslice, twist, 0, mm); togo <= len; togo++) {
-    cperm_depth = 0;
-    edges_depth = 0;
-    phase1(0, togo, flip, twist, sslice, phase1_moves);
-  }
+int TwoPhaseSolver::lower_bound() {
+    MoveMask mm;
+    return getFSTwistPrun(flip, sslice, twist, 0, mm);
+}
+
+void TwoPhaseSolver::solve(int togo) {
+  edges_depth = 0;
+  phase1(0, togo, flip, twist, sslice, cperm, phase1_moves);
 }
 
 void TwoPhaseSolver::phase1(
-  int depth, int togo, int flip, int twist, const Edges4 &sslice, MoveMask movemask
+  int depth, int togo, int flip, int twist, Edges4 sslice, CPerm cperm, MoveMask movemask
 ) {
   if (togo == 0) {
-    for (int i = cperm_depth + 1; i <= depth; i++)
-      moveCPerm(cperm[i - 1], moves[i - 1], cperm[i]);
-    cperm_depth = depth - 1;
-    CPerm cperm1 = cperm[depth];
-
-    int tmp = getCornSlicePrun(cperm1, sslice);
+    int tmp = getCornSlicePrun(cperm, sslice);
     if (tmp >= len - depth)
       return;
 
@@ -85,8 +80,8 @@ void TwoPhaseSolver::phase1(
     Edges4 uedges1 = uedges[depth];
     Edges4 dedges1 = dedges[depth];
 
-    for (int togo1 = std::max(getCornEdPrun(cperm1, uedges1, dedges1), tmp); togo1 < len - depth; togo1++) {
-      if (phase2(depth, togo1, sslice, uedges1, dedges1, cperm1, movemask))
+    for (int togo1 = std::max(getCornEdPrun(cperm, uedges1, dedges1), tmp); togo1 < len - depth; togo1++) {
+      if (phase2(depth, togo1, sslice, uedges1, dedges1, cperm, movemask))
         return;
     }
     return;
@@ -100,6 +95,7 @@ void TwoPhaseSolver::phase1(
     depth++;
     togo--;
     Edges4 sslice1;
+    CPerm cperm1;
 
     while (mm && !done) {
       int m = ffsll(mm) - 1;
@@ -108,13 +104,12 @@ void TwoPhaseSolver::phase1(
       int flip1 = move_flip[flip][m];
       int twist1 = move_twist[twist][m];
       moveSSlice(sslice, m, sslice1);
+      moveCPerm(cperm, m, cperm1);
       moves[depth - 1] = m;
 
-      phase1(depth, togo, flip1, twist1, sslice1, next_moves[m]);
+      phase1(depth, togo, flip1, twist1, sslice1, cperm1, next_moves[m]);
     }
 
-    if (cperm_depth == depth - 1)
-      cperm_depth--;
     if (edges_depth == depth - 1)
       edges_depth--;
   }
@@ -122,7 +117,7 @@ void TwoPhaseSolver::phase1(
 
 bool TwoPhaseSolver::phase2(
   int depth, int togo,
-  const Edges4 &sslice, const Edges4 &uedges, const Edges4 &dedges, const CPerm &cperm,
+  Edges4 sslice, Edges4 uedges, Edges4 dedges, CPerm cperm,
   MoveMask movemask
 ) {
   if (togo == 0) {
@@ -197,26 +192,31 @@ bool TwoPhaseSolver::phase2(
   return done;
 }
 
-void prepareSolve() {
+void prepareSolve(int n_threads) {
   waitForFinish();
-  start = false;
 
-  for (int rot = 0; rot < 3; rot++) {
-    #ifdef FACES5
-      if (rot > 1)
-        break;
-    #endif
-    for (int inv = 0; inv < 2; inv++) {
-      std::thread thread([rot, inv]() {
-        TwoPhaseSolver solver(rot, (bool) inv);
-        {
-          std::unique_lock<std::mutex> lock(start_mutex);
-          start_var.wait(lock, []{ return start; });
+  start.lock();
+  done = false;
+
+  for (int i = 0; i < n_threads; i++) {
+    std::thread thread([]() {
+      while (!done) {
+        start.lock();
+        int i = 0;
+        for (int j = 1; j < solvers.size(); j++) {
+          if (dists[j]  < dists[i])
+            i = j;
         }
-        solver.solve(cube1);
-      });
-      threads.push_back(std::move(thread));
-    }
+        int togo = dists[i]++;
+        start.unlock();
+
+        if (togo >= len)
+          break;
+        TwoPhaseSolver solver = solvers[i];
+        solver.solve(togo);
+      }
+    });
+    threads.push_back(std::move(thread));
   }
 }
 
@@ -227,17 +227,24 @@ void waitForFinish() {
 }
 
 int solve(const CubieCube &cube, int max_depth1, int timelimit, std::vector<int> &sol1) {
-  done = false;
   sol.clear();
   max_depth = max_depth1;
   len = max_depth > 0 ? max_depth + 1 : N;
 
-  cube1 = cube;
-  {
-    std::lock_guard<std::mutex> lock(start_mutex);
-    start = true;
-    start_var.notify_all();
+  solvers.clear();
+  for (int rot = 0; rot < 3; rot++) {
+    #ifdef FACES5
+      if (rot > 1)
+        break;
+    #endif
+    for (int inv = 0; inv < 2; inv++) {
+      TwoPhaseSolver solver(rot, inv, cube);
+      dists[solvers.size()] = solver.lower_bound();
+      solvers.push_back(std::move(solver));
+    }
   }
+
+  start.unlock();
 
   ret = 0;
   {
@@ -311,7 +318,7 @@ std::string solToStr(const std::vector<int> &sol) {
   return ss.str();
 }
 
-std::string twophase(std::string s, int max_depth, int timelimit, bool prepare, bool wait) {
+std::string twophase(std::string s, int max_depth, int timelimit, bool prepare, bool wait, int n_threads) {
   CubieCube cube;
   int err = faceToCubie(s, cube);
   if (err)
@@ -320,7 +327,7 @@ std::string twophase(std::string s, int max_depth, int timelimit, bool prepare, 
     return "CubieError " + std::to_string(err);
 
   if (prepare)
-    prepareSolve();
+    prepareSolve(n_threads);
   std::vector<int> sol;
   int ret = solve(cube, max_depth, timelimit, sol);
   if (wait)
