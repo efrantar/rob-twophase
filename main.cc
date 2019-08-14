@@ -1,8 +1,6 @@
 /**
- * Main program; Simple CMD interface for benchmarks, solving and scrambling
+ * Main program; Simple CMD interface for solving and scrambling
  */
-
-// TODO: make n_threads a parameter
 
 #include <algorithm>
 #include <chrono>
@@ -18,12 +16,13 @@
 #include "solve.h"
 
 #define BENCHFILE "bench.cubes"
-#define MAX_BENCHTIME 10000 // even the worst cubes should not take much more than a few 100ms to solve in 20 moves
+#define MAX_BENCHTIME 10000 // should be sufficient to solve even the worst cubes in `benchtime` mode
 #define PRINT_EVERY 1000
 
+// In interactive mode, we want to preinitalize the cache by solving some random cube
 #define WARMUP_CUBE "UDFUURRLDBFLURRDRUUFLLFRFDBRBRLDBUDLRBBFLBBUDDFFDBUFLL"
 
-#define N_THREADS 12
+int n_threads = 1;
 
 bool checkSol(const CubieCube &cube, const std::vector<int> &sol) {
   CubieCube cube1;
@@ -48,7 +47,7 @@ void benchTime(const std::vector<CubieCube> &cubes, int moves) {
     if (i % PRINT_EVERY == 0)
       std::cout << "Benchmarking ..." << std::endl;
 
-    prepareSolve(N_THREADS);
+    prepareSolve(n_threads);
     std::vector<int> sol;
     auto tick = std::chrono::high_resolution_clock::now();
     solve(cubes[i], moves, MAX_BENCHTIME, sol);
@@ -76,7 +75,7 @@ void benchMoves(const std::vector<CubieCube> &cubes, int time) {
     if (i % PRINT_EVERY == 0)
       std::cout << "Benchmarking ..." << std::endl;
     std::vector<int> sol;
-    prepareSolve(N_THREADS);
+    prepareSolve(n_threads);
     solve(cubes[i], -1, time, sol);
     if (!checkSol(cubes[i], sol))
       failed++;
@@ -95,15 +94,21 @@ void benchMoves(const std::vector<CubieCube> &cubes, int time) {
 int main(int argc, char *argv[]) {
   if (argc == 1) {
     std::cout
-      << "Call:" << std::endl
-      << "./twophase solve FACECUBE MAX_MOVES TIME" << std::endl
-      << "./twophase interactive" << std::endl
-      << "./twophase benchtime MAX_MOVES" << std::endl
-      << "./twophase benchmoves TIME" << std::endl
+      << "Usage:" << std::endl
+      << "./twophase [-t N_THREADS] solve FACECUBE MAX_MOVES TIME" << std::endl
+      << "./twophase [-t N_THREADS] interactive" << std::endl
+      << "./twophase [-t N_THREADS] benchtime MAX_MOVES" << std::endl
+      << "./twophase [-t N_THREADS] benchmoves TIME" << std::endl
     ;
     return 0;
   }
-  std::string mode(argv[1]);
+
+  int i = 1;
+  if (std::string(argv[i]) == "-t") {
+    n_threads = std::stoi(argv[i + 1]);
+    i += 2;
+  }
+  std::string mode(argv[i]);
 
   std::cout << "Loading tables ..." << std::endl;
   auto tick = std::chrono::high_resolution_clock::now();
@@ -114,24 +119,25 @@ int main(int argc, char *argv[]) {
 
   if (mode == "solve") {
     auto tick = std::chrono::high_resolution_clock::now();
-    std::cout << twophase(std::string(argv[2]), std::stoi(argv[3]), std::stoi(argv[4])) << std::endl;
+    std::cout << twophase(std::string(argv[i + 1]), std::stoi(argv[i + 2]), std::stoi(argv[i + 3])) << std::endl;
     std::cout << std::chrono::duration_cast<std::chrono::microseconds>(
       std::chrono::high_resolution_clock::now() - tick
     ).count() / 1000. << "ms" << std::endl;
   } else if (mode == "interactive") {
     std::ios_base::sync_with_stdio(false);
-    twophase(WARMUP_CUBE, -1, 100, true, true, N_THREADS);
+    twophase(WARMUP_CUBE, -1, 100, true, true, n_threads);
 
     std::string cube;
     int len;
     int timelimit;
 
     while (std::cin) {
-      prepareSolve(N_THREADS);
+      prepareSolve(n_threads);
+      std::cout << "Enter >>FACECUBE MAX_MOVES TIME<< to solve.\n";
       std::cout << "Ready!" << std::endl;
       std::cin >> cube >> len >> timelimit;
       auto tick = std::chrono::high_resolution_clock::now();
-      std::cout << twophase(cube, len, timelimit, false, false, N_THREADS) << std::endl;
+      std::cout << twophase(cube, len, timelimit, false, false, n_threads) << std::endl;
       std::cout << std::chrono::duration_cast<std::chrono::microseconds>(
         std::chrono::high_resolution_clock::now() - tick
       ).count() / 1000. << "ms" << std::endl;
@@ -151,9 +157,9 @@ int main(int argc, char *argv[]) {
       }
 
       if (mode == "benchtime")
-        benchTime(cubes, std::stoi(argv[2]));
+        benchTime(cubes, std::stoi(argv[i + 1]));
       else if (mode == "benchmoves")
-        benchMoves(cubes, std::stoi(argv[2]));
+        benchMoves(cubes, std::stoi(argv[i + 1]));
   }
 
   return 0;
