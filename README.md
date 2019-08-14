@@ -54,7 +54,7 @@ The first table gives the average solution length (number of moves) when running
 Finally, a speed comparison with Thomas Rokicki's [`cube20src`](https://github.com/rokicki/cube20src) solver which was also used to prove that God's number is 20. This extremely optimized implementation (from which `twophase` learned many many greats tricks) is certainly still the best choice for batch solving a large number of cubes. In single threaded mode it is also around 50% faster. It does however (as of right now) not support multi-threaded search for individual cubes (or any of the the additional solving options for robots). With this enabled `twophase` can perform considerably better (depending on the hardware of course), especially on harder solves where the threading overhead becomes irrelevant. The table below gives the average solving time for different move-bounds and metrics (using again `bench.cubes`).
 
 | Metric       | Max #Moves | `twophase` w. `-t 12` | `cube20src` |
-| :-----:      | :--------: | :-------------------: | :---------: |
+| ------       | :--------: | :-------------------: | :---------: |
 | Half-Turn    | 20         | **0.17ms**            | 0.55ms      |
 | Half-Turn    | 19         | **8.04ms**            | 53.04ms     |
 | Quarter-Turn | 26         | **1.99ms**            | 10.26ms     |
