@@ -131,9 +131,9 @@ int main(int argc, char *argv[]) {
     int len;
     int timelimit;
 
+    std::cout << "Enter >>FACECUBE MAX_MOVES TIME<< to solve.\n";
     while (std::cin) {
       prepareSolve(n_threads);
-      std::cout << "Enter >>FACECUBE MAX_MOVES TIME<< to solve.\n";
       std::cout << "Ready!" << std::endl;
       std::cin >> cube >> len >> timelimit;
       auto tick = std::chrono::high_resolution_clock::now();
