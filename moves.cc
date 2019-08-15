@@ -124,17 +124,17 @@ void initMoves() {
     }
   #endif
   #ifdef QUARTER
-    // Always allow move repetitions in quarter-turn mode
-    for (int m = 0; m < 45; m++) {
-      if (is_quarter[m])
-        skip_moves[m] ^= MOVEBIT(m);
-    }
-    // Allow standard moves `m1` and `m2` after axial move `(m1 m2)`
+    // Allow repetitions of the same clockwise turns
+    for (int m : {0, 3, 6, 9, 12, 15, 18, 27, 36})
+      skip_moves[m] ^= MOVEBIT(m);
+    // Allow clockwise standard parts of an axial move to be repeated directly afterwards
     for (int m = 18; m < 45; m++) {
       int tmp1 = (m - 18) / 9;
       int tmp2 = (m - 18) % 9;
-      skip_moves[m] ^= MOVEBIT(6 * tmp1 + (tmp2 / 3));
-      skip_moves[m] ^= MOVEBIT(6 * tmp1 + 3 + tmp2 % 3);
+      if (tmp2 / 3 == 0)
+        skip_moves[m] ^= MOVEBIT(6 * tmp1 + (tmp2 / 3));
+      if (tmp2 % 3 == 0)
+        skip_moves[m] ^= MOVEBIT(6 * tmp1 + 3 + tmp2 % 3);
     }
   #endif
 

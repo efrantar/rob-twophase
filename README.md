@@ -43,13 +43,13 @@ The first table gives the average solution length (number of moves) when running
 | `-DQUARTER` | `-DAXIAL`  | `-DFACES5` | Avg. #Moves | Setup Time | Table Size |
 | :---------: | :--------: | :--------: | :---------: | :--------: | :--------: |
 | -           | -          | -          | **18.65**   | 53s        | 676MB      |
-| YES         | -          | -          | **24.42**   | 40s        | 676MB      |
+| YES         | -          | -          | **24.29**   | 40s        | 676MB      |
 | -           | YES        | -          | **14.99**   | 149s       | 1.2GB      |
-| YES         | YES        | -          | **20.30**   | 82s        | 1.2GB      |
+| YES         | YES        | -          | **20.29**   | 81s        | 1.2GB      |
 | -           | -          | YES        | **20.56**   | 175s       | 2.7GB      |
-| YES         | -          | YES        | **27.17**   | 128s       | 2.7GB      |
+| YES         | -          | YES        | **27.04**   | 128s       | 2.7GB      |
 | -           | YES        | YES        | **16.99**   | 455s       | 4.9GB      |
-| YES         | YES        | YES        | **22.93**   | 242s       | 4.9GB      |
+| YES         | YES        | YES        | **22.90**   | 242s       | 4.9GB      |
 
 Finally, a speed comparison with Thomas Rokicki's [`cube20src`](https://github.com/rokicki/cube20src) solver which was also used to prove that God's number is 20. This extremely optimized implementation (from which `twophase` learned many many greats tricks) is certainly still the best choice for batch solving a large number of cubes. In single threaded mode it is also around 50% faster. It does however (as of right now) not support multi-threaded search for individual cubes (or any of the the additional solving options for robots). With this enabled `twophase` can perform considerably better (depending on the hardware of course), especially on harder solves where the threading overhead becomes irrelevant. The table below gives the average solving time for different move-bounds and metrics (using again `bench.cubes`).
 
@@ -57,4 +57,4 @@ Finally, a speed comparison with Thomas Rokicki's [`cube20src`](https://github.c
 | :-----:      | :--------: | :-------------------: | :---------: |
 | Half-Turn    | 20         | **0.17ms**            | 0.55ms      |
 | Half-Turn    | 19         | **8.04ms**            | 53.04ms     |
-| Quarter-Turn | 26         | **1.99ms**            | 10.26ms     |
+| Quarter-Turn | 26         | **1.50ms**            | 10.26ms     |
