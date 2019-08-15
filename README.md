@@ -32,7 +32,7 @@ Ready!
 ^C
 ```
 
-One of the key features of this program are the different solving modes. These have to be specified at compile times (both for simplicity but also for efficiency reasons). `-DQUARTER` solves in the quarter-turn metric (i.e. a 180 degree turn has a cost of 2), `-DAXIAL` in the axial-metric (consecutive moves on parallel faces can be performed at the same time; such moves are printed brackets like `(U D)`) and `-DFACES5` produces solutions using only 5-faces (ignoring the back-face). All options are fully compatible and can be combined arbitrarily. The tables are always persisted in the same file named `twophase.tbl` hence only on version of the program may exist in a directory.
+One of the key features of this program are the different solving modes. These have to be specified at compile times (both for simplicity but also for efficiency reasons). `-DQUARTER` solves in the quarter-turn metric (i.e. a 180 degree turns are twice as expensive as quarter-turns), `-DAXIAL` in the axial-metric (consecutive moves on parallel faces can be performed at the same time; such moves are printed in brackets like `(U D)`) and `-DFACES5` produces solutions using only 5-faces (ignoring the back-face). All options are fully compatible and can be combined arbitrarily. The tables are always persisted in the same file named `twophase.tbl` hence only on version of the program may exist in a directory.
 
 ## Performance
 
@@ -54,7 +54,7 @@ The first table gives the average solution length (number of moves) when running
 Finally, a speed comparison with Thomas Rokicki's [`cube20src`](https://github.com/rokicki/cube20src) solver which was also used to prove that God's number is 20. This extremely optimized implementation (from which `twophase` learned many many greats tricks) is certainly still the best choice for batch solving a large number of cubes. In single threaded mode it is also around 50% faster. It does however (as of right now) not support multi-threaded search for individual cubes (or any of the the additional solving options for robots). With this enabled `twophase` can perform considerably better (depending on the hardware of course), especially on harder solves where the threading overhead becomes irrelevant. The table below gives the average solving time for different move-bounds and metrics (using again `bench.cubes`).
 
 | Metric       | Max #Moves | `twophase` w. `-t 12` | `cube20src` |
-| :-----:      | :--------: | :-------------------: | :---------: |
+| ------       | :--------: | :-------------------: | :---------: |
 | Half-Turn    | 20         | **0.17ms**            | 0.55ms      |
 | Half-Turn    | 19         | **8.04ms**            | 53.04ms     |
 | Quarter-Turn | 26         | **1.50ms**            | 10.26ms     |
