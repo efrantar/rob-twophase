@@ -89,7 +89,7 @@ void TwoPhaseSolver::phase1(
   MoveMask mm;
   int dist = getFSTwistPrun(flip, sslice, twist, togo, mm);
   if (dist == togo || dist + togo >= 5) { // small optimization to avoid exploring too similar solutions
-    mm &= movemask;
+    mm &= phase1_moves & movemask;
 
     depth++;
     togo--;
