@@ -80,7 +80,9 @@ void TwoPhaseSolver::phase1(
     Edges4 dedges1 = dedges[depth];
 
     for (int togo1 = std::max(getCornEdPrun(cperm, uedges1, dedges1), tmp); togo1 < len - depth; togo1++) {
-      if (phase2(depth, togo1, sslice, uedges1, dedges1, cperm, movemask))
+      // We don't want to block any moves here as this might cause us to require another full search with a
+      // a higher depth if we get unlucky (~10% performance loss)
+      if (phase2(depth, togo1, sslice, uedges1, dedges1, cperm, phase2_moves))
         return; // once we have found a phase 2 solution, there cannot be any shorter ones -> quit
     }
     return;
