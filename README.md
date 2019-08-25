@@ -11,9 +11,9 @@ On the other hand, if you are interested in the current state of the art techniq
 
 ## Usage
 
-`main.cc` compiles to a little CMD-line utility that allows solving given cubes (modes `twophase` and `interactive`) as well as performing benchmarks (`benchtime` and `benchmoves`). The number of threads to use for solving can be specified with the `-t` option. The solver supports an arbitrary number of threads but note that the performance improvement might not scale linearly as at the memory throughput might bottleneck the parallelization. Simply run the program without any arguments to get the full calling syntax.
+`main.cc` compiles to a little CMD-line utility that allows solving given cubes (modes `twophase` and `interactive`) as well as performing benchmarks (`benchtime` and `benchmoves`). The number of threads to use for solving can be specified with the `-t` option. The solver supports an arbitrary number of threads but note that the performance improvement might not scale linearly as at the memory throughput can bottleneck the parallelization. Simply run the program without any arguments to get the full calling syntax.
 
-For a robot, you will most likely want to use the `interactive` mode. This mode preloads all tables as well as solver threads (to minimize threading overhead) and warms up the cache (by running some solves) before waiting for a cube to be passed over STDIN. Inputs are expected in Herbert Kociemba's face-cube representation (see `face.h` for detailled documentation). See also the example below. When specifying `MAX_MOVES` as `-1` the solver will simply search for the full `TIME` milliseconds and then return the shortest solution. Note that running the program for the first time will generate fairly large lookup tables with may take a few minutes, these are then saved to a file so that consecutive starts are very quick (typically < 1s).
+For a robot, you will most likely want to use the `interactive` mode. This mode preloads all tables as well as solver threads (to minimize threading overhead) and warms up the cache (by running some solves) before waiting for a cube to be passed over STDIN. Inputs are expected in Herbert Kociemba's face-cube representation (see `face.h` for detailled documentation). See also the example below. When specifying `MAX_MOVES` as `-1` the solver will simply search for the full `TIME` milliseconds and then return the shortest solution. Note that running the program for the first time will generate fairly large lookup tables with may take a few minutes, these are then saved to a file so that consecutive starts are very quick (typically < 2s).
 
 ```
 >> ./twophase -t 12 interactive
@@ -32,7 +32,7 @@ Ready!
 ^C
 ```
 
-One of the key features of this program are the different solving modes. These have to be specified at compile times (both for simplicity but also for efficiency reasons). `-DQUARTER` solves in the quarter-turn metric (i.e. a 180 degree turns are twice as expensive as quarter-turns), `-DAXIAL` in the axial-metric (consecutive moves on parallel faces can be performed at the same time; such moves are printed in brackets like `(U D)`) and `-DFACES5` produces solutions using only 5-faces (ignoring the back-face). All options are fully compatible and can be combined arbitrarily. The tables are always persisted in the same file named `twophase.tbl` hence only on version of the program may exist in a directory.
+One of the key features of this program are the different solving modes. These have to be specified at compile times (both for simplicity but also for efficiency reasons). `-DQUARTER` solves in the quarter-turn metric (i.e. 180 degree turns are twice as expensive as quarter-turns), `-DAXIAL` in the axial-metric (consecutive moves on parallel faces can be performed at the same time; such moves are printed in brackets like `(U D)`) and `-DFACES5` produces solutions using only 5-faces (ignoring the back-face). All options are fully compatible and can be combined arbitrarily. The tables are always persisted in the same file named `twophase.tbl` hence only on version of the program may exist in a directory.
 
 ## Performance
 
