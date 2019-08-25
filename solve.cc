@@ -205,6 +205,9 @@ bool TwoPhaseSolver::phase2(
 }
 
 void prepareSolve(int n_threads) {
+  // This means threads are already prepared and have not been used for a solve so far
+  if (threads.size() > 0 && !done)
+    return;
   waitForFinish();
 
   start.lock(); // lock here on the main thread to prevent worker threads from starting to solve
