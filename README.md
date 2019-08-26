@@ -13,7 +13,7 @@ On the other hand, if you are interested in the current state of the art techniq
 
 `main.cc` compiles to a little CMD-line utility that allows solving given cubes (modes `twophase` and `interactive`) as well as performing benchmarks (`benchtime` and `benchmoves`). The number of threads to use for solving can be specified with the `-t` option. The solver supports an arbitrary number of threads but note that the performance improvement might not scale linearly as at the memory throughput can bottleneck the parallelization. Simply run the program without any arguments to get the full calling syntax.
 
-For a robot, you will most likely want to use the `interactive` mode. This mode preloads all tables as well as solver threads (to minimize threading overhead) and warms up the cache (by running some solves) before waiting for a cube to be passed over STDIN. Inputs are expected in Herbert Kociemba's face-cube representation (see `face.h` for detailled documentation). See also the example below. When specifying `MAX_MOVES` as `-1` the solver will simply search for the full `TIME` milliseconds and then return the shortest solution. Note that running the program for the first time will generate fairly large lookup tables with may take a few minutes, these are then saved to a file so that consecutive starts are very quick (typically < 2s).
+For a robot, you will most likely want to use the `interactive` mode. This mode preloads all tables as well as solver threads (to minimize threading overhead) and warms up the cache (by running some solves) before waiting for a cube to be passed over STDIN. Inputs are expected in Herbert Kociemba's face-cube representation (see `face.h` for detailled documentation). See also the example below. When specifying `MAX_MOVES` as `-1` the solver will simply search for the full `TIME` milliseconds and then return the shortest solution. Note that running the program for the first time will generate fairly large lookup tables with may take a few minutes, these are then saved to a file so that consecutive starts are very quick (typically at most a few seconds).
 
 ```
 >> ./twophase -t 12 interactive
@@ -42,19 +42,20 @@ The first table gives the average solution length (number of moves) when running
 
 | `-DQUARTER` | `-DAXIAL`  | `-DFACES5` | Avg. #Moves | Setup Time | Table Size |
 | :---------: | :--------: | :--------: | :---------: | :--------: | :--------: |
-| -           | -          | -          | **18.65**   | 53s        | 676MB      |
-| YES         | -          | -          | **24.29**   | 40s        | 676MB      |
-| -           | YES        | -          | **14.99**   | 149s       | 1.2GB      |
+| -           | -          | -          | **18.62**   | 53s        | 676MB      |
+| YES         | -          | -          | **24.28**   | 40s        | 676MB      |
+| -           | YES        | -          | **14.98**   | 149s       | 1.2GB      |
 | YES         | YES        | -          | **20.29**   | 81s        | 1.2GB      |
 | -           | -          | YES        | **20.71**   | 175s       | 2.7GB      |
 | YES         | -          | YES        | **27.19**   | 128s       | 2.7GB      |
 | -           | YES        | YES        | **17.10**   | 455s       | 4.9GB      |
 | YES         | YES        | YES        | **23.05**  | 242s       | 4.9GB      |
 
-Finally, a speed comparison with Thomas Rokicki's [`cube20src`](https://github.com/rokicki/cube20src) solver which was also used to prove that God's number is 20. This extremely optimized implementation (from which `twophase` learned many many greats tricks) is certainly still the best choice for batch solving a large number of cubes. In single threaded mode it is also around 50% faster. It does however (as of right now) not support multi-threaded search for individual cubes (or any of the the additional solving options for robots). With this enabled `twophase` can perform considerably better (depending on the hardware of course), especially on harder solves where the threading overhead becomes irrelevant. The table below gives the average solving time for different move-bounds and metrics (using again `bench.cubes`).
+Finally, a speed comparison with Thomas Rokicki's [`cube20src`](https://github.com/rokicki/cube20src) solver which was also used to prove that God's number is 20. This extremely optimized implementation (from which `twophase` learned many many greats tricks) is certainly still the best choice for batch solving a large number of cubes. In single threaded mode it is also still around 25% faster. It does however (as of right now) not support multi-threaded search for individual cubes (or any of the the additional solving options for robots). With this enabled `twophase` can perform considerably better (depending on the hardware of course), especially on harder solves where the threading overhead becomes irrelevant. The table below gives the average solving time for different move-bounds and metrics (using again `bench.cubes`).
 
 | Metric       | Max #Moves | `twophase` w. `-t 12` | `cube20src` |
 | ------       | :--------: | :-------------------: | :---------: |
-| Half-Turn    | 20         | **0.17ms**            | 0.55ms      |
-| Half-Turn    | 19         | **8.04ms**            | 53.04ms     |
-| Quarter-Turn | 26         | **1.50ms**            | 10.26ms     |
+| Half-Turn    | 20         | **0.15ms**            | 0.55ms      |
+| Half-Turn    | 19         | **5.83ms**            | 53.04ms     |
+| Quarter-Turn | 26         | **1.42ms**            | 10.26ms     |
+| Quarter-Turn | 25         | **8.78ms**            | 77.94ms     |
