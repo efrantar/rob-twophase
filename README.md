@@ -32,7 +32,7 @@ Ready!
 ^C
 ```
 
-One of the key features of this program are the different solving modes. These have to be specified at compile times (both for simplicity but also for efficiency reasons). `-DQUARTER` solves in the quarter-turn metric (i.e. 180 degree turns are twice as expensive as quarter-turns), `-DAXIAL` in the axial-metric (consecutive moves on parallel faces can be performed at the same time; such moves are printed in brackets like `(U D)`) and `-DFACES5` produces solutions using only 5-faces (ignoring the back-face). All options are fully compatible and can be combined arbitrarily. The tables are always persisted in the same file named `twophase.tbl` hence only on version of the program may exist in a directory.
+One of the key features of this program are the different solving modes. These have to be specified at compile times (both for simplicity but also for efficiency reasons). `-DQUARTER` solves in the quarter-turn metric (i.e. 180 degree turns are twice as expensive as quarter-turns), `-DAXIAL` in the axial-metric (consecutive moves on parallel faces can be performed at the same time; such moves are printed in brackets like `(U D)`) and `-DFACES5` produces solutions using only 5-faces (ignoring the back-face). All options are fully compatible and can be combined arbitrarily. The tables are always persisted in the same file named `twophase.tbl` hence only one version of the program may exist in a directory.
 
 ## Performance
 
