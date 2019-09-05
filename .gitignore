@@ -31,6 +31,12 @@
 *.out
 *.app
 
+# Project specific
 twophase
+twophase.tbl
+tables
 .depend
+.idea
+CMakeLists.txt
+cmake-build-debug
 
