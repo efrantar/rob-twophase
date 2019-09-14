@@ -4,7 +4,7 @@ This repository features a highly optimized C++ version of Herbert Kociemba's tw
 It combines many of the best tricks from the excellent implementations [`RubiksCube-TwophaseSolver`](https://github.com/hkociemba/RubiksCube-TwophaseSolver), [`min2phase`](https://github.com/cs0x7f/min2phase) and [`cube20src`](https://github.com/rokicki/cube20src) (fast coordinates, 16-way symmetry reduction, extended phase 1 pruning table with moves, phase 2 prechecking, parallel search in 6 directions and more) with several smaller improvements of my own aiming to push single solve performance on random cubes to the limit. 
 Furthermore, it includes several options to search for solutions that are particularly efficient to execute for cube-solving robots (like preferring consecutive moves on opposite faces which can be performed in parallel and preferring quarter- over half-turns).
 
-This is probably one of the "best" (in terms of average solving time for a fixed upper bound on the number of moves and average solution length when searching for a fixed amount of time) solvers you can find online at the moment (I am not aware of any faster implementation than this one in multi-threading mode).
+This is probably one of the "best" (in terms of average solving time for a fixed upper bound on the number of moves and average solution length when searching for a fixed amount of time) solvers you can find online at the moment (I am not aware of any faster implementation than this one, especially when multi-threading).
 It also seems to be the only one specifically tuned for cube-solving robots (i.e. that supports any combination of the axial, the quarter-turn and the 5-face metric).
 However, all of these optimizations make the solver relatively resource intensive (especially for non-standard solving modes), hence if you just want to quickly (for human standards) find a decent solution to a Rubik's Cube, it might be a little overkill. 
 On the other hand, if you are interested in the current state of the art techniques for solving a cube as quickly as possible or if you are planning to beat the Guinness World Record for the fastest robot to solve a Rubik's Cube, this solver is most likely what you want to look at.
@@ -51,11 +51,11 @@ The first table gives the average solution length (number of moves) when running
 | -           | YES        | YES        | **17.10**   | 455s       | 4.9GB      |
 | YES         | YES        | YES        | **23.05**  | 242s       | 4.9GB      |
 
-Finally, a speed comparison with Thomas Rokicki's [`cube20src`](https://github.com/rokicki/cube20src) solver which was also used to prove that God's number is 20. This extremely optimized implementation (from which `twophase` learned many many greats tricks) is certainly still the best choice for batch solving a large number of cubes. In single threaded mode it is also still around 25% faster. It does however (as of right now) not support multi-threaded search for individual cubes (or any of the additional solving options for robots). With this enabled `twophase` can perform considerably better (depending on the hardware of course), especially on harder solves where the threading overhead becomes irrelevant. The table below gives the average solving time for different move-bounds and metrics (using again `bench.cubes`).
+Finally, a speed comparison with Thomas Rokicki's [`cube20src`](https://github.com/rokicki/cube20src) solver which was also used to prove that God's number is 20. This extremely optimized implementation (from which `twophase` learned many many greats tricks) is certainly still the best choice for batch solving a large number of cubes. Compared to `twophase`'s single-threaded mode (`-t 1`), it performs slightly better on short searches (like half-turn length 20) but a bit worse on longer ones (ex. length 19). `cube20src` does however (as of right now) not support multi-threaded search for individual cubes (or any of the additional solving options for robots). With this enabled `twophase` can perform considerably better (depending on the hardware of course), especially on harder solves where any threading overhead becomes negligible. The table below gives the average solving time for different move-bounds and metrics (using again `bench.cubes`).
 
-| Metric       | Max #Moves | `twophase` w. `-t 12` | `cube20src` |
-| ------       | :--------: | :-------------------: | :---------: |
-| Half-Turn    | 20         | **0.15ms**            | 0.55ms      |
-| Half-Turn    | 19         | **5.83ms**            | 53.04ms     |
-| Quarter-Turn | 26         | **1.42ms**            | 10.26ms     |
-| Quarter-Turn | 25         | **8.78ms**            | 77.94ms     |
+| Metric       | Max #Moves | `twophase` w. `-t 1` | `twophase` w. `-t 12` | `cube20src` |
+| ------       | :--------: | :------------------: | :-------------------: | :---------: |
+| Half-Turn    | 20         | 0.67ms               | **0.15ms**            | 0.55ms      |
+| Half-Turn    | 19         | 44.20ms              | **5.83ms**            | 53.04ms     |
+| Quarter-Turn | 26         | 11.29ms              | **1.42ms**            | 10.26ms     |
+| Quarter-Turn | 25         | 70.32ms              | **8.78ms**            | 77.94ms     |
