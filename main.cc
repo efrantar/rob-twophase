@@ -96,6 +96,7 @@ int main(int argc, char *argv[]) {
     std::cout
       << "Usage:" << std::endl
       << "./twophase [-t N_THREADS] solve FACECUBE MAX_MOVES TIME" << std::endl
+      << "./twophase [-t N_THREADS] scramble TIME" << std::endl
       << "./twophase [-t N_THREADS] interactive" << std::endl
       << "./twophase [-t N_THREADS] benchtime MAX_MOVES" << std::endl
       << "./twophase [-t N_THREADS] benchmoves TIME" << std::endl
@@ -123,24 +124,34 @@ int main(int argc, char *argv[]) {
     std::cout << std::chrono::duration_cast<std::chrono::microseconds>(
       std::chrono::high_resolution_clock::now() - tick
     ).count() / 1000. << "ms" << std::endl;
-  } else if (mode == "interactive") {
+  } else if (mode == "scramble")
+    std::cout << scramble(std::stoi(argv[i + 1]), n_threads) << std::endl;
+  else if (mode == "interactive") {
     std::ios_base::sync_with_stdio(false);
     twophase(WARMUP_CUBE, -1, 100, true, true, n_threads);
 
+    std::string mode;
     std::string cube;
     int len;
     int timelimit;
 
-    std::cout << "Enter >>FACECUBE MAX_MOVES TIME<< to solve.\n";
+    std::cout << "Enter >>solve FACECUBE MAX_MOVES TIME<< to solve or >>scramble TIME<< to scramble.\n";
     while (std::cin) {
       prepareSolve(n_threads);
       std::cout << "Ready!" << std::endl;
-      std::cin >> cube >> len >> timelimit;
-      auto tick = std::chrono::high_resolution_clock::now();
-      std::cout << twophase(cube, len, timelimit, false, false, n_threads) << std::endl;
-      std::cout << std::chrono::duration_cast<std::chrono::microseconds>(
-        std::chrono::high_resolution_clock::now() - tick
-      ).count() / 1000. << "ms" << std::endl;
+      std::cin >> mode;
+      if (mode == "solve") {
+        std::cin >> cube >> len >> timelimit;
+        auto tick = std::chrono::high_resolution_clock::now();
+        std::cout << twophase(cube, len, timelimit, false, false, n_threads) << std::endl;
+        std::cout << std::chrono::duration_cast<std::chrono::microseconds>(
+          std::chrono::high_resolution_clock::now() - tick
+        ).count() / 1000. << "ms" << std::endl;
+      } else if (mode == "scramble") {
+        std::cin >> timelimit;
+        std::cout << scramble(timelimit, n_threads) << std::endl;
+      } else
+        std::cout << "Error." << std::endl;
     }
     waitForFinish();
   } else {

@@ -357,3 +357,20 @@ std::string twophase(std::string s, int max_depth, int timelimit, bool prepare, 
 
   return ret == 0 ? solToStr(sol) : "SolveError " + std::to_string(ret);
 }
+
+std::string scramble(int timelimit, int n_threads) {
+  CubieCube cube;
+  shuffle(cube); // generate uniformly random cube
+
+  // For simplicity we simply always setup and tear-down solver threads
+  prepareSolve(n_threads);
+  std::vector<int> sol;
+  solve(cube, -1, timelimit, sol); // we will always find at least some solution
+  waitForFinish();
+
+  // Turn solution into scramble
+  std::reverse(sol.begin(), sol.end());
+  for (int i = 0; i < sol.size(); i++)
+    sol[i] = inv_move[sol[i]];
+  return solToStr(sol);
+}

@@ -326,7 +326,7 @@ void initFSTwistPrun() {
       }
     }
 
-    std::cout << dist << " " << count << "\n";
+    std::cout << dist << " " << count << std::endl;
   }
 }
 
@@ -393,7 +393,7 @@ void initCornEdPrun() {
         }
       }
     }
-    std::cout << dist << " " << count << "\n";
+    std::cout << dist << " " << count << std::endl;
   }
 }
 
@@ -438,6 +438,6 @@ void initCornSlicePrun() {
         }
       }
     }
-    std::cout << dist << " " << count << "\n";
+    std::cout << dist << " " << count << std::endl;
   }
 }

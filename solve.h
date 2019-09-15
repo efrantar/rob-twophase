@@ -124,4 +124,12 @@ std::string twophase(
   bool prepare = true, bool wait = true, int n_threads = 1
 );
 
+/**
+ * Computes a scramble to a uniformly random cube
+ * @param timelimit maximum search time in milliseconds (higher values may lead to shorter scrambles)
+ * @param n_threads number of search threads
+ * @return scramble in standard cube notation
+ */
+std::string scramble(int timelimit = 25, int n_threads = 1);
+
 #endif
