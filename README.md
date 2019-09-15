@@ -11,7 +11,7 @@ On the other hand, if you are interested in the current state of the art techniq
 
 ## Usage
 
-`main.cc` compiles to a little CMD-line utility that allows solving given cubes (modes `twophase` and `interactive`) as well as performing benchmarks (`benchtime` and `benchmoves`). The number of threads to use for solving can be specified with the `-t` option. The solver supports an arbitrary number of threads but note that the performance improvement might not scale linearly as at the memory throughput can bottleneck the parallelization. Simply run the program without any arguments to get the full calling syntax.
+`main.cc` compiles to a little CMD-line utility that allows solving given cubes (modes `solve` and `interactive`) as well as performing benchmarks (`benchtime` and `benchmoves`) and generating scrambles (`scramble` and `interactive`). The number of threads to use for solving (scrambling) can be specified with the `-t` option. The solver supports an arbitrary number of threads but note that the performance improvement might not scale linearly as at the memory throughput can bottleneck the parallelization. Simply run the program without any arguments to get the full calling syntax.
 
 For a robot, you will most likely want to use the `interactive` mode. This mode preloads all tables as well as solver threads (to minimize threading overhead) and warms up the cache (by running some solves) before waiting for a cube to be passed over STDIN. Inputs are expected in Herbert Kociemba's face-cube representation (see `face.h` for detailled documentation). See also the example below. When specifying `MAX_MOVES` as `-1` the solver will simply search for the full `TIME` milliseconds and then return the shortest solution. Note that running the program for the first time will generate fairly large lookup tables with may take a few minutes, these are then saved to a file so that consecutive starts are very quick (typically at most a few seconds).
 
@@ -19,15 +19,18 @@ For a robot, you will most likely want to use the `interactive` mode. This mode 
 >> ./twophase -t 12 interactive
 Loading tables ...
 Done. 0.25s
-Enter >>FACECUBE MAX_MOVES TIME<< to solve.
+Enter >>solve FACECUBE MAX_MOVES TIME<< to solve or >>scramble TIME<< to scramble.
 Ready!
->> UDFUURRLDBFLURRDRUUFLLFRFDBRBRLDBUDLRBBFLBBUDDFFDBUFLL 20 100
+>> solve UDFUURRLDBFLURRDRUUFLLFRFDBRBRLDBUDLRBBFLBBUDDFFDBUFLL 20 100
 R2 F' D2 F' U2 R2 F R2 U2 F' D L F2 D' B' R' B R2 F U'
 0.205ms
 Ready!
->> UDFUURRLDBFLURRDRUUFLLFRFDBRBRLDBUDLRBBFLBBUDDFFDBUFLL -1 100
+>> solve UDFUURRLDBFLURRDRUUFLLFRFDBRBRLDBUDLRBBFLBBUDDFFDBUFLL -1 100
 D F U2 L' B' U' L U B2 R' B' U R U2 D2 B2 U D2 F2
 100.13ms
+Ready!
+>> scramble 50
+F2 L2 F' D2 U F U' R2 U L' D2 B2 R D2 L' U' F'
 Ready!
 ^C
 ```
