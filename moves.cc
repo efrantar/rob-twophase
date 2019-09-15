@@ -115,6 +115,9 @@ void initMoves() {
     for (int i = off; i < off + 9 && i < 45; i++)
       skip_moves[i] = MoveMask(0x1ff) << off;
   }
+  // As half-slice moves commute, fix an ordering
+  skip_moves[40] |= MOVEBIT(31) | MOVEBIT(22);
+  skip_moves[31] |= MOVEBIT(22);
 
   #ifdef AXIAL
     // Always skip all moves on the same axis (normally not for U, R and F faces) in axial mode
