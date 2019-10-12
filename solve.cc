@@ -28,7 +28,7 @@ int dists[6]; // current min dist that has not been tried for this axis yet; use
 std::mutex start; // different lock than `mutex` for task assignment to minimize interference with solving threads
 
 // Variables used to realize a simple timeout
-std::mutex wait;
+std::mutex wait_mutex;
 std::condition_variable notify;
 
 TwoPhaseSolver::TwoPhaseSolver(int rot1, bool inv1, const CubieCube &cube) {
@@ -151,7 +151,7 @@ bool TwoPhaseSolver::phase2(
 
       if (depth <= max_depth) { // keep searching if current solution exceeds max-depth
         // Notify the timeout thread that a solution has been found (it should not wait any longer)
-        std::lock_guard<std::mutex> lock(wait);
+        std::lock_guard<std::mutex> lock(wait_mutex);
         done = true;
         notify.notify_one();
       }
@@ -269,7 +269,7 @@ int solve(const CubieCube &cube, int max_depth1, int timelimit, std::vector<int>
 
   int ret = 0; // 1 indicates timeout, 2 no solution of desired length found
   {
-    std::unique_lock<std::mutex> lock(wait);
+    std::unique_lock<std::mutex> lock(wait_mutex);
     notify.wait_for(lock, std::chrono::milliseconds(timelimit), []{ return done; });
     if (!done) {
       // if get here, this was a timeout
