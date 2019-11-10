@@ -43,6 +43,7 @@ void benchTime(const std::vector<CubieCube> &cubes, int moves) {
   std::vector<double> times;
   int failed = 0;
 
+  std::cout << std::endl;
   for (int i = 0; i < cubes.size(); i++) {
     if (i % PRINT_EVERY == 0)
       std::cout << "Benchmarking ..." << std::endl;
@@ -61,16 +62,17 @@ void benchTime(const std::vector<CubieCube> &cubes, int moves) {
   waitForFinish();
 
   std::cout
-    << "Average: " << std::accumulate(times.begin(), times.end(), 0.) / times.size()
-    << "ms Min: " << *std::min_element(times.begin(), times.end())
-    << "ms Max: " << *std::max_element(times.begin(), times.end())
-    << "ms Failed: " << failed << std::endl;
+    << "\nAverage: " << std::accumulate(times.begin(), times.end(), 0.) / times.size()
+    << "ms, Min: " << *std::min_element(times.begin(), times.end())
+    << "ms, Max: " << *std::max_element(times.begin(), times.end())
+    << "ms, Failed: " << failed << std::endl;
 }
 
 void benchMoves(const std::vector<CubieCube> &cubes, int time) {
   std::vector<int> moves;
   int failed = 0;
 
+  std::cout << std::endl;
   for (int i = 0; i < cubes.size(); i++) {
     if (i % PRINT_EVERY == 0)
       std::cout << "Benchmarking ..." << std::endl;
@@ -84,11 +86,19 @@ void benchMoves(const std::vector<CubieCube> &cubes, int time) {
   }
   waitForFinish();
 
+  int min = *std::min_element(moves.begin(), moves.end());
+  int max = *std::max_element(moves.begin(), moves.end());
   std::cout
-    << "Average: " << std::accumulate(moves.begin(), moves.end(), 0.) / moves.size()
-    << " Min: " << *std::min_element(moves.begin(), moves.end())
-    << " Max: " << *std::max_element(moves.begin(), moves.end())
-    << " Failed: " << failed << std::endl;
+    << std::endl << "Average: " << std::accumulate(moves.begin(), moves.end(), 0.) / moves.size()
+    << ", Min: " << min << ", Max: " << max << ", Failed: " << failed << std::endl
+  ;
+
+  int freq[100];
+  for (int len : moves)
+    freq[len]++;
+  std::cout << std::endl << "Distribution:" << std::endl;
+  for (int len = min; len <= max; len++)
+    std::cout << len << ": " << freq[len] << std::endl;
 }
 
 int main(int argc, char *argv[]) {
