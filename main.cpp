@@ -1,7 +1,8 @@
 #include <iostream>
 
-#include "cubie.h"
 #include "coord.h"
+#include "cubie.h"
+#include "move.h"
 
 inline void ok() { std::cout << "Ok." << std::endl; }
 inline void error() { std::cout << "Error." << std::endl; }
@@ -60,8 +61,28 @@ void test_coord() {
   test_getset(coord::get_udedges2, coord::set_udedges2, coord::N_UDEDGES2);
 }
 
+void test_move() {
+  std::cout << "Testing move level ..." << std::endl;
+
+  cubie::cube c;
+  for (int m = 0; m < move::COUNT; m++) {
+    if (move::inv[move::inv[m]] != m)
+      error();
+    cubie::mul(move::cubes[m], move::cubes[move::inv[m]], c);
+    if (c != cubie::SOLVED_CUBE)
+      error();
+    cubie::mul(move::cubes[move::inv[m]], move::cubes[m], c);
+    if (c != cubie::SOLVED_CUBE)
+      error();
+  }
+  ok();
+
+
+}
+
 int main() {
   test_cubie();
   test_coord();
+  test_move();
   return 0;
 }

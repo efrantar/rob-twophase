@@ -78,7 +78,7 @@ namespace coord {
     perm = 0;
 
     for (int i = len - 1; i >= 0; i--) {
-      if ((mask & (1 << cubies[i])) != 0) {
+      if (mask & (1 << cubies[i])) {
         comb |= 1 << i;
         perm = (perm << 2) | (cubies[i] - min_cubie);
       }
@@ -96,7 +96,7 @@ namespace coord {
     for (int i = 0; i < len; i++) {
       if (cubie == min_cubie)
         cubie += 4;
-      if ((comb & (1 << i)) != 0) {
+      if (comb & (1 << i)) {
         cubies[i] = (perm & 0x3) + min_cubie;
         perm >>= 2;
       } else
@@ -129,7 +129,7 @@ namespace coord {
     int perm1 = dec_perm[(perm8 / N_PERM4) % N_PERM4];
 
     for (int i = 0; i < 8; i++) {
-      if ((comb1 & (1 << i)) != 0) {
+      if (comb1 & (1 << i)) {
         cubies[i] = perm1 & 0x3;
         perm1 >>= 2;
       } else {
@@ -212,7 +212,7 @@ namespace coord {
     int j = cubie::edge::FR;
     int cubie = 0;
     for (int i = 0; i < cubie::edge::COUNT; i++)
-      c.eperm[i] = ((slice1 & (1 << i)) != 0) ? j++ : cubie++;
+      c.eperm[i] = (slice1 & (1 << i)) ? j++ : cubie++;
   }
 
   int get_udedges2(const cubie::cube& c) {
