@@ -1,4 +1,5 @@
 #include <iostream>
+#include <algorithm>
 #include "move.h"
 
 namespace move {
@@ -57,40 +58,11 @@ namespace move {
   mask qt_skip[COUNT];
 
   mask p1mask = (mask(1) << 45) - 1;
-  mask p2mask = 0x040904097fff;
+  mask p2mask = 0x10482097fff;// 000010000 010010 000010000 010010 111111111 111111;
 
-  const cubie::cube U = {
-    {UBR, URF, UFL, ULB, DFR, DLF, DBL, DRB},
-    {UB, UR, UF, UL, DR, DF, DL, DB, FR, FL, BL, BR},
-    {}, {}
-  };
-  const cubie::cube D = {
-    {URF, UFL, ULB, UBR, DLF, DBL, DRB, DFR},
-    {UR, UF, UL, UB, DF, DL, DB, DR, FR, FL, BL, BR},
-    {}, {}
-  };
-  const cubie::cube R = {
-    {DFR, UFL, ULB, URF, DRB, DLF, DBL, UBR},
-    {FR, UF, UL, UB, BR, DF, DL, DB, DR, FL, BL, UR},
-    {2, 0, 0, 1, 1, 0, 0, 2}, {}
-  };
-  const cubie::cube L = {
-    {URF, ULB, DBL, UBR, DFR, UFL, DLF, DRB},
-    {UR, UF, BL, UB, DR, DF, FL, DB, FR, UL, DL, BR},
-    {0, 1, 2, 0, 0, 2, 1, 0}, {}
-  };
-  const cubie::cube F = {
-    {UFL, DLF, ULB, UBR, URF, DFR, DBL, DRB},
-    {UR, FL, UL, UB, DR, FR, DL, DB, UF, DF, BL, BR},
-    {1, 2, 0, 0, 2, 1, 0, 0},
-    {0, 1, 0, 0, 0, 1, 0, 0, 1, 1, 0, 0}
-  };
-  const cubie::cube B = {
-    {URF, UFL, UBR, DRB, DFR, DLF, ULB, DBL},
-    {UR, UF, UL, BR, DR, DF, DL, BL, FR, FL, UB, DB},
-    {0, 0, 1, 2, 0, 0, 2, 1},
-    {0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 1, 1}
-  };
+  std::string names1[45];
+  int merge[45][45];
+  int unmap[COUNT];
 
   mask reindex(mask mm) {
     mask mm1 = 0;
@@ -102,7 +74,11 @@ namespace move {
   }
 
   bool autoinit() {
-    std::string names1[45];
+    for (int m = 0; m < 45; m++) {
+      if (map[m] != -1)
+        unmap[map[m]] = m;
+    }
+
     cubie::cube cubes1[45];
     int inv1[45];
     mask next1[45];
@@ -110,30 +86,82 @@ namespace move {
 
     std::string fnames[] = {"U", "D", "R", "L", "F", "B"};
     std::string pnames[] = {"", "2", "'"};
-    cubie::cube fcubes[] = {U, D, R, L, F, B};
+    cubie::cube fcubes[] = {
+      { // U
+        {UBR, URF, UFL, ULB, DFR, DLF, DBL, DRB},
+        {UB, UR, UF, UL, DR, DF, DL, DB, FR, FL, BL, BR},
+        {}, {}
+      },
+      { // D
+        {URF, UFL, ULB, UBR, DLF, DBL, DRB, DFR},
+        {UR, UF, UL, UB, DF, DL, DB, DR, FR, FL, BL, BR},
+        {}, {}
+      },
+      { // R
+        {DFR, UFL, ULB, URF, DRB, DLF, DBL, UBR},
+        {FR, UF, UL, UB, BR, DF, DL, DB, DR, FL, BL, UR},
+        {2, 0, 0, 1, 1, 0, 0, 2}, {}
+      },
+      { // L
+        {URF, ULB, DBL, UBR, DFR, UFL, DLF, DRB},
+        {UR, UF, BL, UB, DR, DF, FL, DB, FR, UL, DL, BR},
+        {0, 1, 2, 0, 0, 2, 1, 0}, {}
+      },
+      { // F
+        {UFL, DLF, ULB, UBR, URF, DFR, DBL, DRB},
+        {UR, FL, UL, UB, DR, FR, DL, DB, UF, DF, BL, BR},
+        {1, 2, 0, 0, 2, 1, 0, 0},
+        {0, 1, 0, 0, 0, 1, 0, 0, 1, 1, 0, 0}
+      },
+      { // B
+        {URF, UFL, UBR, DRB, DFR, DLF, ULB, DBL},
+        {UR, UF, UL, BR, DR, DF, DL, BL, FR, FL, UB, DB},
+        {0, 0, 1, 2, 0, 0, 2, 1},
+        {0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 1, 1}
+      }
+    };
 
     for (int ax = 0; ax < 3; ax++) {
       int i1 = 15 * ax;
       int i2 = 15 * ax + 3;
       int i3 = 15 * ax + 6;
 
-      for (int f : {2 * ax, 2 * ax + 1}) {
-        for (int cnt = 0; cnt < 3; cnt++) {
-          int m = (f & 1) ? i2 + cnt : i1 + cnt;
-          names1[m] = fnames[f] + pnames[cnt];
-          if (cnt == 0)
-            cubes1[m] = fcubes[f];
-          else
-            cubie::mul(cubes1[m - 1], cubes1[f], cubes1[m]);
-          inv1[m] = (f & 1) ? i2 + (2 - cnt) : i1 + (2 - cnt);
-          if (f % 2 == 0) {
-            next1[m] |= mask(0x3f) << i1;
-            next1[m] |= mask(0x7) << i3 + 3 * cnt;
-          } else {
-            next1[m] |= mask(0x3) << i2;
-            next1[m] |= mask(0x124) << i3 + 3 * cnt;
+      int f1 = 2 * ax;
+      int f2 = 2 * ax + 1;
+
+      for (int cnt = 0; cnt < 3; cnt++) {
+        int m = i1 + cnt;
+        names1[m] = fnames[f1] + pnames[cnt];
+        if (cnt == 0)
+          cubes1[m] = fcubes[f1];
+        else
+          cubie::mul(cubes1[m - 1], fcubes[f1], cubes1[m]);
+        inv1[m] = i1 + (2 - cnt);
+        next1[m] |= mask(0x7) << i1;
+        #ifdef QT
+          if (cnt == 0) {
+            next1[m] |= mask(0x1ff ^ (0x7 << 3 * cnt)) << i3;
+            continue;
           }
-        }
+        #endif
+        next1[m] |= mask(0x1ff) << i3;
+      }
+      for (int cnt = 0; cnt < 3; cnt++) {
+        int m = i2 + cnt;
+        names1[m] = fnames[f2] + pnames[cnt];
+        if (cnt == 0)
+          cubes1[m] = fcubes[f2];
+        else
+          cubie::mul(cubes1[m - 1], fcubes[f2], cubes1[m]);
+        inv1[m] = i2 + (2 - cnt);
+        next1[m] |= mask(0x3f) << i1;
+        #ifdef QT
+          if (cnt == 0) {
+            next1[m] |= mask(0x1ff ^ (0x49 << cnt)) << i3; // 0x49 == 0b1001001
+            continue;
+          }
+        #endif
+        next1[m] |= mask(0x1ff) << i3;
       }
       for (int cnt1 = 0; cnt1 < 3; cnt1++) {
         for (int cnt2 = 0; cnt2 < 3; cnt2++) {
@@ -147,7 +175,7 @@ namespace move {
     }
     #ifdef QT
       for (int m : {0, 3, 6, 15, 18, 21, 30, 33, 36})
-        next1[m] |= mask(1) << m;
+        next1[m] ^= mask(1) << m;
     #endif
     for (int m = 0; m < 45; m++)
       next1[m] = ~next1[m];
@@ -169,13 +197,11 @@ namespace move {
       inv[i] = map[inv1[m]];
       next[i] = reindex(next1[m]);
       qt_skip[i] = reindex(qt_skip1[m]);
-
-      std::cout << inv[i] << "\n";
     }
 
     #ifdef QT
-      p1mask &= ~0x92e92e92e92;
-      p2mask &= ~0x2e92;
+      // Unmapped moves are skipped automatically during reindexing
+      p1mask &= ~0x10482090000; // 000010000 010010 000010000 010010 000000000 000000
     #endif
     #ifdef F5
       mask tmp = ~(mask(0xfff) << 33);
@@ -185,8 +211,107 @@ namespace move {
     p1mask = reindex(p1mask);
     p2mask = reindex(p2mask);
 
+    cubie::cube c;
+    for (int m1 = 0; m1 < 45; m1++) {
+      for (int m2 = 0; m2 < 45; m2++) {
+        merge[m1][m2] = -1;
+        cubie::mul(cubes1[m1], cubes1[m2], c);
+        for (int i = 0; i < 45; i++) {
+          if (c == cubes[i]) {
+            merge[m1][m2] = i;
+            break;
+          }
+        }
+      }
+    }
+
     return true;
   }
   bool inited = autoinit();
+
+  void compress1(const std::vector<int>& mseq, std::vector<int>& into) {
+    into.clear();
+    for (int m : mseq) {
+      m = unmap[m];
+      if (into.size() == 0 || merge[into.back()][m] == -1)
+        into.push_back(m);
+      else {
+        int tmp = into.back();
+        into.pop_back();
+        into.push_back(merge[tmp][m]);
+      }
+    }
+  }
+
+  std::string compress(const std::vector<int>& mseq) {
+    std::vector<int> comp;
+    compress1(mseq, comp);
+
+    std::string s;
+    for (int i = 0; i < comp.size(); i++) {
+      s += names1[comp[i]];
+      if (i != comp.size() - 1)
+        s += " ";
+    }
+    return s;
+  }
+
+  int len(const std::vector<int>& mseq, int cost[]) {
+    std::vector<int> comp;
+    compress1(mseq, comp);
+
+    int res = 0;
+    for (int m : comp)
+      res += cost[res];
+    return res;
+  }
+
+  int len_ht(const std::vector<int>& mseq) {
+    int cost[] = {
+      1, 1, 1, 1, 1, 1,
+      2, 2, 2, 2, 2, 2, 2, 2, 2,
+      1, 1, 1, 1, 1, 1,
+      2, 2, 2, 2, 2, 2, 2, 2, 2,
+      1, 1, 1, 1, 1, 1,
+      2, 2, 2, 2, 2, 2, 2, 2, 2
+    };
+    return len(mseq, cost);
+  }
+
+  int len_axht(const std::vector<int>& mseq) {
+    int cost[] = {
+      1, 1, 1, 1, 1, 1,
+      1, 1, 1, 1, 1, 1, 1, 1, 1,
+      1, 1, 1, 1, 1, 1,
+      1, 1, 1, 1, 1, 1, 1, 1, 1,
+      1, 1, 1, 1, 1, 1,
+      1, 1, 1, 1, 1, 1, 1, 1, 1
+    };
+    return len(mseq, cost);
+  }
+
+  int len_qt(const std::vector<int>& mseq) {
+    int cost[] = {
+      1, 2, 1, 1, 2, 1,
+      2, 3, 2, 3, 4, 3, 2, 3, 2,
+      1, 2, 1, 1, 2, 1,
+      2, 3, 2, 3, 4, 3, 2, 3, 2,
+      1, 2, 1, 1, 2, 1,
+      2, 3, 2, 3, 4, 3, 2, 3, 2
+    };
+    return len(mseq, cost);
+  }
+
+  int len_axqt(const std::vector<int>& mseq) {
+    int cost[] = {
+      1, 2, 1, 1, 2, 1,
+      1, 2, 1, 2, 2, 2, 1, 2, 1,
+      1, 2, 1, 1, 2, 1,
+      1, 2, 1, 2, 2, 2, 1, 2, 1,
+      1, 2, 1, 1, 2, 1,
+      1, 2, 1, 2, 2, 2, 1, 2, 1
+    };
+    return len(mseq, cost);
+  }
 
 }

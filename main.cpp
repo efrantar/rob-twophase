@@ -77,6 +77,28 @@ void test_move() {
   }
   ok();
 
+  std::cout << "Phase 1: ";
+  for (int m = 0; m < move::COUNT; m++) {
+    if (move::p1mask & (move::mask(1) << m))
+      std::cout << move::names[m] << " ";
+  }
+  std::cout << std::endl;
+  std::cout << "Phase 2: ";
+  for (int m = 0; m < move::COUNT; m++) {
+    if (move::p2mask & (move::mask(1) << m))
+      std::cout << move::names[m] << " ";
+  }
+  std::cout << std::endl;
+
+  std::cout << "Forbidden:" << std::endl;
+  for (int m = 0; m < move::COUNT; m++) {
+    std::cout << move::names[m] << ": ";
+    for (int m1 = 0; m1 < move::COUNT; m1++) {
+      if ((move::next[m] & (move::mask(1) << m1)) == 0)
+        std::cout << move::names[m1] << " ";
+    }
+    std::cout << std::endl;
+  }
 
 }
 

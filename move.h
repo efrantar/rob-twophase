@@ -3,6 +3,7 @@
 
 #include <cstdint>
 #include <string>
+#include <vector>
 
 #include "cubie.h"
 
@@ -33,6 +34,12 @@ namespace move {
 
   extern mask p1mask;
   extern mask p2mask;
+
+  std::string compress(const std::vector<int>& mseq);
+  int len_ht(const std::vector<int>& mseq);
+  int len_axht(const std::vector<int>& mseq);
+  int len_qt(const std::vector<int>& mseq);
+  int len_axqt(const std::vector<int>& mseq);
 
 }
 
