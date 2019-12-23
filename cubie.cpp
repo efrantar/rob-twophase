@@ -6,6 +6,7 @@
 
 namespace cubie {
 
+  /* Faster than tricky if-else sequences for handling mirrored states */
   int mul_coris[][6] = {
     {0, 1, 2, 3, 4, 5},
     {1, 2, 0, 4, 5, 3},
@@ -14,7 +15,6 @@ namespace cubie {
     {4, 3, 5, 1, 0, 2},
     {5, 4, 3, 2, 1, 0}
   };
-
   int inv_cori[] = {
     0, 2, 1, 3, 4, 5
   };
@@ -111,12 +111,10 @@ namespace cubie {
     for (int i = 0; i < edge::COUNT; i++)
       c.eperm[i] = i;
 
-    // We shuffle explicitly as we do not have a coordinate that encodes all edges
-    std::shuffle(c.cperm, c.cperm + corner::COUNT, gen);
-    std::shuffle(c.eperm, c.eperm + edge::COUNT, gen);
+    coord::set_corners(c, std::uniform_int_distribution<int>(0, coord::N_CORNERS)(gen));
+    std::shuffle(c.eperm, c.eperm + edge::COUNT, gen); // no coordinate for all edges
     if (parity(c.cperm, corner::COUNT) != parity(c.eperm, edge::COUNT))
-      // Any single swap of two elements flips the permutation parity
-      std::swap(c.cperm[corner::COUNT - 2], c.cperm[corner::COUNT - 1]);
+      std::swap(c.cperm[corner::COUNT - 2], c.cperm[corner::COUNT - 1]); // flip parity
 
     coord::set_twist(c, std::uniform_int_distribution<int>(0, coord::N_TWIST)(gen));
     coord::set_flip(c, std::uniform_int_distribution<int>(0, coord::N_FLIP)(gen));

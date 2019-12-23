@@ -1,7 +1,9 @@
+/**
+ * Cubie definitions, cubie-cube representation + methods for manipulating it
+ */
+
 #ifndef __CUBIE__
 #define __CUBIE__
-
-#include <string>
 
 namespace cubie {
 
@@ -30,6 +32,7 @@ namespace cubie {
     const int DF = 5;
     const int DL = 6;
     const int DB = 7;
+    // SLICE-edges last s.t. UDEDGES2 is easier to handle
     const int FR = 8;
     const int FL = 9;
     const int BL = 10;
@@ -49,6 +52,8 @@ namespace cubie {
     {UR, UF, UL, UB, DR, DF, DL, DB, FR, FL, BL, BR},
     {}, {}
   };
+
+  /* Explicitly pass result cube to avoid unnecessary copying during table generation */
 
   namespace corner {
     void mul(const cube& c1, const cube& c2, cube& into);
