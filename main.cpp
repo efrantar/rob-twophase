@@ -79,13 +79,13 @@ void test_move() {
 
   std::cout << "Phase 1: ";
   for (int m = 0; m < move::COUNT; m++) {
-    if (move::p1mask & (move::mask(1) << m))
+    if (move::in(m, move::p1mask))
       std::cout << move::names[m] << " ";
   }
   std::cout << std::endl;
   std::cout << "Phase 2: ";
   for (int m = 0; m < move::COUNT; m++) {
-    if (move::p2mask & (move::mask(1) << m))
+    if (move::in(m, move::p2mask))
       std::cout << move::names[m] << " ";
   }
   std::cout << std::endl;
@@ -94,8 +94,15 @@ void test_move() {
   for (int m = 0; m < move::COUNT; m++) {
     std::cout << move::names[m] << ": ";
     for (int m1 = 0; m1 < move::COUNT; m1++) {
-      if ((move::next[m] & (move::mask(1) << m1)) == 0)
+      if (!move::in(m1, move::next[m]))
         std::cout << move::names[m1] << " ";
+    }
+    if (move::qt_skip[m] != 0) {
+      std::cout << "| ";
+      for (int m1 = 0; m1 < move::COUNT; m1++) {
+        if (move::in(m1, move::qt_skip[m]))
+          std::cout << move::names[m1] << " ";
+      }
     }
     std::cout << std::endl;
   }

@@ -35,6 +35,13 @@ namespace move {
   extern mask p1mask;
   extern mask p2mask;
 
+  inline mask bit(int m) {
+    return mask(1) << m;
+  }
+  inline bool in(int m, mask mm) {
+    return mm & bit(m);
+  }
+
   std::string compress(const std::vector<int>& mseq);
   int len_ht(const std::vector<int>& mseq);
   int len_axht(const std::vector<int>& mseq);

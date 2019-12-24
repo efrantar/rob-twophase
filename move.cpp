@@ -1,6 +1,7 @@
-#include <iostream>
-#include <algorithm>
 #include "move.h"
+
+#include <algorithm>
+#include <iostream>
 
 namespace move {
 
@@ -8,8 +9,7 @@ namespace move {
   using namespace cubie::edge;
 
   #ifdef QT
-    #ifdef AXIAL
-        const int COUNT = 30;
+    #ifdef AX
         const int map[] = {
           0, -1, 1, 2, -1, 3,
           4, -1, 5, -1, -1, -1, 6, -1, 7,
@@ -57,8 +57,8 @@ namespace move {
   mask next[COUNT];
   mask qt_skip[COUNT];
 
-  mask p1mask = (mask(1) << 45) - 1;
-  mask p2mask = 0x10482097fff;// 000010000 010010 000010000 010010 111111111 111111;
+  mask p1mask = bit(45) - 1;
+  mask p2mask = 0x10482097fff; // 000010000 010010 000010000 010010 111111111 111111;
 
   std::string names1[45];
   int merge[45][45];
@@ -67,8 +67,8 @@ namespace move {
   mask reindex(mask mm) {
     mask mm1 = 0;
     for (int m = 0; m < 45; m++) {
-      if (map[m] != -1 && mm & (mask(1) << m))
-        mm1 |= mask(1) << map[m];
+      if (map[m] != -1 && in(m, mm))
+        mm1 |= bit(map[m]);
     }
     return mm1;
   }
@@ -172,20 +172,19 @@ namespace move {
           next1[m] |= mask(0x7fff) << 15 * ax;
         }
       }
+
+      qt_skip1[i1] |= bit(i1);
+      qt_skip1[i1] |= bit(i3);
+      qt_skip1[i2] |= bit(i2);
+      qt_skip1[i2] |= bit(i3);
+      qt_skip1[i3] |= bit(i3);
     }
     #ifdef QT
       for (int m : {0, 3, 6, 15, 18, 21, 30, 33, 36})
-        next1[m] ^= mask(1) << m;
+        next1[m] ^= bit(m);
     #endif
     for (int m = 0; m < 45; m++)
       next1[m] = ~next1[m];
-    for (int ax = 0; ax < 3; ax++) {
-      for (int f = 0; f < 2; f++) {
-        int i = 15 * ax + 3 * f;
-        qt_skip1[i] |= mask(1) << i;
-        qt_skip1[i] |= mask(1) << 15 * ax + 6;
-      }
-    }
 
     for (int m = 0; m < 45; m++) {
       if (map[m] == -1)

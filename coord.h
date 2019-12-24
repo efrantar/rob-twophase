@@ -18,6 +18,8 @@ namespace coord {
   const int N_UDEDGES2 = 40320; // 8!
   const int N_CORNERS = 40320; // 8!
 
+  const int SLICE1_SOLVED = 449;
+
   // TODO: moves
 
   int get_flip(const cubie::cube& c);

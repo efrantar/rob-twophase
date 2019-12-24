@@ -159,13 +159,11 @@ namespace coord {
     int comb;
     int perm;
     get_combperm(comb, perm, c.eperm, cubie::edge::COUNT, 0xf00);
-    // comb-coord must be inverted as it should be 0 in phase 2
-    comb = (N_C12K4 - 1) - comb;
     return N_PERM4 * comb + perm;
   }
 
   void set_slice(cubie::cube& c, int slice) {
-    set_combperm((N_C12K4 - 1) - slice / N_PERM4, slice % N_PERM4, c.eperm, cubie::edge::COUNT, cubie::edge::FR);
+    set_combperm(slice / N_PERM4, slice % N_PERM4, c.eperm, cubie::edge::COUNT, cubie::edge::FR);
   }
 
   int get_uedges(const cubie::cube& c) {
