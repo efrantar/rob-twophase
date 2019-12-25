@@ -1,3 +1,7 @@
+/**
+ * All kinds of moveset definitions and setup
+ */
+
 #ifndef __MOVE__
 #define __MOVE__
 
@@ -29,11 +33,11 @@ namespace move {
   extern cubie::cube cubes[COUNT];
   extern int inv[COUNT];
 
-  extern mask next[COUNT];
-  extern mask qt_skip[COUNT];
+  extern mask next[COUNT]; // successor moves that should be explored
+  extern mask qt_skip[COUNT]; // to avoid ever trying M^3 = M' in QT mode
 
-  extern mask p1mask;
-  extern mask p2mask;
+  extern mask p1mask; // phase 1 moves
+  extern mask p2mask; // phase 2 moves
 
   inline mask bit(int m) {
     return mask(1) << m;
@@ -42,11 +46,16 @@ namespace move {
     return mm & bit(m);
   }
 
+  // Convert solution to AXHT; especially useful when solving in AXQT
   std::string compress(const std::vector<int>& mseq);
+
+  /* Compute solution lengths in different metrics */
   int len_ht(const std::vector<int>& mseq);
   int len_axht(const std::vector<int>& mseq);
   int len_qt(const std::vector<int>& mseq);
   int len_axqt(const std::vector<int>& mseq);
+
+  void init();
 
 }
 

@@ -2,6 +2,7 @@
 #define __COORD__
 
 #include "cubie.h"
+#include "move.h"
 
 namespace coord {
 
@@ -20,7 +21,11 @@ namespace coord {
 
   const int SLICE1_SOLVED = 449;
 
-  // TODO: moves
+  extern int move_flip[N_FLIP][move::COUNT];
+  extern int move_twist[N_TWIST][move::COUNT];
+  extern int move_edges4[N_SLICE][move::COUNT];
+  extern int move_corners[N_CORNERS][move::COUNT];
+  extern int move_uedges2[N_UDEDGES2][move::COUNT];
 
   int get_flip(const cubie::cube& c);
   int get_twist(const cubie::cube& c);
@@ -47,6 +52,8 @@ namespace coord {
   inline int fslice1(int flip, int slice1) { return N_FLIP * slice1 + flip; }
   inline int fslice1_to_flip(int fslice1) { return fslice1 % N_FLIP; }
   inline int fslice1_to_slice1(int fslice1) { return fslice1 / N_FLIP; }
+
+  void init();
 
 }
 

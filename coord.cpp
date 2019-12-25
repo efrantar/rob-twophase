@@ -9,8 +9,13 @@
 namespace coord {
 
   const int N_C12K4 = 495; // binom(12, 4)
-  const int N_C8K4 = 70; // binom(8, 4)
   const int N_PERM4 = 24; // 4!
+
+  int move_flip[N_FLIP][move::COUNT];
+  int move_twist[N_TWIST][move::COUNT];
+  int move_edges4[N_SLICE][move::COUNT];
+  int move_corners[N_CORNERS][move::COUNT];
+  int move_uedges2[N_UDEDGES2][move::COUNT];
 
   /*
    * Set of tables used for en- and decoding edge and corner coordinates. `enc_perm` compresses a 4-element permutation
@@ -71,11 +76,11 @@ namespace coord {
   }
 
   // Computes the combination and permutation coordinate for the set of 4 cubies indicated by the bitmask `mask`
-  void get_combperm(int& comb, int& perm, const int cubies[], int len, int mask) {
+  int get_combperm(const int cubies[], int len, int mask) {
     int min_cubie = ffs(mask) - 1;
 
-    comb = 0;
-    perm = 0;
+    int comb = 0;
+    int perm = 0;
 
     for (int i = len - 1; i >= 0; i--) {
       if (mask & (1 << cubies[i])) {
@@ -84,8 +89,7 @@ namespace coord {
       }
     }
 
-    comb = enc_comb[comb];
-    perm = enc_perm[perm];
+    return N_PERM4 * enc_comb[comb] + enc_perm[perm];
   }
 
   void set_combperm(int comb, int perm, int cubies[], int len, int min_cubie) {
@@ -156,10 +160,7 @@ namespace coord {
   }
 
   int get_slice(const cubie::cube& c) {
-    int comb;
-    int perm;
-    get_combperm(comb, perm, c.eperm, cubie::edge::COUNT, 0xf00);
-    return N_PERM4 * comb + perm;
+    return get_combperm(c.eperm, cubie::edge::COUNT, 0xf00);
   }
 
   void set_slice(cubie::cube& c, int slice) {
@@ -167,10 +168,7 @@ namespace coord {
   }
 
   int get_uedges(const cubie::cube& c) {
-    int comb;
-    int perm;
-    get_combperm(comb, perm, c.eperm, cubie::edge::COUNT, 0x00f);
-    return N_PERM4 * comb + perm;
+    return get_combperm(c.eperm, cubie::edge::COUNT, 0x00f);
   }
 
   void set_uedges(cubie::cube& c, int uedges) {
@@ -178,10 +176,7 @@ namespace coord {
   }
 
   int get_dedges(const cubie::cube& c) {
-    int comb;
-    int perm;
-    get_combperm(comb, perm, c.eperm, cubie::edge::COUNT, 0x0f0);
-    return N_PERM4 * comb + perm;
+    return get_combperm(c.eperm, cubie::edge::COUNT, 0x0f0);
   }
 
   void set_dedges(cubie::cube& c, int dedges) {
@@ -221,10 +216,43 @@ namespace coord {
     set_perm8(udedges2, c.eperm);
   }
 
-  bool autoinit() {
-    init_encdec();
-    return true;
+  void init_move(
+    int move_coord[][move::COUNT],
+    int n_coord,
+    int (*get_coord)(const cubie::cube&),
+    void (*set_coord)(cubie::cube&, int),
+    void (*mul)(const cubie::cube&, const cubie::cube&, cubie::cube&),
+    bool phase2 = false
+  ) {
+    cubie::cube c1 = cubie::SOLVED_CUBE;
+    cubie::cube c2;
+
+    for (int coord = 0; coord < n_coord; coord++) {
+      set_coord(c1, coord);
+
+      if (phase2) {
+        for (int moves = move::p2mask; moves; moves &= moves - 1) {
+          int m = ffsll(moves) - 1;
+          mul(c1, move::cubes[m], c2);
+          move_coord[coord][m] = get_coord(c2);
+        }
+      } else {
+        for (int m = 0; m < move::COUNT; m++) {
+          mul(c1, move::cubes[m], c2);
+          move_coord[coord][m] = get_coord(c2);
+        }
+      }
+    }
   }
-  volatile bool inited = autoinit();
+
+  void init() {
+    init_encdec();
+
+    init_move(move_flip, N_FLIP, get_flip, set_flip, cubie::edge::mul);
+    init_move(move_twist, N_TWIST, get_twist, set_twist, cubie::corner::mul);
+    init_move(move_edges4, N_SLICE, get_slice, set_slice, cubie::edge::mul);
+    init_move(move_corners, N_CORNERS, get_corners, set_corners, cubie::corner::mul);
+    init_move(move_uedges2, N_UDEDGES2, get_udedges2, set_udedges2, cubie::edge::mul, true);
+  }
 
 }

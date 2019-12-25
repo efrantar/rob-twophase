@@ -5,7 +5,7 @@ CPPFLAGS=-std=c++11 -lpthread -O3
 LDFLAGS=
 LDLIBS=-lpthread
 
-SRCS=main.cpp
+SRCS=main.cpp coord.cpp cubie.cpp move.cpp
 OBJS=$(subst .cpp,.o,$(SRCS))
 
 all: tool

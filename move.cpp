@@ -8,14 +8,21 @@ namespace move {
   using namespace cubie::corner;
   using namespace cubie::edge;
 
+  /* Select moves and order according to used metric */
   #ifdef QT
     #ifdef AX
         const int map[] = {
+          // U, U2, U', D, D2, D'
           0, -1, 1, 2, -1, 3,
+          // (U D), (U D2), (U D'), (U2 D), (U2 D2), (U2 D'), (U' D), (U' D2), (U' D')
           4, -1, 5, -1, -1, -1, 6, -1, 7,
+          // R, R2, R', L, L2, L'
           8, 24, 9, 10, 25, 11,
+          // (R L), (R L2), (R L'), (R2 L), (R2 L2), (R2 L'), (R' L), (R' L2), (R' L')
           12, -1, 13, -1, 26, -1, 14, -1, 15,
+          // F, F2, F', B, B2, B'
           16, 27, 17, 18, 28, 19,
+          // (F B), (F B2), (F B'), (F2 B), (F2 B2), (F2 B'), (F' B), (F' B2), (F' B')
           20, -1, 21, -1, 29, -1, 22, -1, 23
         };
       #else
@@ -60,20 +67,23 @@ namespace move {
   mask p1mask = bit(45) - 1;
   mask p2mask = 0x10482097fff; // 000010000 010010 000010000 010010 111111111 111111;
 
+  // For full set of 45 moves no matter the solving mode
   std::string names1[45];
   int merge[45][45];
   int unmap[COUNT];
 
+  // Translate bitmask from full moveset to configured one
   mask reindex(mask mm) {
     mask mm1 = 0;
     for (int m = 0; m < 45; m++) {
-      if (map[m] != -1 && in(m, mm))
+      if (map[m] != -1 && in(m, mm)) // drop unmapped moves
         mm1 |= bit(map[m]);
     }
     return mm1;
   }
 
-  bool autoinit() {
+  // Build full moveset first, then remap to configured one
+  void init() {
     for (int m = 0; m < 45; m++) {
       if (map[m] != -1)
         unmap[map[m]] = m;
@@ -122,12 +132,12 @@ namespace move {
     };
 
     for (int ax = 0; ax < 3; ax++) {
-      int i1 = 15 * ax;
-      int i2 = 15 * ax + 3;
-      int i3 = 15 * ax + 6;
+      int i1 = 15 * ax; // index to start first face moves
+      int i2 = 15 * ax + 3; // index to start of second face moves
+      int i3 = 15 * ax + 6; // index to start of axial moves
 
-      int f1 = 2 * ax;
-      int f2 = 2 * ax + 1;
+      int f1 = 2 * ax; // first face
+      int f2 = 2 * ax + 1; // second face
 
       for (int cnt = 0; cnt < 3; cnt++) {
         int m = i1 + cnt;
@@ -137,14 +147,17 @@ namespace move {
         else
           cubie::mul(cubes1[m - 1], fcubes[f1], cubes1[m]);
         inv1[m] = i1 + (2 - cnt);
-        next1[m] |= mask(0x7) << i1;
+        next1[m] |= mask(0x7) << i1; // block any moves on same face
+        #ifdef AX
+          next1[m] |= mask(0x38) << i1; // block also moves on opposite face
+        #endif
         #ifdef QT
-          if (cnt == 0) {
+          if (cnt == 0) { // block all axial moves but the ones with M
             next1[m] |= mask(0x1ff ^ (0x7 << 3 * cnt)) << i3;
             continue;
           }
         #endif
-        next1[m] |= mask(0x1ff) << i3;
+        next1[m] |= mask(0x1ff) << i3; // block all axial moves
       }
       for (int cnt = 0; cnt < 3; cnt++) {
         int m = i2 + cnt;
@@ -154,9 +167,9 @@ namespace move {
         else
           cubie::mul(cubes1[m - 1], fcubes[f2], cubes1[m]);
         inv1[m] = i2 + (2 - cnt);
-        next1[m] |= mask(0x3f) << i1;
+        next1[m] |= mask(0x3f) << i1; // block all simple moves on both faces
         #ifdef QT
-          if (cnt == 0) {
+          if (cnt == 0) { // block all axial moves but the ones with M
             next1[m] |= mask(0x1ff ^ (0x49 << cnt)) << i3; // 0x49 == 0b1001001
             continue;
           }
@@ -169,7 +182,7 @@ namespace move {
           names1[m] = "(" + names1[i1 + cnt1] + " " + names1[i2 + cnt2] + ")";
           cubie::mul(cubes1[i1 + cnt1], cubes1[i2 + cnt2], cubes1[m]);
           inv1[m] = i3 + 3 * (2 - cnt1) + (2 - cnt2);
-          next1[m] |= mask(0x7fff) << 15 * ax;
+          next1[m] |= mask(0x7fff) << 15 * ax; // block all simple and axial moves
         }
       }
 
@@ -180,9 +193,11 @@ namespace move {
       qt_skip1[i3] |= bit(i3);
     }
     #ifdef QT
+    // Allow repetitions of purely clockwise moves
       for (int m : {0, 3, 6, 15, 18, 21, 30, 33, 36})
         next1[m] ^= bit(m);
     #endif
+    // Was built by blocking moves, but should actually indicate permitted ones
     for (int m = 0; m < 45; m++)
       next1[m] = ~next1[m];
 
@@ -223,10 +238,7 @@ namespace move {
         }
       }
     }
-
-    return true;
   }
-  bool inited = autoinit();
 
   void compress1(const std::vector<int>& mseq, std::vector<int>& into) {
     into.clear();

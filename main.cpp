@@ -1,4 +1,5 @@
 #include <iostream>
+#include <chrono>
 
 #include "coord.h"
 #include "cubie.h"
@@ -110,8 +111,19 @@ void test_move() {
 }
 
 int main() {
+  auto tick = std::chrono::high_resolution_clock::now();
+  move::init();
+  std::cout << std::chrono::duration_cast<std::chrono::microseconds>(
+    std::chrono::high_resolution_clock::now() - tick
+  ).count() / 1000. << "ms" << std::endl;
+  coord::init();
+  std::cout << std::chrono::duration_cast<std::chrono::microseconds>(
+    std::chrono::high_resolution_clock::now() - tick
+  ).count() / 1000. << "ms" << std::endl;
+
   test_cubie();
   test_coord();
   test_move();
+
   return 0;
 }
