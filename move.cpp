@@ -258,6 +258,7 @@ namespace move {
     std::vector<int> comp;
     compress1(mseq, comp);
 
+    // Faster string building probably not worth it in a function like this
     std::string s;
     for (int i = 0; i < comp.size(); i++) {
       s += names1[comp[i]];
@@ -273,7 +274,7 @@ namespace move {
 
     int res = 0;
     for (int m : comp)
-      res += cost[res];
+      res += cost[m];
     return res;
   }
 

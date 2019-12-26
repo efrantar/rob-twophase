@@ -1,5 +1,6 @@
 #include <iostream>
 #include <chrono>
+#include <strings.h>
 
 #include "coord.h"
 #include "cubie.h"
@@ -49,10 +50,23 @@ void test_getset(int (*get_coord)(const cubie::cube&), void (*set_coord)(cubie::
   ok();
 }
 
+void test_movecoord(int move_coord[][move::COUNT], int n_coord, move::mask moves = move::p1mask | move::p2mask) {
+  for (int coord = 0; coord < n_coord; coord++) {
+    for (; moves; moves &= moves - 1) {
+      int m = ffsll(moves) - 1;
+      if (move_coord[move_coord[coord][m]][move::inv[m]] != coord)
+        error();
+      if (move_coord[move_coord[coord][move::inv[m]]][m] != coord)
+        error();
+    }
+  }
+  ok();
+}
+
 void test_coord() {
   std::cout << "Testing coord level ..." << std::endl;
-  test_getset(coord::get_twist, coord::set_twist, coord::N_TWIST);
   test_getset(coord::get_flip, coord::set_flip, coord::N_FLIP);
+  test_getset(coord::get_twist, coord::set_twist, coord::N_TWIST);
   test_getset(coord::get_slice, coord::set_slice, coord::N_SLICE);
   test_getset(coord::get_uedges, coord::set_uedges, coord::N_UEDGES);
   test_getset(coord::get_dedges, coord::set_dedges, coord::N_DEDGES);
@@ -60,6 +74,12 @@ void test_coord() {
 
   test_getset(coord::get_slice1, coord::set_slice1, coord::N_SLICE1);
   test_getset(coord::get_udedges2, coord::set_udedges2, coord::N_UDEDGES2);
+
+  test_movecoord(coord::move_flip, coord::N_FLIP);
+  test_movecoord(coord::move_twist, coord::N_TWIST);
+  test_movecoord(coord::move_edges4, coord::N_SLICE);
+  test_movecoord(coord::move_corners, coord::N_CORNERS);
+  test_movecoord(coord::move_uedges2, coord::N_UDEDGES2, move::p2mask);
 }
 
 void test_move() {
@@ -111,15 +131,8 @@ void test_move() {
 }
 
 int main() {
-  auto tick = std::chrono::high_resolution_clock::now();
   move::init();
-  std::cout << std::chrono::duration_cast<std::chrono::microseconds>(
-    std::chrono::high_resolution_clock::now() - tick
-  ).count() / 1000. << "ms" << std::endl;
   coord::init();
-  std::cout << std::chrono::duration_cast<std::chrono::microseconds>(
-    std::chrono::high_resolution_clock::now() - tick
-  ).count() / 1000. << "ms" << std::endl;
 
   test_cubie();
   test_coord();

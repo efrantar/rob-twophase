@@ -17,18 +17,12 @@ namespace coord {
   int move_corners[N_CORNERS][move::COUNT];
   int move_uedges2[N_UDEDGES2][move::COUNT];
 
-  /*
-   * Set of tables used for en- and decoding edge and corner coordinates. `enc_perm` compresses a 4-element permutation
-   * encoded as an 8-bit integer with 2 bits used for every element to a number from 0 - 23, `dec_perm` does the
-   * inverse. `enc_comb` maps a 4-element combination encoded in form of a bitmask with exactly 4 bits on (indicating
-   * where the elements are located) to a number between 0 - 494, `dec_comb` is again for decompression.
-   */
-  uint8_t enc_perm[1 << (4 * 2)];
+  /* Used for en-/decoding pos-perm coords */
+  uint8_t enc_perm[1 << (4 * 2)]; // encode 4-elem perm as 8 bits
   uint8_t dec_perm[N_PERM4];
-  uint16_t enc_comb[1 << 12];
+  uint16_t enc_comb[1 << 12]; // encode 4-elem comb as 12-bit mask with exactly 4 bits on
   uint16_t dec_comb[N_C12K4];
 
-  // Converts a 4-element permutation into an 8-bit number using 2 bits to represent every element
   int binarize_perm(int perm[]) {
     int bin = 0;
     for (int i = 3; i >= 0; i--)
@@ -55,15 +49,13 @@ namespace coord {
     }
   }
 
-  // Computes an orientation coordinate
   int get_ori(const int oris[], int len, int n_oris) {
     int val = 0;
-    for (int i = 0; i < len - 1; i++) // skip the last orientation as it can be reconstructed by parity
+    for (int i = 0; i < len - 1; i++) // last ori can be reconstructed by parity
       val = n_oris * val + oris[i];
     return val;
   }
 
-  // Decodes an orientation coordinate
   void set_ori(int val, int oris[], int len, int n_oris) {
     int par = 0;
     for (int i = len - 2; i >= 0; i--) {
@@ -71,11 +63,11 @@ namespace coord {
       par += oris[i];
       val /= n_oris;
     }
-    // Reconstruct last element by using the fact that the orientation parity (for a solvable cube) must always be 0
+    // Ori parity must always be 0
     oris[len - 1] = (n_oris - par % n_oris) % n_oris;
   }
 
-  // Computes the combination and permutation coordinate for the set of 4 cubies indicated by the bitmask `mask`
+  // `mask` indicates which 4 edges to compute the coordinate for
   int get_combperm(const int cubies[], int len, int mask) {
     int min_cubie = ffs(mask) - 1;
 
@@ -107,6 +99,8 @@ namespace coord {
         cubies[i] = cubie++;
     }
   }
+
+  /* Faster than using `*_comperm()` twice */
 
   int get_perm8(const int cubies[]) {
     int comb1 = 0;
@@ -191,17 +185,19 @@ namespace coord {
     set_perm8(corners, c.cperm);
   }
 
+  /* Dedicated methods again more efficient than `*_posperm()` */
+
   int get_slice1(const cubie::cube& c) {
     int slice1 = 0;
     for (int i = cubie::edge::COUNT - 1; i >= 0; i--) {
       if (c.eperm[i] >= cubie::edge::FR)
         slice1 |= 1 << i;
     }
-    return (N_C12K4 - 1) - enc_comb[slice1];
+    return enc_comb[slice1];
   }
 
   void set_slice1(cubie::cube& c, int slice1) {
-    slice1 = dec_comb[(N_C12K4 - 1) - slice1];
+    slice1 = dec_comb[slice1];
     int j = cubie::edge::FR;
     int cubie = 0;
     for (int i = 0; i < cubie::edge::COUNT; i++)
@@ -216,6 +212,8 @@ namespace coord {
     set_perm8(udedges2, c.eperm);
   }
 
+  // Computing only exactly the moves that are needed and storing them tightly would only make things more complicated
+  // during solving (in exchange for completely negligible setup/memory-gains)
   void init_move(
     int move_coord[][move::COUNT],
     int n_coord,
@@ -224,13 +222,13 @@ namespace coord {
     void (*mul)(const cubie::cube&, const cubie::cube&, cubie::cube&),
     bool phase2 = false
   ) {
-    cubie::cube c1 = cubie::SOLVED_CUBE;
+    cubie::cube c1 = cubie::SOLVED_CUBE; // coords only affect perm or ori -> one would be uninitialized
     cubie::cube c2;
 
     for (int coord = 0; coord < n_coord; coord++) {
       set_coord(c1, coord);
 
-      if (phase2) {
+      if (phase2) { // UDEDGES2 is only defined for phase 2 moves
         for (int moves = move::p2mask; moves; moves &= moves - 1) {
           int m = ffsll(moves) - 1;
           mul(c1, move::cubes[m], c2);

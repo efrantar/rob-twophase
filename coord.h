@@ -1,3 +1,7 @@
+/**
+ * Coord definitions, utilities and move tables.
+ */
+
 #ifndef __COORD__
 #define __COORD__
 
@@ -19,13 +23,13 @@ namespace coord {
   const int N_UDEDGES2 = 40320; // 8!
   const int N_CORNERS = 40320; // 8!
 
-  const int SLICE1_SOLVED = 449;
+  const int SLICE1_SOLVED = 449; // SLICE1 is not 0 at the end of phase 1
 
   extern int move_flip[N_FLIP][move::COUNT];
   extern int move_twist[N_TWIST][move::COUNT];
   extern int move_edges4[N_SLICE][move::COUNT];
   extern int move_corners[N_CORNERS][move::COUNT];
-  extern int move_uedges2[N_UDEDGES2][move::COUNT];
+  extern int move_uedges2[N_UDEDGES2][move::COUNT]; // primarily for faster phase 2 table generation
 
   int get_flip(const cubie::cube& c);
   int get_twist(const cubie::cube& c);
@@ -41,7 +45,7 @@ namespace coord {
   void set_dedges(cubie::cube& c, int dedges);
   void set_corners(cubie::cube& c, int corners);
 
-  int get_slice1(const cubie::cube& c);
+  int get_slice1(const cubie::cube& c); // faster table generation
   void set_slice1(cubie::cube& c, int slice1);
   int get_udedges2(const cubie::cube& c);
   void set_udedges2(cubie::cube& c, int udedges2);
