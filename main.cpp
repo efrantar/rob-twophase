@@ -5,6 +5,7 @@
 #include "coord.h"
 #include "cubie.h"
 #include "move.h"
+#include "sym.h"
 
 inline void ok() { std::cout << "Ok." << std::endl; }
 inline void error() { std::cout << "Error." << std::endl; }
@@ -50,7 +51,7 @@ void test_getset(int (*get_coord)(const cubie::cube&), void (*set_coord)(cubie::
   ok();
 }
 
-void test_movecoord(int move_coord[][move::COUNT], int n_coord, move::mask moves = move::p1mask | move::p2mask) {
+void test_movecoord(uint16_t move_coord[][move::COUNT], int n_coord, move::mask moves = move::p1mask | move::p2mask) {
   for (int coord = 0; coord < n_coord; coord++) {
     for (; moves; moves &= moves - 1) {
       int m = ffsll(moves) - 1;
@@ -131,8 +132,19 @@ void test_move() {
 }
 
 int main() {
+  auto tick = std::chrono::high_resolution_clock::now();
   move::init();
+  std::cout << std::chrono::duration_cast<std::chrono::microseconds>(
+    std::chrono::high_resolution_clock::now() - tick
+  ).count() / 1000. << "ms" << std::endl;
   coord::init();
+  std::cout << std::chrono::duration_cast<std::chrono::microseconds>(
+    std::chrono::high_resolution_clock::now() - tick
+  ).count() / 1000. << "ms" << std::endl;
+  sym::init();
+  std::cout << std::chrono::duration_cast<std::chrono::microseconds>(
+    std::chrono::high_resolution_clock::now() - tick
+  ).count() / 1000. << "ms" << std::endl;
 
   test_cubie();
   test_coord();

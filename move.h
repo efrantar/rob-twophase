@@ -17,13 +17,13 @@ namespace move {
 
   #ifdef QT
     #ifdef AX
-      const int COUNT = 30;
+      const int COUNT_SUB = 30;
     #else
-      const int COUNT = 16;
+      const int COUNT_SUB = 16;
     #endif
   #else
     #ifdef AX
-      const int COUNT = 45;
+      const int COUNT_SUB = 45;
     #else
       const int COUNT = 18;
     #endif

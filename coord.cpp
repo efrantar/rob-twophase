@@ -11,11 +11,11 @@ namespace coord {
   const int N_C12K4 = 495; // binom(12, 4)
   const int N_PERM4 = 24; // 4!
 
-  int move_flip[N_FLIP][move::COUNT];
-  int move_twist[N_TWIST][move::COUNT];
-  int move_edges4[N_SLICE][move::COUNT];
-  int move_corners[N_CORNERS][move::COUNT];
-  int move_uedges2[N_UDEDGES2][move::COUNT];
+  uint16_t move_flip[N_FLIP][move::COUNT];
+  uint16_t move_twist[N_TWIST][move::COUNT];
+  uint16_t move_edges4[N_SLICE][move::COUNT];
+  uint16_t move_corners[N_CORNERS][move::COUNT];
+  uint16_t move_uedges2[N_UDEDGES2][move::COUNT];
 
   /* Used for en-/decoding pos-perm coords */
   uint8_t enc_perm[1 << (4 * 2)]; // encode 4-elem perm as 8 bits
@@ -215,7 +215,7 @@ namespace coord {
   // Computing only exactly the moves that are needed and storing them tightly would only make things more complicated
   // during solving (in exchange for completely negligible setup/memory-gains)
   void init_move(
-    int move_coord[][move::COUNT],
+    uint16_t move_coord[][move::COUNT],
     int n_coord,
     int (*get_coord)(const cubie::cube&),
     void (*set_coord)(cubie::cube&, int),
