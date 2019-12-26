@@ -5,6 +5,7 @@
 #include "coord.h"
 #include "cubie.h"
 #include "move.h"
+#include "prun.h"
 #include "sym.h"
 
 inline void ok() { std::cout << "Ok." << std::endl; }
@@ -80,7 +81,7 @@ void test_coord() {
   test_movecoord(coord::move_twist, coord::N_TWIST);
   test_movecoord(coord::move_edges4, coord::N_SLICE);
   test_movecoord(coord::move_corners, coord::N_CORNERS);
-  test_movecoord(coord::move_uedges2, coord::N_UDEDGES2, move::p2mask);
+  test_movecoord(coord::move_udedges2, coord::N_UDEDGES2, move::p2mask);
 }
 
 void test_move() {
@@ -142,6 +143,10 @@ int main() {
     std::chrono::high_resolution_clock::now() - tick
   ).count() / 1000. << "ms" << std::endl;
   sym::init();
+  std::cout << std::chrono::duration_cast<std::chrono::microseconds>(
+    std::chrono::high_resolution_clock::now() - tick
+  ).count() / 1000. << "ms" << std::endl;
+  prun::init();
   std::cout << std::chrono::duration_cast<std::chrono::microseconds>(
     std::chrono::high_resolution_clock::now() - tick
   ).count() / 1000. << "ms" << std::endl;

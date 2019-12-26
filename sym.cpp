@@ -92,16 +92,19 @@ namespace sym {
       }
     }
 
-    /* TODO */
-    /*
+    /* Figure this out right here instead of defining even more "weird" constants */
+    int per_axis = move::COUNT1 / 3;
+    int per_face = 3;
+    #ifdef QT
+      per_face -= 1;
+    #endif
     for (int s = 0; s < COUNT; s++) {
       for (int ax = 0; ax < 3; ax++) {
-        effect[s][ax] = (conj_move[PER_AXIS * ax][inv[s]] / PER_AXIS) << 2; // shift
-        effect[s][ax] |= (conj_move[PER_AXIS * ax][inv[s]] % PER_AXIS >= (PER_AXIS / 2)) << 1; // flip
-        effect[s][ax] |= (conj_move[PER_AXIS * ax][inv[s]] % (PER_AXIS / 2) != 0) << 1; // inv
+        effect[s][ax] = (conj_move[per_axis * ax][inv[s]] / per_axis) << 2; // shift
+        effect[s][ax] |= (conj_move[per_axis * ax][inv[s]] % per_axis >= per_face) << 1; // flip
+        effect[s][ax] |= (conj_move[per_axis * ax][inv[s]] % per_face != 0); // inv
       }
     }
-     */
   }
 
   void init_conjcoord(

@@ -15,7 +15,7 @@ namespace coord {
   uint16_t move_twist[N_TWIST][move::COUNT];
   uint16_t move_edges4[N_SLICE][move::COUNT];
   uint16_t move_corners[N_CORNERS][move::COUNT];
-  uint16_t move_uedges2[N_UDEDGES2][move::COUNT];
+  uint16_t move_udedges2[N_UDEDGES2][move::COUNT];
 
   /* Used for en-/decoding pos-perm coords */
   uint8_t enc_perm[1 << (4 * 2)]; // encode 4-elem perm as 8 bits
@@ -250,7 +250,7 @@ namespace coord {
     init_move(move_twist, N_TWIST, get_twist, set_twist, cubie::corner::mul);
     init_move(move_edges4, N_SLICE, get_slice, set_slice, cubie::edge::mul);
     init_move(move_corners, N_CORNERS, get_corners, set_corners, cubie::corner::mul);
-    init_move(move_uedges2, N_UDEDGES2, get_udedges2, set_udedges2, cubie::edge::mul, true);
+    init_move(move_udedges2, N_UDEDGES2, get_udedges2, set_udedges2, cubie::edge::mul, true);
   }
 
 }

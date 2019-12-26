@@ -23,13 +23,13 @@ namespace coord {
   const int N_UDEDGES2 = 40320; // 8!
   const int N_CORNERS = 40320; // 8!
 
-  const int SLICE1_SOLVED = 449; // SLICE1 is not 0 at the end of phase 1
+  const int SLICE1_SOLVED = 494; // SLICE1 is not 0 at the end of phase 1
 
   extern uint16_t move_flip[N_FLIP][move::COUNT];
   extern uint16_t move_twist[N_TWIST][move::COUNT];
   extern uint16_t move_edges4[N_SLICE][move::COUNT];
   extern uint16_t move_corners[N_CORNERS][move::COUNT];
-  extern uint16_t move_uedges2[N_UDEDGES2][move::COUNT]; // primarily for faster phase 2 table generation
+  extern uint16_t move_udedges2[N_UDEDGES2][move::COUNT]; // primarily for faster phase 2 table generation
 
   int get_flip(const cubie::cube& c);
   int get_twist(const cubie::cube& c);
@@ -53,6 +53,8 @@ namespace coord {
 
   inline int slice_to_slice1(int slice) { return slice / 24; }
   inline int slice1_to_slice(int slice1) { return slice1 * 24; }
+  inline int slice_to_slice2(int slice) { return slice - N_SLICE2 * SLICE1_SOLVED; }
+  inline int slice2_to_slice(int slice) { return slice + N_SLICE2 * SLICE1_SOLVED; }
   inline int fslice1(int flip, int slice1) { return N_FLIP * slice1 + flip; }
   inline int fslice1_to_flip(int fslice1) { return fslice1 % N_FLIP; }
   inline int fslice1_to_slice1(int fslice1) { return fslice1 / N_FLIP; }
