@@ -5,6 +5,8 @@ namespace sym {
   using namespace cubie::corner;
   using namespace cubie::edge;
 
+  const uint32_t EMPTY = ~uint32_t(0);
+
   cubie::cube cubes[COUNT];
   int inv[COUNT];
   int effect[COUNT][3];
@@ -130,7 +132,7 @@ namespace sym {
   }
 
   void init_fslice1() {
-    std::fill(fslice1_sym, fslice1_sym + coord::N_FSLICE1, N_FSLICE1); // `N_FSLICE1` represents empty
+    std::fill(fslice1_sym, fslice1_sym + coord::N_FSLICE1, EMPTY);
 
     cubie::cube c1 = cubie::SOLVED_CUBE;
     cubie::cube c2;
@@ -143,7 +145,7 @@ namespace sym {
         coord::set_flip(c1, flip);
         int fslice1 = coord::fslice1(flip, slice1);
 
-        if (fslice1_sym[fslice1] != N_FSLICE1)
+        if (fslice1_sym[fslice1] != EMPTY)
           continue;
         fslice1_sym[fslice1] = COUNT_SUB * cls;
         fslice1_raw[cls] = fslice1;
@@ -153,7 +155,7 @@ namespace sym {
           cubie::edge::mul(cubes[inv[s]], c1, tmp);
           cubie::edge::mul(tmp, cubes[s], c2);
           int fslice11 = coord::fslice1(coord::get_flip(c2), coord::get_slice1(c2));
-          if (fslice1_sym[fslice11] == N_FSLICE1)
+          if (fslice1_sym[fslice11] == EMPTY)
             fslice1_sym[fslice11] = COUNT_SUB * cls + s;
           else if (fslice11 == fslice1) // collect self-symmetries
             fslice1_selfs[cls] |= 1 << s;
@@ -164,7 +166,7 @@ namespace sym {
   }
 
   void init_corners() {
-    std::fill(corners_sym, corners_sym + coord::N_CORNERS, N_CORNERS);
+    std::fill(corners_sym, corners_sym + coord::N_CORNERS, EMPTY);
 
     cubie::cube c1 = cubie::SOLVED_CUBE;
     cubie::cube c2;
@@ -174,7 +176,7 @@ namespace sym {
     for (int corners = 0; corners < coord::N_CORNERS; corners++) {
       coord::set_corners(c1, corners);
 
-      if (corners_sym[corners] != N_CORNERS)
+      if (corners_sym[corners] != EMPTY)
         continue;
       corners_sym[corners] = COUNT_SUB * cls;
       corners_raw[cls] = corners;
@@ -184,7 +186,7 @@ namespace sym {
         cubie::corner::mul(cubes[inv[s]], c1, tmp);
         cubie::corner::mul(tmp, cubes[s], c2);
         int corners1 = coord::get_corners(c2);
-        if (corners_sym[corners1] == N_CORNERS)
+        if (corners_sym[corners1] == EMPTY)
           corners_sym[corners1] = COUNT_SUB * cls + s;
         else if (corners1 == corners)
           corners_selfs[cls] |= 1 << s;

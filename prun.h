@@ -7,9 +7,17 @@
 
 namespace prun {
 
+  const int N_FS1TWIST = sym::N_FSLICE1 * coord::N_TWIST;
   const int N_CORNUD2 = sym::N_CORNERS * coord::N_UDEDGES2;
   const int N_CSLICE2 = coord::N_CORNERS * coord::N_SLICE2;
 
+  #ifdef AX
+    using prun1 = uint64_t;
+  #else
+    using prun1 = uint32_t;
+  #endif
+
+  extern prun1  *phase1;
   extern uint8_t *phase2;
   extern uint8_t *precheck;
 

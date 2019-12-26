@@ -132,6 +132,24 @@ void test_move() {
 
 }
 
+void test_conj(uint16_t conj_coord[][sym::COUNT_SUB], int n_coord) {
+  for (int coord = 0; coord < n_coord; coord++) {
+    for (int s = 0; s < sym::COUNT_SUB; s++) {
+      if (conj_coord[conj_coord[coord][s]][sym::inv[s]] != coord)
+        error();
+      if (conj_coord[conj_coord[coord][sym::inv[s]]][s] != coord)
+        error();
+    }
+  }
+  ok();
+}
+
+void test_sym() {
+  std::cout << "Testing sym level ..." << std::endl;
+  test_conj(sym::conj_twist, coord::N_TWIST);
+  test_conj(sym::conj_udedges2, coord::N_UDEDGES2);
+}
+
 int main() {
   auto tick = std::chrono::high_resolution_clock::now();
   move::init();
@@ -146,14 +164,14 @@ int main() {
   std::cout << std::chrono::duration_cast<std::chrono::microseconds>(
     std::chrono::high_resolution_clock::now() - tick
   ).count() / 1000. << "ms" << std::endl;
+
   prun::init();
-  std::cout << std::chrono::duration_cast<std::chrono::microseconds>(
-    std::chrono::high_resolution_clock::now() - tick
-  ).count() / 1000. << "ms" << std::endl;
+  std::cout << std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::high_resolution_clock::now() - tick).count() / 1000. << "ms" << std::endl;
 
   test_cubie();
   test_coord();
   test_move();
+  test_sym();
 
   return 0;
 }

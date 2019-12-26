@@ -52,7 +52,7 @@ namespace coord {
   inline int merge_udedges2(int uedges, int dedges) { return 24 * uedges + (dedges % 24); };
 
   inline int slice_to_slice1(int slice) { return slice / 24; }
-  inline int slice1_to_slice(int slice1) { return slice1 * 24; }
+  inline int slice1_to_slice(int slice1) { return 24 * slice1; }
   inline int slice_to_slice2(int slice) { return slice - N_SLICE2 * SLICE1_SOLVED; }
   inline int slice2_to_slice(int slice) { return slice + N_SLICE2 * SLICE1_SOLVED; }
   inline int fslice1(int flip, int slice1) { return N_FLIP * slice1 + flip; }
