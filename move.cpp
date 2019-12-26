@@ -231,7 +231,7 @@ namespace move {
         merge[m1][m2] = -1;
         cubie::mul(cubes1[m1], cubes1[m2], c);
         for (int i = 0; i < 45; i++) {
-          if (c == cubes[i]) {
+          if (c == cubes1[i]) {
             merge[m1][m2] = i;
             break;
           }
