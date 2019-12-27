@@ -192,6 +192,9 @@ namespace move {
       qt_skip1[i2] |= bit(i3);
       qt_skip1[i3] |= bit(i3);
     }
+    // Half-slice moves commute
+    next1[25] |= bit(10);
+    next1[40] |= bit(10) | bit(25);
     #ifdef QT
     // Allow repetitions of purely clockwise moves
       for (int m : {0, 3, 6, 15, 18, 21, 30, 33, 36})
