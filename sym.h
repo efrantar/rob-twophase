@@ -10,10 +10,10 @@ namespace sym {
   const int COUNT = 48;
 
   #ifdef F5
-    const COUNT_SUB = 4; // number of symmetries used for reduction
-    const N_FSLICE1 = 255664;
-    const N_CORNERS = 10368;
-    const ROT = 36; // 90 degree rotation around FB-axis
+    const int COUNT_SUB = 4; // number of symmetries used for reduction
+    const int N_FSLICE1 = 255664;
+    const int N_CORNERS = 10368;
+    const int ROT = 36; // 90 degree rotation around FB-axis
   #else
     const int COUNT_SUB = 16;
     const int N_FSLICE1 = 64430;

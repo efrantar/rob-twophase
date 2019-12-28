@@ -56,7 +56,7 @@ namespace prun {
   
   int flip(int mask) {
     int per_face = N_SIMP / 2;
-    int flipped = rev(mask, 2, 0, per_face);
+    int flipped = rev(mask, 2, 0, BITS_PER_M * per_face);
 
     #ifdef AX
       mask >>= BITS_PER_M * N_SIMP;
@@ -76,7 +76,7 @@ namespace prun {
   void init_base() { // TODO: make in work in HT
     for (int eff = 0; eff < 16; eff++) {
       for (int mask = 0; mask < (1 << BITS_PER_AX); mask++) {
-        if (eff == 3 && mask == 65502)
+        if (eff == 7 && mask == 6)
           std::cout << "Test\n";
 
         move::mask mask1 = mask;
@@ -92,17 +92,18 @@ namespace prun {
         #ifdef QT
           remap[0][eff][mask] = 0;
           remap[1][eff][mask] = 0;
-          for (int i = 0; i << BITS_PER_AX / 2; i++) {
+          for (int i = 0; i < BITS_PER_AX / 2; i++) {
             remap[0][eff][mask] |= ((mask1 & 0x3) == 0) << i;
             remap[1][eff][mask] |= ((mask1 & 0x3) <= 1) << i;
+            mask1 >>= 2;
           }
+          remap[0][eff][mask] <<= (BITS_PER_AX / 2) * sym::eff_shift(eff);
+          remap[1][eff][mask] <<= (BITS_PER_AX / 2) * sym::eff_shift(eff);
         #else
-          move::mask o = ones(BITS_PER_AX - 1);
-          remap[0][eff][mask] = (mask & 1) ? 0 : ~mask1 & o;
-          remap[1][eff][mask] = (mask & 1) ? ~mask1 & o : o;
+          move::mask o = ones(BITS_PER_AX - 1); // first bit indicates direction but is not a move
+          remap[0][eff][mask] = ((mask & 1) ? 0 : ~mask1 & o) << (BITS_PER_AX - 1) * sym::eff_shift(eff);
+          remap[1][eff][mask] = ((mask & 1) ? ~mask1 & o : o) <<= (BITS_PER_AX - 1) * sym::eff_shift(eff);
         #endif
-        remap[0][eff][mask] <<= (BITS_PER_AX - 1) * sym::eff_shift(eff);
-        remap[1][eff][mask] <<= (BITS_PER_AX - 1) * sym::eff_shift(eff);
       }
     }
   }
@@ -153,9 +154,6 @@ namespace prun {
                 selfs >>= 1;
               }
             }
-
-            if (coord == 61750046)
-              std::cout << "Test\n";
 
             prun1 prun = 0;
             #ifdef QT
