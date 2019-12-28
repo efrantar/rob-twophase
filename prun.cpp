@@ -33,37 +33,39 @@ namespace prun {
 
   inline int ones(int count) { return (1 << count) - 1; }
 
-  int rev(int bits, int len, int step = 1) {
+  int rev(int movec, int count, int off = 0, int step = BITS_PER_M) {
+    movec >>= step * off;
+
     int rev = 0;
-    for (int i = 0; i < len; i += step) {
-      rev = (rev << step) | (bits & ones(step));
-      bits >>= step;
+    for (int i = 0; i < step * count; i += step) {
+      rev = (rev << step) | (movec & ones(step));
+      movec >>= step;
     }
-    return rev;
+    return rev << step * off;
   }
 
   int inv(int mask) {
-    int inv = rev(mask, N_SIMP, BITS_PER_M);
+    int n_per_face = N_SIMP / 2;
+
+    int inv = rev(mask, n_per_face) | rev(mask, n_per_face, n_per_face);
     #ifdef AX
-      mask >>= BITS_PER_M * N_SIMP;
-      inv |= rev(mask, N_AX, BITS_PER_M) << BITS_PER_M * N_SIMP
+      inv |= rev(mask, N_AX, N_SIMP);
     #endif
     return inv;
   }
   
   int flip(int mask) {
     int per_face = N_SIMP / 2;
+    int flipped = rev(mask, 2, 0, per_face);
 
-    int tmp = ones(BITS_PER_M * per_face);
-    int flipped = (mask & tmp) | (mask & (tmp << BITS_PER_M * per_face));
     #ifdef AX
       mask >>= BITS_PER_M * N_SIMP;
 
       // Flipping an axis means to transpose the axial move-mask (M N) (M N2) (M N') ... to (N M) (N M2) (N M') ...
       int fax = 0;
       for (int i = 0; i < per_face; i++) {
-        for (int j = 0; j < per_face; j++) {
-          fax |= ((mask >> per_face * (per_face * i + j)) & ones(BITS_PER_M)) << per_face * (per_face * j + i);
+        for (int j = 0; j < per_face; j++)
+          fax |= ((mask >> BITS_PER_M * (per_face * i + j)) & ones(BITS_PER_M)) << BITS_PER_M * (per_face * j + i);
       }
       flipped |= fax << BITS_PER_M * N_SIMP;
     #endif
@@ -71,9 +73,12 @@ namespace prun {
     return flipped;
   }
 
-  void init_base() {
+  void init_base() { // TODO: make in work in HT
     for (int eff = 0; eff < 16; eff++) {
       for (int mask = 0; mask < (1 << BITS_PER_AX); mask++) {
+        if (eff == 3 && mask == 65502)
+          std::cout << "Test\n";
+
         move::mask mask1 = mask;
         #ifndef QT
           mask1 >>= 1; // first bit encodes direction in HT
@@ -83,27 +88,27 @@ namespace prun {
           mask1 = inv(mask1);
         if (sym::eff_flip(eff))
           mask1 = flip(mask1);
-        mask1 <<= sym::eff_shift(eff);
 
         #ifdef QT
           remap[0][eff][mask] = 0;
-          remap[0][eff][mask] = 0;
-          for (int i = 0; i << BITS_PER_AX / 2) {
+          remap[1][eff][mask] = 0;
+          for (int i = 0; i << BITS_PER_AX / 2; i++) {
             remap[0][eff][mask] |= ((mask1 & 0x3) == 0) << i;
             remap[1][eff][mask] |= ((mask1 & 0x3) <= 1) << i;
           }
         #else
-          int o = ones(BITS_PER_AX);
+          move::mask o = ones(BITS_PER_AX - 1);
           remap[0][eff][mask] = (mask & 1) ? 0 : ~mask1 & o;
           remap[1][eff][mask] = (mask & 1) ? ~mask1 & o : o;
         #endif
+        remap[0][eff][mask] <<= (BITS_PER_AX - 1) * sym::eff_shift(eff);
+        remap[1][eff][mask] <<= (BITS_PER_AX - 1) * sym::eff_shift(eff);
       }
     }
   }
 
   void init_phase1() {
-    // Make sure to skip B-moves in F5-mode
-    int n_moves = std::bitset<64>(move::p1mask).count();
+    int n_moves = std::bitset<64>(move::p1mask).count(); // make sure not to consider B-moves in F5-mode
 
     phase1 = new prun1[N_FS1TWIST];
     std::fill(phase1, phase1 + N_FS1TWIST, EMPTY);
@@ -149,29 +154,40 @@ namespace prun {
               }
             }
 
+            if (coord == 61750046)
+              std::cout << "Test\n";
+
             prun1 prun = 0;
             #ifdef QT
               // In QT there is enough space to simply encode the effect of every move in 2 bits
               for (int m = n_moves - 1; m >= 0; m--)
                   prun = (prun << 2) | (deltas[m] + 1);
             #else
-              for (int ax = 0; ax < 3; ax++) {
-                bool away = false; // first bit of axis encoding
-                for (int i = ax * (BITS_PER_AX - 1); i < (ax + 1) * (BITS_PER_AX - 1); i++) {
-                  if (deltas[i] != 0) {
-                    if (deltas[i] > 0)
-                      away = true;
-                    break; // stop immediately once we found a value != 0
+              #ifndef AX
+                int n_ax = 6; // in standard (HT) mode we have to treat every face as an individual axis for encoding
+                int bits_per_ax = 4;
+              #else
+                int n_ax = 3;
+                int bits_per_ax = BITS_PER_AX;
+              #endif
+                /* Encode from left to right to preserve indexing of moves */
+                for (int ax = n_ax - 1; ax >= 0; ax--) {
+                  bool away = false; // first bit of axis encoding (whether any move brings us further from the goal)
+                  for (int i = ax * (bits_per_ax - 1); i < (ax + 1) * (bits_per_ax - 1); i++) {
+                    if (deltas[i] != 0) {
+                      if (deltas[i] > 0)
+                        away = true;
+                      break; // stop immediately once we found a value != 0
+                    }
                   }
+
+                  int tmp = 0;
+                  for (int i = (ax + 1) * (bits_per_ax - 1) - 1; i >= ax * (bits_per_ax - 1); i--)
+                    tmp = (tmp | (away ? deltas[i] : deltas[i] + 1)) << 1;
+                  tmp |= away;
+
+                  prun = (prun << bits_per_ax) | tmp;
                 }
-
-                int tmp = 0;
-                for (int i = (ax + 1) * (BITS_PER_AX - 1) - 1; i >= 0; i--) // last move should be the leftmost
-                  tmp = (tmp | (away ? deltas[i] : deltas[i] + 1)) << 1;
-                tmp |= away;
-
-                prun = (prun << BITS_PER_AX) | tmp;
-              }
             #endif
             phase1[coord] |= prun << 8;
           }
@@ -289,6 +305,7 @@ namespace prun {
   int get_phase1(int flip, int slice, int twist, int togo, move::mask& next) {
     int tmp = sym::fslice1_sym[coord::fslice1(flip, coord::slice_to_slice1(slice))];
     int s = sym::coord_s(tmp);
+    std::cout << coord::N_TWIST * sym::coord_c(tmp) + sym::conj_twist[twist][s] << "\n";
     prun1 prun = phase1[coord::N_TWIST * sym::coord_c(tmp) + sym::conj_twist[twist][s]];
 
     int dist = prun & 0xff;
@@ -299,8 +316,12 @@ namespace prun {
       next = move::p1mask; // all moves are possible
     else {
       prun >>= 8; // get rid of dist
+      std::cout << std::bitset<45>(prun) << "\n";
       next = 0;
       for (int ax = 0; ax < 3; ax++) {
+        std::cout << sym::effect[s][ax] << "\n";
+        std::cout << std::bitset<16>(prun & ones(BITS_PER_AX)) << "\n";
+        std::cout << std::bitset<45>(remap[delta][sym::effect[s][ax]][prun & ones(BITS_PER_AX)]) << "\n";
         next |= remap[delta][sym::effect[s][ax]][prun & ones(BITS_PER_AX)];
         prun >>= BITS_PER_AX;
       }
@@ -337,22 +358,28 @@ namespace prun {
       init_precheck();
 
       f = fopen(SAVE.c_str(), "wb");
-      err |= fwrite(phase1, sizeof(prun1), N_FS1TWIST, f);
-      err |= fwrite(phase2, sizeof(uint8_t), N_CORNUD2, f);
-      err |= fwrite(precheck, sizeof(uint8_t), N_CSLICE2, f);
+      if (fwrite(phase1, sizeof(prun1), N_FS1TWIST, f) != N_FS1TWIST)
+        err = 1;
+      if (fwrite(phase2, sizeof(uint8_t), N_CORNUD2, f) != N_CORNUD2)
+        err = 1;
+      if (fwrite(precheck, sizeof(uint8_t), N_CSLICE2, f) != N_CSLICE2)
+        err = 1;
       if (err)
         remove(SAVE.c_str()); // delete file if there was some error writing it
     } else {
       phase1 = new prun1[N_FS1TWIST];
       phase2 = new uint8_t[N_CORNUD2];
       precheck = new uint8_t[N_CSLICE2];
-      err |= fread(phase1, sizeof(prun1), N_FS1TWIST, f);
-      err |= fread(phase2, sizeof(uint8_t), N_CORNUD2, f);
-      err |= fread(precheck, sizeof(uint8_t), N_CSLICE2, f);
+      if (fread(phase1, sizeof(prun1), N_FS1TWIST, f) != N_FS1TWIST)
+        err = 1;
+      if (fread(phase2, sizeof(uint8_t), N_CORNUD2, f) != N_CORNUD2)
+        err = 1;
+      if (fread(precheck, sizeof(uint8_t), N_CSLICE2, f) != N_CSLICE2)
+        err = 1;
     }
 
-    err |= fclose(f);
-    return err == 0;
+    fclose(f);
+    return err;
   }
 
 }

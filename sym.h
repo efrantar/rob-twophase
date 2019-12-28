@@ -36,9 +36,9 @@ namespace sym {
   extern uint16_t fslice1_selfs[N_FSLICE1];
   extern uint16_t corners_selfs[N_CORNERS];
 
-  inline bool eff_inv(int eff) { return eff & 2; }
-  inline bool eff_flip(int eff) { return eff & 1; }
-  inline bool eff_shift(int eff) { return eff >> 2; }
+  inline bool eff_inv(int eff) { return eff & 1; }
+  inline bool eff_flip(int eff) { return eff & 2; }
+  inline int eff_shift(int eff) { return eff >> 2; }
   inline int coord_c(int coord) { return coord / COUNT_SUB; }
   inline int coord_s(int coord) { return coord % COUNT_SUB; }
 

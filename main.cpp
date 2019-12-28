@@ -1,5 +1,6 @@
-#include <iostream>
+#include <bitset>
 #include <chrono>
+#include <iostream>
 #include <strings.h>
 
 #include "coord.h"
@@ -150,6 +151,58 @@ void test_sym() {
   test_conj(sym::conj_udedges2, coord::N_UDEDGES2);
 }
 
+void test_prun() {
+  std::cout << "Testing pruning ..." << std::endl;
+
+  srand(0);
+  int n_moves = std::bitset<64>(move::p1mask).count(); // make sure not to consider B-moves in F5-mode
+
+  for (int i = 0; i < 1000; i++) {
+    int flip = rand() % coord::N_FLIP;
+    int slice = rand() % coord::N_SLICE;
+    int twist = rand() % coord::N_TWIST;
+
+    move::mask next;
+    move::mask next1;
+    move::mask tmp;
+    int togo = prun::get_phase1(flip, slice, twist, 100, tmp);
+
+    int dist = prun::get_phase1(flip, slice, twist, togo, next);
+    next &= move::p1mask;
+
+    next1 = 0;
+    for (int m = 0; m < n_moves; m++) {
+      int flip1 = coord::move_flip[flip][m];
+      int slice1 = coord::move_edges4[slice][m];
+      int twist1 = coord::move_twist[twist][m];
+      if (prun::get_phase1(flip1, slice1, twist1, 100, tmp) < dist)
+        next1 |= move::bit(m);
+    }
+    if (next1 != next) {
+      std::cout << i << std::endl;
+      std::cout << std::bitset<64>(next1) << std::endl;
+      std::cout << std::bitset<64>(next) << std::endl;
+      error();
+    }
+
+    dist = prun::get_phase1(flip, slice, twist, togo + 1, next);
+    next &= move::p1mask;
+
+    next1 = 0;
+    for (int m = 0; m < n_moves; m++) {
+      int flip1 = coord::move_flip[flip][m];
+      int slice1 = coord::move_edges4[slice][m];
+      int twist1 = coord::move_twist[twist][m];
+      if (prun::get_phase1(flip1, slice1, twist1, 100, tmp) <= dist)
+        next1 |= move::bit(m);
+    }
+    if (next1 != next)
+      error();
+  }
+
+  ok();
+}
+
 int main() {
   auto tick = std::chrono::high_resolution_clock::now();
   move::init();
@@ -172,6 +225,7 @@ int main() {
   test_coord();
   test_move();
   test_sym();
+  test_prun();
 
   return 0;
 }

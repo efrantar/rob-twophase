@@ -23,7 +23,7 @@ namespace prun {
 
   int get_phase1(int flip, int slice, int twist, int togo, move::mask& next);
   int get_phase2(int corners, int udedges);
-  int get_precheck(int corners, int slice2);
+  int get_precheck(int corners, int slice);
 
   bool init(bool file = true);
 
