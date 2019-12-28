@@ -178,12 +178,8 @@ void test_prun() {
       if (prun::get_phase1(flip1, slice1, twist1, 100, tmp) < dist)
         next1 |= move::bit(m);
     }
-    if (next1 != next) {
-      std::cout << i << std::endl;
-      std::cout << std::bitset<64>(next1) << std::endl;
-      std::cout << std::bitset<64>(next) << std::endl;
+    if (next1 != next)
       error();
-    }
 
     dist = prun::get_phase1(flip, slice, twist, togo + 1, next);
     next &= move::p1mask;

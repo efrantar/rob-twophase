@@ -1,3 +1,7 @@
+/**
+ * Symmetry definition and reduction/conjugation tables.
+ */
+
 #ifndef __SYM__
 #define __SYM__
 

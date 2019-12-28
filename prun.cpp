@@ -74,11 +74,33 @@ namespace prun {
   }
 
   void init_base() { // TODO: make in work in HT
+    /* It is probably cleanest to simply handle the special HT case individually */
+    #ifndef AX
+      #ifndef QT
+        for (int eff = 0; eff < 16; eff++) {
+          for (int mask = 0; mask < 256; mask++) {
+            int mask1 = mask & 0xf;
+            int mask2 = (mask & 0xf0) >> 4;
+
+            if (sym::eff_inv(eff)) {
+              mask1 = rev(mask1, 3, 1) | (mask1 & 1);
+              mask2 = rev(mask2, 3, 1) | (mask2 & 1);
+            }
+            if (sym::eff_flip(eff))
+              std::swap(mask1, mask2);
+
+            remap[0][eff][mask] = ((mask1 & 1) ? 0 : ~(mask1 >> 1) & 0x7) << 6 * sym::eff_shift(eff);
+            remap[1][eff][mask] = ((mask1 & 1) ? ~(mask1 >> 1) & 0x7 : 0x7) << 6 * sym::eff_shift(eff);
+            remap[0][eff][mask] |= ((mask2 & 1) ? 0 : ~(mask2 >> 1) & 0x7) << 6 * sym::eff_shift(eff) + 3;
+            remap[1][eff][mask] |= ((mask2 & 1) ? ~(mask2 >> 1) & 0x7 : 0x7) << 6 * sym::eff_shift(eff) + 3;
+          }
+        }
+        return;
+      #endif
+    #endif
+
     for (int eff = 0; eff < 16; eff++) {
       for (int mask = 0; mask < (1 << BITS_PER_AX); mask++) {
-        if (eff == 7 && mask == 6)
-          std::cout << "Test\n";
-
         move::mask mask1 = mask;
         #ifndef QT
           mask1 >>= 1; // first bit encodes direction in HT
@@ -102,7 +124,7 @@ namespace prun {
         #else
           move::mask o = ones(BITS_PER_AX - 1); // first bit indicates direction but is not a move
           remap[0][eff][mask] = ((mask & 1) ? 0 : ~mask1 & o) << (BITS_PER_AX - 1) * sym::eff_shift(eff);
-          remap[1][eff][mask] = ((mask & 1) ? ~mask1 & o : o) <<= (BITS_PER_AX - 1) * sym::eff_shift(eff);
+          remap[1][eff][mask] = ((mask & 1) ? ~mask1 & o : o) << (BITS_PER_AX - 1) * sym::eff_shift(eff);
         #endif
       }
     }
@@ -303,7 +325,6 @@ namespace prun {
   int get_phase1(int flip, int slice, int twist, int togo, move::mask& next) {
     int tmp = sym::fslice1_sym[coord::fslice1(flip, coord::slice_to_slice1(slice))];
     int s = sym::coord_s(tmp);
-    std::cout << coord::N_TWIST * sym::coord_c(tmp) + sym::conj_twist[twist][s] << "\n";
     prun1 prun = phase1[coord::N_TWIST * sym::coord_c(tmp) + sym::conj_twist[twist][s]];
 
     int dist = prun & 0xff;
@@ -314,12 +335,8 @@ namespace prun {
       next = move::p1mask; // all moves are possible
     else {
       prun >>= 8; // get rid of dist
-      std::cout << std::bitset<45>(prun) << "\n";
       next = 0;
       for (int ax = 0; ax < 3; ax++) {
-        std::cout << sym::effect[s][ax] << "\n";
-        std::cout << std::bitset<16>(prun & ones(BITS_PER_AX)) << "\n";
-        std::cout << std::bitset<45>(remap[delta][sym::effect[s][ax]][prun & ones(BITS_PER_AX)]) << "\n";
         next |= remap[delta][sym::effect[s][ax]][prun & ones(BITS_PER_AX)];
         prun >>= BITS_PER_AX;
       }

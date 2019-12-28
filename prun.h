@@ -1,3 +1,7 @@
+/**
+ * Pruning table generation and lookup.
+ */
+
 #ifndef __PRUN__
 #define __PRUN__
 
