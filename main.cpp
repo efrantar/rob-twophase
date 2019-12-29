@@ -8,6 +8,7 @@
 #include "move.h"
 #include "prun.h"
 #include "sym.h"
+#include "solve.h"
 
 inline void ok() { std::cout << "Ok." << std::endl; }
 inline void error() { std::cout << "Error." << std::endl; }
@@ -202,26 +203,35 @@ void test_prun() {
 int main() {
   auto tick = std::chrono::high_resolution_clock::now();
   move::init();
-  std::cout << std::chrono::duration_cast<std::chrono::microseconds>(
-    std::chrono::high_resolution_clock::now() - tick
-  ).count() / 1000. << "ms" << std::endl;
   coord::init();
-  std::cout << std::chrono::duration_cast<std::chrono::microseconds>(
-    std::chrono::high_resolution_clock::now() - tick
-  ).count() / 1000. << "ms" << std::endl;
   sym::init();
-  std::cout << std::chrono::duration_cast<std::chrono::microseconds>(
-    std::chrono::high_resolution_clock::now() - tick
-  ).count() / 1000. << "ms" << std::endl;
-
   prun::init();
   std::cout << std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::high_resolution_clock::now() - tick).count() / 1000. << "ms" << std::endl;
 
-  test_cubie();
-  test_coord();
-  test_move();
-  test_sym();
-  test_prun();
+  // test_cubie();
+  // test_coord();
+  // test_move();
+  // test_sym();
+  // test_prun();
+
+  int total = 0;
+
+  for (int i = 0; i < 10000; i++) {
+    std::cout << i << "\n";
+
+    cubie::cube c;
+    cubie::shuffle(c);
+
+    solve::Engine solver(
+      12, 10,
+      1, -1, 2
+    );
+    solver.prepare();
+    total += solver.solve(c)[0].size();
+    solver.finish();
+  }
+
+  std::cout << double(total) / 10000 << "\n";
 
   return 0;
 }

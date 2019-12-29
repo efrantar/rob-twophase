@@ -1,11 +1,11 @@
 C=gcc
 CXX=g++
 RM=rm -f
-CPPFLAGS=-std=c++11 -lpthread -O3
+CPPFLAGS=-std=c++11 -lpthread -O3 -DAX
 LDFLAGS=
 LDLIBS=-lpthread
 
-SRCS=main.cpp coord.cpp cubie.cpp move.cpp prun.cpp sym.cpp
+SRCS=main.cpp coord.cpp cubie.cpp move.cpp prun.cpp solve.cpp sym.cpp
 OBJS=$(subst .cpp,.o,$(SRCS))
 
 all: tool

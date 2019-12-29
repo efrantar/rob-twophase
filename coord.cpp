@@ -229,7 +229,7 @@ namespace coord {
       set_coord(c1, coord);
 
       if (phase2) { // UDEDGES2 is only defined for phase 2 moves
-        for (int moves = move::p2mask; moves; moves &= moves - 1) {
+        for (move::mask moves = move::p2mask; moves; moves &= moves - 1) {
           int m = ffsll(moves) - 1;
           mul(c1, move::cubes[m], c2);
           move_coord[coord][m] = get_coord(c2);

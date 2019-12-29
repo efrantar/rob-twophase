@@ -41,7 +41,7 @@ One of the key features of this program are the different solving modes. These h
 
 All benchmarks were run on a stock *AMD Ryzen 5 3600 (6 cores, 12 threads)* processor (hence `-t 12`) combined with standard clocked *DDR4* memory and use exactly the same set of 10000 uniformly random cubes (file `bench.cubes`).
 
-The first table gives the average solution length (number of moves) when running the solver with a timelimit of 10ms per cube. The average optimal solution length in the standard half-turn metric is approximately 17.7, hence the solutions found by the solver are on average only 1 move longer. While no optimal average is known for the other modes, the solutions can be expected to be slightly further away from the optimum as those metrics are considerably harder (which is also why no reference exists).
+The first table gives the average solution length (number of moves) when running the solver with a tlim of 10ms per cube. The average optimal solution length in the standard half-turn metric is approximately 17.7, hence the solutions found by the solver are on average only 1 move longer. While no optimal average is known for the other modes, the solutions can be expected to be slightly further away from the optimum as those metrics are considerably harder (which is also why no reference exists).
 
 | `-DQUARTER` | `-DAXIAL`  | `-DFACES5` | Avg. #Moves | Setup Time | Table Size |
 | :---------: | :--------: | :--------: | :---------: | :--------: | :--------: |

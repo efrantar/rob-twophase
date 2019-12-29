@@ -347,7 +347,7 @@ namespace prun {
 
   int get_phase2(int corners, int udedges) {
     int tmp = sym::corners_sym[corners];
-    return precheck[coord::N_UDEDGES2 * sym::coord_c(tmp) + sym::conj_udedges2[udedges][sym::coord_s(tmp)]];
+    return phase2[coord::N_UDEDGES2 * sym::coord_c(tmp) + sym::conj_udedges2[udedges][sym::coord_s(tmp)]];
   }
 
   int get_precheck(int corners, int slice) {
