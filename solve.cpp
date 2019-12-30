@@ -9,6 +9,42 @@
 
 namespace solve {
 
+  class Search {
+
+    int dir; // ID of search direction
+    const coordc& cube; // starting position
+    int p1depth; // phase 1 search depth
+    move::mask d0moves; // mask for initial moves to consider
+    bool& done; // when to terminate the search
+    int& lenlim; // only find strictly shorter solutions
+    Engine& solver; // report solutions to
+
+    /* Keep track of reconstructed edges that remain valid in the current search path */
+    int uedges[50];
+    int dedges[50];
+    int edges_depth;
+
+    int moves[50]; // current (partial) solution
+
+  private:
+    void phase1(
+      int depth, int togo, int flip, int slice, int twist, int corners, move::mask next, move::mask qt_skip
+    ); // phase 1 search; iterates through all solution with exactly `togo` moves
+    bool phase2(
+      int depth, int togo, int slice, int udedges2, int corners, move::mask next, move::mask qt_skip
+    ); // phase 2 search; returns once any solution is found
+
+  public:
+    Search(
+      int dir,
+      const coordc& cube,
+      int p1depth, move::mask d0moves,
+      bool& done, int& lenlim, Engine& solver
+    ) : dir(dir), cube(cube), p1depth(p1depth), d0moves(d0moves), done(done), lenlim(lenlim), solver(solver) {};
+    void run(); // perform the search
+
+  };
+
   void Search::run() {
     uedges[0] = cube.uedges;
     dedges[0] = cube.dedges;
@@ -37,8 +73,8 @@ namespace solve {
       int udedges2 = coord::merge_udedges2(uedges[depth], dedges[depth]);
 
       for (int togo1 = std::max(prun::get_phase2(corners, udedges2), tmp); togo1 < lenlim - depth; togo1++) {
-        // We don't want to block any moves here as this might cause us to require another full search with a
-        // a higher depth if we get unlucky (~10% performance loss)
+        // We don't want to block any moves here as this might cause us to require another full search with
+        // a higher depth if we happen to get unlucky (~10% performance loss)
         if (phase2(depth, togo1, slice, udedges2, corners, move::p2mask, qt_skip))
           return; // once we have found a phase 2 solution, there cannot be any shorter ones -> quit
       }
@@ -74,7 +110,7 @@ namespace solve {
 
     // We always want to maintain the maximum number of already reconstructed EDGES coordinates, hence we only
     // decrement when the depth level gets lower than the current valid index (note that we will typically also
-    // visit other deeper branches in between that might not have an effect on this)
+    // visit other deeper branches in between that might not have any effect on this)
     if (edges_depth == depth - 1)
       edges_depth--;
   }
@@ -86,7 +122,7 @@ namespace solve {
       if (slice != coord::N_SLICE2 * coord::SLICE1_SOLVED) // check if SLICE2 is also solved
         return false;
 
-      solution sol = { std::vector<int>(depth), dir };
+      searchres sol = {std::vector<int>(depth), dir };
       for (int i = 0; i < depth; i++)
         sol.first[i] = moves[i];
       solver.report_sol(sol);
@@ -102,13 +138,13 @@ namespace solve {
       int udedges21 = coord::move_udedges2[udedges2][m];
       int corners1 = coord::move_corners[corners][m];
 
-      #ifdef QT
+      #ifdef QT // TODO: implement
         // As we never want to leave the set of phase 2 cubes (which we would by doing only a quarter-turn on an axis
         // for which only double-moves are permitted), we need special handling of the double moves. The simplest way
         // to do this is to treat a double moves simply as if two consecutive quarter-turns were added to the current
         // search path.
         if (m > N_COUNT1) {
-          int split = 0; // TODO: implement
+          int split = 0;
           moves[depth] = split;
           moves[depth + 1] = split;
 
@@ -135,17 +171,11 @@ namespace solve {
   Engine::Engine(
     int n_threads, int tlim,
     int n_sols, int max_len, int n_splits
-  ) {
-    this->n_threads = n_threads;
-    this->n_splits = n_splits;
-    this->n_sols = n_sols;
-    this->max_len = max_len;
-    this->tlim = tlim;
-
+  ) : n_threads(n_threads), tlim(tlim), n_sols(n_sols), max_len(max_len), n_splits(n_splits) {
     int tmp = (move::COUNT1 + n_splits - 1) / n_splits; // ceil to make sure that we always include all moves
     for (int i = 0; i < n_splits; i++)
       masks[i] = (move::mask(1) << tmp) - 1 << tmp * i;
-    done = true;
+    done = true; // make sure that the first `prepare()` will actually do something
   }
 
   void Engine::thread() {
@@ -167,14 +197,13 @@ namespace solve {
 
       Search search(mindir, dirs[mindir], togo, masks[split], done, lenlim, *this);
       search.run();
-    } while (!done); // we should never actually get to the optimal depth anyways
+    } while (!done); // we should never actually get to the truly optimal depth anyways in general
   }
 
   void Engine::prepare() {
     if (!done) // avoid double preparation
       return;
     finish();
-    threads.clear();
 
     job_mtx.lock(); // make spawned threads wait for initialization of the cube to be solved
     for (int i = 0; i < n_threads; i++)
@@ -186,14 +215,14 @@ namespace solve {
   }
 
   std::vector<std::vector<int>> Engine::solve(const cubie::cube& c) {
-    prepare(); // make sure we are prepared; will do nothing if that is already the case
+    prepare(); // make sure we are prepared; will do nothing if that should already be the case
 
     cubie::cube tmp1, tmp2;
     cubie::cube invc;
     cubie::inv(c, invc);
 
     for (int dir = 0; dir < N_DIRS; dir++) {
-      const cubie::cube& c1 = (dir & 1) ? invc : c; // inv
+      const cubie::cube& c1 = (dir & 1) ? invc : c; // reference is enough, we do not need to copy
       int rot = sym::ROT * (dir / 2);
       cubie::mul(sym::cubes[sym::inv[rot]], c1, tmp1);
       cubie::mul(tmp1, sym::cubes[rot], tmp2);
@@ -205,7 +234,7 @@ namespace solve {
       dirs[dir].dedges = coord::get_dedges(tmp2);
       dirs[dir].corners = coord::get_corners(tmp2);
 
-      move::mask tmp;
+      move::mask tmp; // simply ignore, makes no sense anyways without proper `togo`
       depths[dir] = prun::get_phase1(dirs[dir].flip, dirs[dir].slice, dirs[dir].twist, 100, tmp);
       splits[dir] = 0;
     }
@@ -222,7 +251,7 @@ namespace solve {
 
     std::vector<std::vector<int>> res(sols.size());
     for (int i = 0; i < res.size(); i++) {
-      const solution& sol = sols.top();
+      const searchres& sol = sols.top();
       res[i].resize(sol.first.size());
 
       int rot = sym::ROT * (sol.second / 2);
@@ -240,15 +269,20 @@ namespace solve {
     return res;
   }
 
-  void Engine::report_sol(solution& sol) {
+  void Engine::report_sol(searchres& sol) { // TODO: make friend function somehow
     sol_mtx.lock();
     sols.push(sol); // usually we only get here if we actually have a solution that will be added
     if (sols.size() > n_sols)
       sols.pop();
     if (sols.size() == n_sols) {
       lenlim = sols.top().first.size(); // only search for strictly shorter solutions
-      if (lenlim <= max_len) // already found a solution that is short enough
-        done = true;
+
+      if (lenlim <= max_len) { // already found a solution that is short enough
+        done = true; // end searching
+        // Wake up timeout
+        std::lock_guard<std::mutex> lock(tout_mtx);
+        tout_cvar.notify_one();
+      }
     }
     sol_mtx.unlock();
   }
@@ -256,6 +290,7 @@ namespace solve {
   void Engine::finish() {
     for (std::thread& t : threads) // wait for all existing threads to actually finish
       t.join();
+    threads.clear(); // they are now invalid
   }
 
 }

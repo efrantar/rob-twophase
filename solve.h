@@ -10,93 +10,66 @@
 
 namespace solve {
 
-  using solution = std::pair<std::vector<int>, int>;
-  inline bool less_than(const solution& s1, const solution&  s2) { return s1.first.size() < s2.first.size(); }
+  namespace { // namespace private
+    using searchres = std::pair<std::vector<int>, int>; // moves + search direction
+    inline bool cmp(const searchres& s1, const searchres&  s2) { return s1.first.size() < s2.first.size(); }
 
-  struct coord_cube {
-    int flip;
-    int slice;
-    int twist;
-    int uedges;
-    int dedges;
-    int corners;
-  };
+    // Container with coords of a starting position
+    struct coordc {
+      int flip;
+      int slice;
+      int twist;
+      int uedges;
+      int dedges;
+      int corners;
+    };
 
-  #ifdef F5
-    const int N_DIRS = 4; // number of search directions
-  #else
-    const int N_DIRS = 6;
-  #endif
+    // Number of search directions
+    #ifdef F5
+      const int N_DIRS = 4;
+    #else
+      const int N_DIRS = 6;
+    #endif
+  }
 
   class Engine {
 
-    int n_threads;
-    int n_splits;
-    int n_sols;
-    int max_len;
-    int tlim;
+    int n_threads; // number of search threads
+    int n_splits; // number of sub-searches every search is split into
+    int n_sols; // number of solutions to find
+    int max_len; // find solutions with at most this length; -1 means simply search for the full `tlimit`
+    int tlim; // search for this amount of milliseconds
 
-    coord_cube dirs[N_DIRS];
-    move::mask masks[move::COUNT1];
-    int depths[N_DIRS];
-    int splits[N_DIRS];
+    coordc dirs[N_DIRS]; // search directions
+    move::mask masks[move::COUNT1]; // split masks
+    int depths[N_DIRS]; // current search depths per direction
+    int splits[N_DIRS]; // current search splits per direction
 
-    bool done;
-    int lenlim;
-    std::mutex job_mtx;
-    std::mutex sol_mtx;
-    std::priority_queue<solution, std::vector<solution>, decltype(&less_than)> sols {less_than};
-    std::vector<std::thread> threads;
+    bool done; // indicate that we are done
+    int lenlim; // only look for solution that are strictly shorter than this
+    std::mutex job_mtx; // thread-safety for selection of the next search task
+    std::mutex sol_mtx; // thread-safety for reporting a solution
+    std::priority_queue<searchres, std::vector<searchres>, decltype(&cmp)> sols {cmp}; // already found solutions
+    std::vector<std::thread> threads; // search threads
 
+    // Tools for implementing a required timeout
     std::mutex tout_mtx;
     std::condition_variable tout_cvar;
 
-  public:
-    Engine(
-      int n_threads, int tlim,
-      int n_sols = 1, int max_len = -1, int n_splits = 1
-    );
-    void thread();
-    void prepare();
-    std::vector<std::vector<int>> solve(const cubie::cube& c);
-    void report_sol(solution& sol);
-    void finish();
+    public:
+      Engine(
+        int n_threads, int tlim,
+        int n_sols = 1, int max_len = -1, int n_splits = 1
+      );
+      void prepare(); // setup all threads
+      std::vector<std::vector<int>> solve(const cubie::cube& c); // actual solve
+      void finish(); // wait for all threads to shutdown (mostly for clean program exit)
+      void report_sol(searchres& sol); // report a solution
+
+    void thread(); // search thread
 
   };
 
-  class Search {
-
-    int dir;
-    const coord_cube& cube;
-    int p1depth;
-    move::mask d0moves;
-    bool& done;
-    int& lenlim;
-    Engine& solver;
-
-    int uedges[50];
-    int dedges[50];
-    int edges_depth;
-    int moves[50];
-
-  private:
-    void phase1(
-      int depth, int togo, int flip, int slice, int twist, int corners, move::mask next, move::mask qt_skip
-    );
-    bool phase2(
-      int depth, int togo, int slice, int udedges2, int corners, move::mask next, move::mask qt_skip
-    );
-
-  public:
-    Search(
-      int dir,
-      const coord_cube& cube,
-      int p1depth, move::mask d0moves,
-      bool& done, int& lenlim, Engine& solver
-    ) : dir(dir), cube(cube), p1depth(p1depth), d0moves(d0moves), done(done), lenlim(lenlim), solver(solver) {};
-    void run();
-
-  };
 }
 
 #endif

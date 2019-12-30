@@ -214,7 +214,7 @@ int main() {
   // test_sym();
   // test_prun();
 
-  int total = 0;
+  double total = 0;
 
   for (int i = 0; i < 10000; i++) {
     std::cout << i << "\n";
@@ -223,15 +223,18 @@ int main() {
     cubie::shuffle(c);
 
     solve::Engine solver(
-      12, 10,
-      1, -1, 2
+      12, 1000000,
+      1, 19, 1
     );
     solver.prepare();
-    total += solver.solve(c)[0].size();
+    auto tick = std::chrono::high_resolution_clock::now();
+    solver.solve(c);
+    total += std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::high_resolution_clock::now() - tick).count() / 1000.;
+    // total += solver.solve(c)[0].size();
     solver.finish();
   }
 
-  std::cout << double(total) / 10000 << "\n";
+  std::cout << total / 10000 << "\n";
 
   return 0;
 }
