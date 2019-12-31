@@ -138,27 +138,30 @@ namespace solve {
       int udedges21 = coord::move_udedges2[udedges2][m];
       int corners1 = coord::move_corners[corners][m];
 
-      #ifdef QT // TODO: implement
-        // As we never want to leave the set of phase 2 cubes (which we would by doing only a quarter-turn on an axis
-        // for which only double-moves are permitted), we need special handling of the double moves. The simplest way
-        // to do this is to treat a double moves simply as if two consecutive quarter-turns were added to the current
-        // search path.
-        if (m > N_COUNT1) {
-          int split = 0;
-          moves[depth] = split;
-          moves[depth + 1] = split;
-
-          move::mask next1 = move::p2mask & move::next[m];
-          qt_skip1 = move::qt_skip[m];
-          next1 &= ~(qt_skip & qt_skip1);
-
-          if (phase2(depth + 2, togo - 2, slice1, udedges21, corners1, next1, qt_skip1))
-            return true;
-          continue;
-        }
-      #endif
-
       if (prun::get_phase2(corners1, udedges21) < togo) {
+        #ifdef QT
+          // As we never want to leave the set of phase 2 cubes (which we would by doing only a quarter-turn on an axis
+          // for which only double-moves are permitted), we need special handling of the double moves. The simplest way
+          // to do this is to treat a double moves simply as if two consecutive quarter-turns were added to the current
+          // search path.
+          if (m >= move::COUNT1) {
+            if (togo <= 1) // we cannot do half turns when only a single quarter-turn is permitted
+              break;
+
+            int tmp = move::split[m];
+            moves[depth] = tmp;
+            moves[depth + 1] = tmp;
+
+            move::mask next1 = move::p2mask & move::next[m];
+            move::mask qt_skip1 = move::qt_skip[m];
+            next1 &= ~(qt_skip & qt_skip1);
+
+            if (phase2(depth + 2, togo - 2, slice1, udedges21, corners1, next1, qt_skip1))
+              return true;
+            continue;
+          }
+        #endif
+
         moves[depth] = m;
         if (phase2(depth + 1, togo - 1, slice1, udedges21, corners1, move::p2mask & move::next[m], 0))
           return true; // return as soon as we have a solution

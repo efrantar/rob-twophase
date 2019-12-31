@@ -19,9 +19,17 @@ namespace move {
     #ifdef AX
       const int COUNT = 30;
       const int COUNT1 = 24;
+      const int split[] = {
+        -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
+        8, 10, 12, 16, 18, 20
+      }; // split extra half-turns into quarter-turn (for cleaner phase 2 implementation)
     #else
       const int COUNT = 16;
       const int COUNT1 = 12;
+      const int split[] = {
+        -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
+        4, 6, 8, 10
+      };
     #endif
   #else
     #ifdef AX

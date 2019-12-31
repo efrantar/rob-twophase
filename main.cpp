@@ -200,6 +200,19 @@ void test_prun() {
   ok();
 }
 
+bool check(const cubie::cube &c, const std::vector<int>& sol) {
+  cubie::cube c1;
+  cubie::cube c2;
+
+  c1 = c;
+  for (int m : sol) {
+    cubie::mul(c1, move::cubes[m], c2);
+    std::swap(c1, c2);
+  }
+
+  return c1 == cubie::SOLVED_CUBE;
+}
+
 int main() {
   auto tick = std::chrono::high_resolution_clock::now();
   move::init();
@@ -224,13 +237,23 @@ int main() {
 
     solve::Engine solver(
       12, 1000000,
-      1, 19, 1
+      1, 26, 2
     );
     solver.prepare();
     auto tick = std::chrono::high_resolution_clock::now();
     solver.solve(c);
     total += std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::high_resolution_clock::now() - tick).count() / 1000.;
-    // total += solver.solve(c)[0].size();
+    /*
+    std::vector<int> sol = solver.solve(c)[0];
+    for (int m : sol)
+      std::cout << move::names[m] << " ";
+    std::cout << "\n";
+    total += sol.size();
+
+    if (!check(c, sol))
+      std::cout << "Error." << std::endl;
+    */
+
     solver.finish();
   }
 
