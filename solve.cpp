@@ -3,7 +3,6 @@
 #include <thread>
 #include <algorithm>
 #include <strings.h>
-#include <iostream>
 #include "sym.h"
 #include "prun.h"
 
@@ -52,7 +51,8 @@ namespace solve {
 
     move::mask next;
     prun::get_phase1(cube.flip, cube.slice, cube.twist, p1depth, next);
-    phase1(0, p1depth, cube.flip, cube.slice, cube.twist, cube.corners, next & d0moves, 0);
+    next &= move::p1mask & d0moves; // block B-moves in F5 mode here and select current search split
+    phase1(0, p1depth, cube.flip, cube.slice, cube.twist, cube.corners, next, 0);
   }
 
   void Search::phase1(

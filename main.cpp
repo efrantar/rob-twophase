@@ -223,7 +223,7 @@ int main() {
 
   // test_cubie();
   // test_coord();
-  // test_move();
+  test_move();
   // test_sym();
   // test_prun();
 
@@ -236,14 +236,14 @@ int main() {
     cubie::shuffle(c);
 
     solve::Engine solver(
-      12, 1000000,
-      1, 26, 2
+      12, 10,
+      1, -1, 2
     );
     solver.prepare();
-    auto tick = std::chrono::high_resolution_clock::now();
-    solver.solve(c);
-    total += std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::high_resolution_clock::now() - tick).count() / 1000.;
-    /*
+    // auto tick = std::chrono::high_resolution_clock::now();
+    // solver.solve(c);
+    // total += std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::high_resolution_clock::now() - tick).count() / 1000.;
+    
     std::vector<int> sol = solver.solve(c)[0];
     for (int m : sol)
       std::cout << move::names[m] << " ";
@@ -252,7 +252,6 @@ int main() {
 
     if (!check(c, sol))
       std::cout << "Error." << std::endl;
-    */
 
     solver.finish();
   }
