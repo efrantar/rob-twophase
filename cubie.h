@@ -5,6 +5,8 @@
 #ifndef __CUBIE__
 #define __CUBIE__
 
+#include <string>
+
 namespace cubie {
 
   /* All cubie definitions are plain integers for making uniform handling much easier */
@@ -20,6 +22,10 @@ namespace cubie {
     const int DLF = 5;
     const int DBL = 6;
     const int DRB = 7;
+
+    const std::string names[] = {
+      "URF", "UFL", "ULB", "UBR", "DFR", "DLF", "DBL", "DRB"
+    };
   }
   using namespace corner;
 
@@ -39,6 +45,10 @@ namespace cubie {
     const int FL = 9;
     const int BL = 10;
     const int BR = 11;
+
+    const std::string names[] = {
+      "UR", "UF", "UL", "UB", "DR", "DF", "DL", "DB", "FR", "FL", "BL", "BR"
+    };
   }
   using namespace edge;
 
