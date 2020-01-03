@@ -52,6 +52,7 @@ namespace cubie {
       into.eori[i] = c.eori[into.eperm[i]];
   }
 
+  // Permutation partiy =  #inversions % 2
   bool parity(const int perm[], int len) {
     int par = 0;
     for (int i = 0; i < len; i++) {
@@ -120,6 +121,7 @@ namespace cubie {
     coord::set_flip(c, std::uniform_int_distribution<int>(0, coord::N_FLIP)(gen));
   }
 
+  // We could maybe make this faster, but it is not performance critical anyways
   bool operator==(const cube& c1, const cube& c2) {
     return
       std::equal(c1.cperm, c1.cperm + corner::COUNT, c2.cperm) &&
