@@ -10,6 +10,7 @@
 
 namespace solve {
 
+  // TODO: fix warning
   namespace { // namespace private
     using searchres = std::pair<std::vector<int>, int>; // moves + search direction
     inline bool cmp(const searchres& s1, const searchres&  s2) { return s1.first.size() < s2.first.size(); }
@@ -62,7 +63,7 @@ namespace solve {
         int n_sols = 1, int max_len = -1, int n_splits = 1
       );
       void prepare(); // setup all threads
-      std::vector<std::vector<int>> solve(const cubie::cube& c); // actual solve
+      void solve(const cubie::cube& c, std::vector<std::vector<int>>& res); // actual solve
       void finish(); // wait for all threads to shutdown (mostly for clean program exit)
       void report_sol(searchres& sol); // report a solution
 

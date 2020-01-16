@@ -237,7 +237,7 @@ int main() {
 
     solve::Engine solver(
       12, 10,
-      1, -1, 2
+      100, -1, 2
     );
     solver.prepare();
     // auto tick = std::chrono::high_resolution_clock::now();

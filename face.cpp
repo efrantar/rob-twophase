@@ -25,15 +25,15 @@ namespace face {
   void init() {
     for (int corner = 0; corner < cubie::corner::COUNT; corner++) {
       for (int ori = 0; ori < 3; ori++)
-        corners[encode(cubie::corner::names[corner], ori)] = std::make_pair(corner, ori);
+        corners[encode(cubie::corner::NAMES[corner], ori)] = std::make_pair(corner, ori);
     }
     for (int edge = 0; edge < cubie::edge::COUNT; edge++) {
       for (int ori = 0; ori < 2; ori++)
-        edges[encode(cubie::edge::names[edge], ori)] = std::make_pair(edge, ori);
+        edges[encode(cubie::edge::NAMES[edge], ori)] = std::make_pair(edge, ori);
     }
   }
 
-  int faceToCubie(const std::string& s, cubie::cube& c) {
+  int to_cubie(const std::string& s, cubie::cube& c) {
     for (int i = 0; i < N_FACELETS; i++) {
       if (color::FROM_NAME.find(s[i]) == color::FROM_NAME.end())
         return 1; // invalid color
@@ -67,7 +67,7 @@ namespace face {
   }
 
   // Assumes the given cube to be valid
-  std::string cubieToFace(const cubie::cube& c) {
+  std::string from_cubie(const cubie::cube& c) {
     char s[N_FACELETS];
 
     for (int color = 0; color < color::COUNT; color++)
@@ -75,11 +75,11 @@ namespace face {
     for (int corner = 0; corner < cubie::corner::COUNT; corner++) {
       for (int i = 0; i < 3; i++)
         // Corner twist is defined clockwise
-        s[CORNLETS[corner][i]] = cubie::corner::names[c.cperm[corner]][mod(i - c.cori[corner], 3)];
+        s[CORNLETS[corner][i]] = cubie::corner::NAMES[c.cperm[corner]][mod(i - c.cori[corner], 3)];
     }
     for (int edge = 0; edge < cubie::edge::COUNT; edge++) {
       for (int i = 0; i < 2; i++)
-        s[EDGELETS[edge][i]] = cubie::edge::names[c.eperm[edge]][mod(i - c.eori[edge], 2)];
+        s[EDGELETS[edge][i]] = cubie::edge::NAMES[c.eperm[edge]][mod(i - c.eori[edge], 2)];
     }
 
     return std::string(s, N_FACELETS);

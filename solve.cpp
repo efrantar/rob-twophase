@@ -217,7 +217,7 @@ namespace solve {
     // `sols` is always emptied after a solve
   }
 
-  std::vector<std::vector<int>> Engine::solve(const cubie::cube& c) {
+  void Engine::solve(const cubie::cube& c, std::vector<std::vector<int>>& res) {
     prepare(); // make sure we are prepared; will do nothing if that should already be the case
 
     cubie::cube tmp1, tmp2;
@@ -252,7 +252,7 @@ namespace solve {
     }
     std::lock_guard<std::mutex> lock(sol_mtx); // make sure no thread is writing any more solutions
 
-    std::vector<std::vector<int>> res(sols.size());
+    res.resize(sols.size());
     for (int i = 0; i < res.size(); i++) {
       const searchres& sol = sols.top();
       res[i].resize(sol.first.size());
@@ -268,8 +268,7 @@ namespace solve {
 
       sols.pop();
     }
-
-    return res;
+    std::reverse(res.begin(), res.end()); // return solutions in order of increasing length
   }
 
   void Engine::report_sol(searchres& sol) { // TODO: make friend function somehow
