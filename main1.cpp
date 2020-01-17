@@ -13,6 +13,8 @@
 #include "solve.h"
 #include "sym.h"
 
+const std::string BENCH_FILE = "bench.cubes";
+
 void usage() {
   std::cerr << "Usage: ./twophase "
     << "[-c] [-l MAX_LEN = 1] [-m MILLIS = 10] [-n N_SOLS = 1] [-s N_SPLITS = 1] [-t N_THREADS = 1]"
@@ -21,12 +23,21 @@ void usage() {
 }
 
 void init() {
+  auto tick = std::chrono::high_resolution_clock::now();
+  std::cout << "Loading tables ..." << std::endl;
+
   face::init();
   move::init();
   coord::init();
   sym::init();
-  if (prun::init(true))
+  if (prun::init(true)) {
+    std::cerr << "Error." << std::endl;
     exit(1);
+  }
+
+  std::cout << "Done. " << std::chrono::duration_cast<std::chrono::milliseconds>(
+    std::chrono::high_resolution_clock::now() - tick
+  ).count() / 1000. << "s" << std::endl << std::endl;
 }
 
 bool check(const cubie::cube &c, const std::vector<int>& sol) {
@@ -42,10 +53,10 @@ bool check(const cubie::cube &c, const std::vector<int>& sol) {
   return c1 == cubie::SOLVED_CUBE;
 }
 
-double mean(const std::vector<std::vector<int>>& sols) {
+double mean(const std::vector<std::vector<int>>& sols, int (*len)(const std::vector<int>&)) {
   double total = 0;
   for (auto& sol : sols)
-    total += sol.size();
+    total += len(sol);
   return total / sols.size();
 }
 
@@ -96,12 +107,10 @@ int main(int argc, char *argv[]) {
     usage();
   }
 
-  std::cout << "This is rob-twophase v2.0; copyright Elias Frantar 2020." << std::endl;
-  std::cout << "Loading tables ..." << std::endl;
+  std::cout << "This is rob-twophase v2.0; copyright Elias Frantar 2020." << std::endl << std::endl;
   init();
   solve::Engine solver(n_threads, tlim, n_sols, max_len, n_splits);
-  std::cout << "Done." << std::endl;
-  std::cout << "Enter >>solve FACECUBE<< to solve, >>scramble<< to scramble or >>bench FILE<< to benchmark." << std::endl;
+  std::cout << "Enter >>solve FACECUBE<< to solve, >>scramble<< to scramble or >>bench<< to benchmark." << std::endl << std::endl;
 
   std::string mode;
   while (std::cin) {
@@ -111,10 +120,8 @@ int main(int argc, char *argv[]) {
     std::cin >> mode;
     if (mode == "bench") {
       try {
-        std::string file;
-        std::cin >> file;
         std::ifstream fstream;
-        fstream.open(file);
+        fstream.open(BENCH_FILE);
 
         std::string s;
         std::vector<cubie::cube> cubes;
@@ -122,6 +129,10 @@ int main(int argc, char *argv[]) {
           cubie::cube c;
           face::to_cubie(s, c);
           cubes.push_back(c);
+        }
+        if (cubes.size() == 0) {
+          std::cout << "Error." << std::endl;
+          continue;
         }
 
         std::vector<std::vector<int>> sols;
@@ -132,14 +143,19 @@ int main(int argc, char *argv[]) {
         for (int i = 0; i < cubes.size(); i++) {
           std::cout << i << std::endl;
 
+          solver.prepare();
           auto tick = std::chrono::high_resolution_clock::now();
           std::vector<std::vector<int>> tmp;
           solver.solve(cubes[i], tmp);
           times[i] = std::chrono::duration_cast<std::chrono::microseconds>(
             std::chrono::high_resolution_clock::now() - tick
           ).count() / 1000.;
-          if (tmp.size() == 0 || !check(cubes[i], tmp[0]))
+          solver.finish();
+
+          if (tmp.size() == 0 || !check(cubes[i], tmp[0])) {
+            std::cout << face::from_cubie(cubes[i]) << std::endl;
             failed++;
+          }
           else
             sols.push_back(tmp[0]);
         }
@@ -147,7 +163,12 @@ int main(int argc, char *argv[]) {
         std::cout << std::endl;
         std::cout << "Failed: " << failed << std::endl;
         std::cout << "Avg. Time: " << std::accumulate(times.begin(), times.end(), 0.) / times.size() << " ms" << std::endl;
-        std::cout << "Avg. Moves: " << mean(sols) << " (HT) " << std::endl;
+        std::cout << "Avg. Moves: "
+          << mean(sols, move::len_ht) << " (HT), "
+          << mean(sols, move::len_qt) << " (QT), "
+          << mean(sols, move::len_axht) << " (AXHT), "
+          << mean(sols, move::len_axqt) << " (AXQT)"
+        << std::endl;
 
         int freq[100];
         int min = 100;

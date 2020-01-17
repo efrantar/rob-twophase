@@ -272,6 +272,9 @@ namespace solve {
   }
 
   void Engine::report_sol(searchres& sol) { // TODO: make friend function somehow
+    if (done) // prevent any type of reporting after the solver has terminated (important for threading)
+      return;
+
     sol_mtx.lock();
     sols.push(sol); // usually we only get here if we actually have a solution that will be added
     if (sols.size() > n_sols)
