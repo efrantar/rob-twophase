@@ -272,10 +272,11 @@ namespace solve {
   }
 
   void Engine::report_sol(searchres& sol) { // TODO: make friend function somehow
+    std::lock_guard<std::mutex> lock(sol_mtx);
+
     if (done) // prevent any type of reporting after the solver has terminated (important for threading)
       return;
 
-    sol_mtx.lock();
     sols.push(sol); // usually we only get here if we actually have a solution that will be added
     if (sols.size() > n_sols)
       sols.pop();
@@ -289,7 +290,6 @@ namespace solve {
         tout_cvar.notify_one();
       }
     }
-    sol_mtx.unlock();
   }
 
   void Engine::finish() {

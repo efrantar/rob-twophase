@@ -222,9 +222,11 @@ int main(int argc, char *argv[]) {
       for (std::vector<int>& sol : sols) {
         int len = sol.size(); // always print uncompressed length
         if (compress)
-          move::compress(sol);
-        for (int m : sol)
-          std::cout << move::names[m] << " ";
+          std::cout << move::compress(sol) << " ";
+        else {
+          for (int m : sol)
+            std::cout << move::names[m] << " ";
+        }
         std::cout << "(" << len << ")" << std::endl;
       }
     }
