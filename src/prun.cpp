@@ -354,7 +354,7 @@ namespace prun {
     return precheck[coord::N_SLICE2 * corners + coord::slice_to_slice2(slice)];
   }
 
-  bool init(bool file) { // TODO: somehow checksum files + check file size
+  bool init(bool file) {
     init_base();
 
     if (!file) {

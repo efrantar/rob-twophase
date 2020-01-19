@@ -12,7 +12,6 @@
 #include "move.h"
 #include "prun.h"
 #include "sym.h"
-#include "solve.h"
 
 inline void ok() { std::cout << "Ok." << std::endl; }
 inline void error() { std::cout << "Error." << std::endl; }

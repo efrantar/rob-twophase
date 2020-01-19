@@ -1,10 +1,10 @@
 #include "solve.h"
 
-#include <thread>
 #include <algorithm>
 #include <strings.h>
-#include "sym.h"
+#include <thread>
 #include "prun.h"
+#include "sym.h"
 
 namespace solve {
 

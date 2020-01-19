@@ -17,7 +17,7 @@ const std::string BENCH_FILE = "bench.cubes";
 
 void usage() {
   std::cerr << "Usage: ./twophase "
-    << "[-c] [-l MAX_LEN = 1] [-m MILLIS = 10] [-n N_SOLS = 1] [-s N_SPLITS = 1] [-t N_THREADS = 1] [-w N_WARMUPSOLVES = 0]"
+    << "[-c] [-l MAX_LEN = 1] [-m MILLIS = 10] [-n N_SOLS = 1] [-s N_SPLITS = 1] [-t N_THREADS = 1] [-w N_WARMUPS = 0]"
   << std::endl;
   exit(1);
 }

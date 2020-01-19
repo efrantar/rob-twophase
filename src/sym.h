@@ -5,9 +5,9 @@
 #ifndef __SYM__
 #define __SYM__
 
+#include "coord.h"
 #include "cubie.h"
 #include "move.h"
-#include "coord.h"
 
 namespace sym {
 
