@@ -17,7 +17,7 @@ const std::string BENCH_FILE = "bench.cubes";
 
 void usage() {
   std::cerr << "Usage: ./twophase "
-    << "[-c] [-l MAX_LEN = 1] [-m MILLIS = 10] [-n N_SOLS = 1] [-s N_SPLITS = 1] [-t N_THREADS = 1]"
+    << "[-c] [-l MAX_LEN = 1] [-m MILLIS = 10] [-n N_SOLS = 1] [-s N_SPLITS = 1] [-t N_THREADS = 1] [-w N_WARMUPSOLVES = 0]"
   << std::endl;
   exit(1);
 }
@@ -38,6 +38,23 @@ void init() {
   std::cout << "Done. " << std::chrono::duration_cast<std::chrono::milliseconds>(
     std::chrono::high_resolution_clock::now() - tick
   ).count() / 1000. << "s" << std::endl << std::endl;
+}
+
+void warmup(solve::Engine& solver, int count) {
+  if (count == 0)
+    return;
+
+  std::cout << "Warming up ..." << std::endl;
+  cubie::cube c;
+  std::vector<std::vector<int>> sols;
+  for (int i = 0; i < count; i++) {
+    cubie::shuffle(c);
+    solver.prepare();
+    solver.solve(c, sols);
+    solver.finish();
+    std::cout << i << std::endl;
+  }
+  std::cout << "Done." << std::endl << std::endl;
 }
 
 bool check(const cubie::cube &c, const std::vector<int>& sol) {
@@ -67,10 +84,11 @@ int main(int argc, char *argv[]) {
   int max_len = -1;
   int n_splits = 1;
   bool compress = false;
+  int n_warmups = 0;
 
   try {
     int opt;
-    while ((opt = getopt(argc, argv, "cl:m:n:s:t:")) != -1) {
+    while ((opt = getopt(argc, argv, "cl:m:n:s:t:w:")) != -1) {
       switch (opt) {
         case 'c':
           compress = true;
@@ -99,6 +117,12 @@ int main(int argc, char *argv[]) {
             return 1;
           }
           break;
+        case 'w':
+          if ((n_warmups = std::stoi(optarg)) <= 0) {
+            std::cerr << "Error: Number of warmup solves (-w) must be >= 0." << std::endl;
+            return 1;
+          }
+          break;
         default:
           usage();
       }
@@ -110,6 +134,8 @@ int main(int argc, char *argv[]) {
   std::cout << "This is rob-twophase v2.0; copyright Elias Frantar 2020." << std::endl << std::endl;
   init();
   solve::Engine solver(n_threads, tlim, n_sols, max_len, n_splits);
+  warmup(solver, n_warmups);
+
   std::cout << "Enter >>solve FACECUBE<< to solve, >>scramble<< to scramble or >>bench<< to benchmark." << std::endl << std::endl;
 
   std::string mode;
