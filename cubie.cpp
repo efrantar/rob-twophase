@@ -36,6 +36,18 @@ namespace cubie {
     }
   }
 
+  // Permutation partiy =  #inversions % 2
+  bool parity(const int perm[], int len) {
+    int par = 0;
+    for (int i = 0; i < len; i++) {
+      for (int j = 0; j < i; j++) {
+        if (perm[j] > perm[i])
+          par++;
+      }
+    }
+    return par & 1;
+  }
+
   void mul(const cubie::cube& c1, const cubie::cube& c2, cubie::cube& into) {
     corner::mul(c1, c2, into);
     edge::mul(c1, c2, into);
@@ -52,16 +64,8 @@ namespace cubie {
       into.eori[i] = c.eori[into.eperm[i]];
   }
 
-  // Permutation partiy =  #inversions % 2
-  bool parity(const int perm[], int len) {
-    int par = 0;
-    for (int i = 0; i < len; i++) {
-      for (int j = 0; j < i; j++) {
-        if (perm[j] > perm[i])
-          par++;
-      }
-    }
-    return par & 1;
+  int parity(const cube& c) {
+    return parity(c.cperm, corner::COUNT); // edge- and corner-par must be the same for valid cubes
   }
 
   int check(const cube& c) {

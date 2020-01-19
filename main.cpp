@@ -227,36 +227,5 @@ int main() {
   // test_sym();
   // test_prun();
 
-  double total = 0;
-
-  for (int i = 0; i < 10000; i++) {
-    std::cout << i << "\n";
-
-    cubie::cube c;
-    cubie::shuffle(c);
-
-    solve::Engine solver(
-      12, 10,
-      100, -1, 2
-    );
-    solver.prepare();
-    // auto tick = std::chrono::high_resolution_clock::now();
-    // solver.solve(c);
-    // total += std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::high_resolution_clock::now() - tick).count() / 1000.;
-    
-    std::vector<int> sol = solver.solve(c)[0];
-    for (int m : sol)
-      std::cout << move::names[m] << " ";
-    std::cout << "\n";
-    total += sol.size();
-
-    if (!check(c, sol))
-      std::cout << "Error." << std::endl;
-
-    solver.finish();
-  }
-
-  std::cout << total / 10000 << "\n";
-
   return 0;
 }

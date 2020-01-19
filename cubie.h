@@ -76,6 +76,7 @@ namespace cubie {
 
   void mul(const cube& c1, const cube& c2, cube& into); // fully multiply two cubes
   void inv(const cube& c, cube& into); // compute the inverse cube
+  int parity(const cube& c); // get the permutation parity
   void shuffle(cube& c); // generate a uniformly random cube
   int check(const cube& c); // check a cube for being solvable
 
