@@ -10,28 +10,25 @@
 
 namespace solve {
 
-  // TODO: fix warning
-  namespace { // namespace private
-    using searchres = std::pair<std::vector<int>, int>; // moves + search direction
-    inline bool cmp(const searchres& s1, const searchres&  s2) { return s1.first.size() < s2.first.size(); }
+  using searchres = std::pair<std::vector<int>, int>; // moves + search direction
+  inline bool cmp(const searchres& s1, const searchres&  s2) { return s1.first.size() < s2.first.size(); }
 
-    // Container with coords of a starting position
-    struct coordc {
-      int flip;
-      int slice;
-      int twist;
-      int uedges;
-      int dedges;
-      int corners;
-    };
+  // Container with coords of a starting position
+  struct coordc {
+    int flip;
+    int slice;
+    int twist;
+    int uedges;
+    int dedges;
+    int corners;
+  };
 
-    // Number of search directions
-    #ifdef F5
-      const int N_DIRS = 4;
-    #else
-      const int N_DIRS = 6;
-    #endif
-  }
+  // Number of search directions
+  #ifdef F5
+    const int N_DIRS = 4;
+  #else
+    const int N_DIRS = 6;
+  #endif
 
   class Engine {
 
@@ -65,7 +62,7 @@ namespace solve {
       void prepare(); // setup all threads
       void solve(const cubie::cube& c, std::vector<std::vector<int>>& res); // actual solve
       void finish(); // wait for all threads to shutdown (mostly for clean program exit)
-      void report_sol(searchres& sol); // report a solution
+      void report_sol(searchres& sol); // report a solution; never call this from the outside
 
     void thread(); // search thread
 

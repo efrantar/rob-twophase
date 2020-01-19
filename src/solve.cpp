@@ -277,7 +277,7 @@ namespace solve {
     std::reverse(res.begin(), res.end()); // return solutions in order of increasing length
   }
 
-  void Engine::report_sol(searchres& sol) { // TODO: make friend function somehow
+  void Engine::report_sol(searchres& sol) {
     std::lock_guard<std::mutex> lock(sol_mtx);
 
     if (done) // prevent any type of reporting after the solver has terminated (important for threading)

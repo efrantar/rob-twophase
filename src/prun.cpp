@@ -73,7 +73,7 @@ namespace prun {
     return flipped;
   }
 
-  void init_base() { // TODO: make in work in HT
+  void init_base() {
     /* It is probably cleanest to simply handle the special HT case individually */
     #ifndef AX
       #ifndef QT
