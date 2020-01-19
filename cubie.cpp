@@ -64,10 +64,6 @@ namespace cubie {
       into.eori[i] = c.eori[into.eperm[i]];
   }
 
-  int parity(const cube& c) {
-    return parity(c.cperm, corner::COUNT); // edge- and corner-par must be the same for valid cubes
-  }
-
   int check(const cube& c) {
     bool corners[corner::COUNT] = {};
     int cori_sum = 0;

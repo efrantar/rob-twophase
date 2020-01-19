@@ -31,8 +31,6 @@ namespace coord {
   extern uint16_t move_corners[N_CORNERS][move::COUNT];
   extern uint16_t move_udedges2[N_UDEDGES2][move::COUNT]; // primarily for faster phase 2 table generation
 
-  extern bool cpar[N_CORNERS]; // only used for phase 2 table in vanilla QT-mode
-
   int get_flip(const cubie::cube& c);
   int get_twist(const cubie::cube& c);
   int get_slice(const cubie::cube& c);

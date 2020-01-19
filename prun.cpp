@@ -277,21 +277,6 @@ namespace prun {
       std::cout << dist << " " << count << std::endl;
       dist++;
     }
-
-    /* In vanilla QT the permutation parity determines whether solution length is even or odd. */
-    #ifndef AX
-      #ifdef QT
-        int coord = 0;
-        for (int csym = 0; csym < sym::N_CORNERS; csym++) {
-          int corners = sym::corners_raw[csym];
-          int par = coord::cpar[corners];
-          for (int i = 0; i < coord::N_UDEDGES2; i++) {
-            phase2[coord] += (phase2[coord] & 1) ^ par;
-            coord++;
-          }
-        }
-      #endif
-    #endif
   }
 
   void init_precheck() {
@@ -335,19 +320,6 @@ namespace prun {
       std::cout << dist << " " << count << std::endl;
       dist++;
     }
-
-    #ifndef AX
-      #ifdef QT
-        int coord = 0;
-        for (int corners = 0; corners < coord::N_CORNERS; corners++) {
-          int par = coord::cpar[corners];
-          for (int i = 0; i < coord::N_SLICE2; i++) {
-            precheck[coord] += (precheck[coord] & 1) ^ par;
-            coord++;
-          }
-        }
-      #endif
-    #endif
   }
 
   int get_phase1(int flip, int slice, int twist, int togo, move::mask& next) {

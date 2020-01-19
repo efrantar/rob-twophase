@@ -17,8 +17,6 @@ namespace coord {
   uint16_t move_corners[N_CORNERS][move::COUNT];
   uint16_t move_udedges2[N_UDEDGES2][move::COUNT];
 
-  bool cpar[N_CORNERS];
-
   /* Used for en-/decoding pos-perm coords */
   uint8_t enc_perm[1 << (4 * 2)]; // encode 4-elem perm as 8 bits
   uint8_t dec_perm[N_PERM4];
@@ -253,16 +251,6 @@ namespace coord {
     init_move(move_edges4, N_SLICE, get_slice, set_slice, cubie::edge::mul);
     init_move(move_corners, N_CORNERS, get_corners, set_corners, cubie::corner::mul);
     init_move(move_udedges2, N_UDEDGES2, get_udedges2, set_udedges2, cubie::edge::mul, true);
-
-    #ifndef AX
-      #ifdef QT
-        cubie::cube c;
-        for (int corners = 0; corners < N_CORNERS; corners++) {
-          set_corners(c, corners); // we could merge this with move-table generation but cost is not too dramatic
-          cpar[corners] = cubie::parity(c);
-        }
-      #endif
-    #endif
   }
 
 }

@@ -72,7 +72,13 @@ namespace solve {
       edges_depth = depth - 1;
       int udedges2 = coord::merge_udedges2(uedges[depth], dedges[depth]);
 
-      for (int togo1 = std::max(prun::get_phase2(corners, udedges2), tmp); togo1 < lenlim - depth; togo1++) {
+      int delta = 1;
+      #ifndef AX
+        #ifdef QT
+          delta++; // in vanilla QT mode the perm-parity indicates whether solution length is odd or even
+        #endif
+      #endif
+      for (int togo1 = std::max(prun::get_phase2(corners, udedges2), tmp); togo1 < lenlim - depth; togo1 += delta) {
         // We don't want to block any moves here as this might cause us to require another full search with
         // a higher depth if we happen to get unlucky (~10% performance loss); same for `qt_skip`
         if (phase2(depth, togo1, slice, udedges2, corners, move::p2mask, 0))
