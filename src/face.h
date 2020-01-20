@@ -1,5 +1,5 @@
 /**
- * Since `CubieCube`s (especially the orientation part) are quite tricky to deal with, we use a more convenient
+ * Since `cubie::cube`s (especially the orientation part) are quite tricky to deal with, we use a more convenient
  * representation to interface with the outside world, the face-cube. Having defined an ordering over all 54 stickers
  * on the physical cube, a list of the colors for each sticker (in terms of the faces U, R, F, D, L and B not the
  * actual cube colors) uniquely specifies any cube-state.
@@ -26,7 +26,7 @@
  *          |D7|D8|D9|
  *          +--+--+--+
  *
- * A facelet string is simply lists the colors of every facelet position with the faces being in order U, R, F, D, L, B
+ * A facelet string simply lists the colors of every facelet position with the faces being in order U, R, F, D, L, B
  * and the facelets within a face sorted by their index, i.e. U1U2U3U4U5U6U7U8U9R1R2... where U1, U2, ... are the
  * colors of the corresponding facelets.
  *
@@ -36,47 +36,53 @@
  * be B (as it is always on the opposite side on a physical cube).
  */
 
-#ifndef FACE_H_
-#define FACE_H_
+#ifndef __FACE__
+#define __FACE__
 
 #include <string>
 #include <unordered_map>
 #include "cubie.h"
 
-#define N_COLORS 6 // number of colors/faces of a cube
-#define N_FACELETS 54 // number of facelets (stickers) = 9 * 6
+namespace face {
 
-/* Color/Face ordering */
-#define U 0
-#define R 1
-#define F 2
-#define D 3
-#define L 4
-#define B 5
+  const int N_FACELETS = 54; // number of facelets (stickers) = 9 * 6
 
-// Maps color ID to corresponding character
-const char kColorNames[] = {'U', 'R', 'F', 'D', 'L', 'B'};
+  namespace color {
+    const int COUNT = 6; // number of colors/faces of a cube
 
-// Maps color character to corresponding color ID
-const std::unordered_map<char, int> kNameToColor = {
-  {'U', U}, {'R', R}, {'F', F}, {'D', D}, {'L', L}, {'B', B}
-};
+    /* Color/Face ordering */
+    const int U = 0;
+    const int R = 1;
+    const int F = 2;
+    const int D = 3;
+    const int L = 4;
+    const int B = 5;
 
-/* Map corner/edge IDs to corresponding facelet positions */
-const int kCornlets[][3] = {
-  {8, 9, 20}, {6, 18, 38}, {0, 36, 47}, {2, 45, 11},
-  {29, 26, 15}, {27, 44, 24}, {33, 53, 42}, {35, 17, 51}
-};
-const int kEdgelets[][2] = {
-  {5, 10}, {7, 19}, {3, 37}, {1, 46}, {32, 16}, {28, 25},
-  {30, 43}, {34, 52}, {23, 12}, {21, 41}, {50, 39}, {48, 14}
-};
+    const char NAMES[] = {'U', 'R', 'F', 'D', 'L', 'B'};
 
-/* Routines for converting a facelet-string to a CubieCube and vice-versa */
-int faceToCubie(const std::string &s, CubieCube &cube);
-std::string cubieToFace(const CubieCube &cube);
+    // Maps color character to corresponding color ID
+    const std::unordered_map<char, int> FROM_NAME = {
+      {'U', U}, {'R', R}, {'F', F}, {'D', D}, {'L', L}, {'B', B}
+    };
+  }
 
-// Initializes the face-level; to be called before accessing anything from this file
-void initFace();
+  /* Map corner/edge IDs to corresponding facelet positions */
+  const int CORNLETS[][3] = {
+    {8, 9, 20}, {6, 18, 38}, {0, 36, 47}, {2, 45, 11},
+    {29, 26, 15}, {27, 44, 24}, {33, 53, 42}, {35, 17, 51}
+  };
+  const int EDGELETS[][2] = {
+    {5, 10}, {7, 19}, {3, 37}, {1, 46}, {32, 16}, {28, 25},
+    {30, 43}, {34, 52}, {23, 12}, {21, 41}, {50, 39}, {48, 14}
+  };
+
+  /* Routines for converting a facelet-string to a CubieCube and vice-versa */
+  int to_cubie(const std::string& s, cubie::cube &c);
+  std::string from_cubie(const cubie::cube &c);
+
+  // Initializes the face-level; to be called before accessing anything from this file
+  void init();
+
+}
 
 #endif

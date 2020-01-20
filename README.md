@@ -1,64 +1,60 @@
-# rob-twophase
+# rob-twophase v2.0
 
-This repository features a highly optimized C++ version of Herbert Kociemba's two-phase algorithm for finding close to optimal solutions to 3x3 Rubik's Cubes extremely quickly.
-It combines many of the best tricks from the excellent implementations [`RubiksCube-TwophaseSolver`](https://github.com/hkociemba/RubiksCube-TwophaseSolver), [`min2phase`](https://github.com/cs0x7f/min2phase) and [`cube20src`](https://github.com/rokicki/cube20src) (fast coordinates, 16-way symmetry reduction, extended phase 1 pruning table with moves, phase 2 prechecking, parallel search in 6 directions and more) with several smaller improvements of my own aiming to push single solve performance on random cubes to the limit. 
-Furthermore, it includes several options to search for solutions that are particularly efficient to execute for cube-solving robots (like preferring consecutive moves on opposite faces which can be performed in parallel and preferring quarter- over half-turns).
+This is an extremely efficient Rubik's Cube solving algorithm designed particularly for the use by high-speed robots. At its core, it is a highly optimized C++ version of Herbert Kociemba's two-phase algorithm that combines many of the best tricks from the excellent implementations [`RubiksCube-TwophaseSolver`](https://github.com/hkociemba/RubiksCube-TwophaseSolver), [`min2phase`](https://github.com/cs0x7f/min2phase) and [`cube20src`](https://github.com/rokicki/cube20src) with some further improvements of my own. Additionally, it includes several features that (to the best of my knowledge) cannot be found elsewhere at the moment. First and foremost, `rob-twophase` is able to directly consider the mechanics of axial robots (i.e. that it can it can move opposite faces in parallel or that a 180-degree turn takes about twices as long as a 90-degree one) yielding 15-20% faster to execute solutions on average. Secondly, it supports single-solve multi-threading with an arbitrary number of threads yielding 10+ times speed-ups even on moderate hardware. Finally, it can search for multiple solutions at once allowing post-selection to consider additional execution parameters (like for instance turn transitions). If you are planning to challenge the official Guinness World Record for the fastest robot to solve a Rubik's Cube, `rob-twophase` is most likely the solver you will want to use.
 
-This is probably one of the "best" (in terms of average solving time for a fixed upper bound on the number of moves and average solution length when searching for a fixed amount of time) solvers you can find online at the moment (I am not aware of any faster implementation than this one, especially when multi-threading).
-It also seems to be the only one specifically tuned for cube-solving robots (i.e. that supports any combination of the axial, the quarter-turn and the 5-face metric).
-However, all of these optimizations make the solver relatively resource intensive (especially for non-standard solving modes), hence if you just want to quickly (for human standards) find a decent solution to a Rubik's Cube, it might be a little overkill. 
-On the other hand, if you are interested in the current state of the art techniques for solving a cube as quickly as possible or if you are planning to beat the Guinness World Record for the fastest robot to solve a Rubik's Cube, this solver is most likely what you want to look at.
+**New in Version 2.0:**
+
+* Considerably faster solving performance by less table decomposition and proper elimination of redundant maneuvers in QT-modes.
+* Significantly faster initial table generation (also through better coordinates).
+* Much better utilization of high thread-counts via the `-s` parameter.
+* Return more than solution with `-n`.
+* Automatically compress QT-mode solutions back to HT using the `-c` option.
+* Cleaner code by major refactoring and elimination of questionable "optimizations".
 
 ## Usage
 
-`main.cc` compiles to a little CMD-line utility that allows solving given cubes (modes `solve` and `interactive`) as well as performing benchmarks (`benchtime` and `benchmoves`) and generating scrambles (`scramble` and `interactive`). The number of threads to use for solving (scrambling) can be specified with the `-t` option. The solver supports an arbitrary number of threads but note that the performance improvement might not scale linearly as at the memory throughput can bottleneck the parallelization. Simply run the program without any arguments to get the full calling syntax.
+The easiest way to use `rob-twophase` is to use the small interactive CMD-utility that it compiles to via `make`. Interfacing with this tool via pipes to STDIN/STDOUT should be more than sufficient for most applications (this is also what I do for my own robots). If you want to interface with it directly in C++ best have a look at `src/main.cpp` to see how to use the internal solver eninge. The solving mode needs to be selected during compile time via compiler-flags (both for efficiency but also simplicity reasons). Simply add them to `CPPFLAGS` if you are using the provided `makefile`. `-DQT` solves in the quarter-turn metric (only 90-degree moves), `-DAX` in the axial metric (opposite faces can be manipulated at the same time) and `-DF5` uses only 5-faces (never turning the B-face). All three of those flags can be combined arbitrarily.
 
-For a robot, you will most likely want to use the `interactive` mode. This mode preloads all tables as well as solver threads (to minimize threading overhead) and warms up the cache (by running some solves) before waiting for a cube to be passed over STDIN. Inputs are expected in Herbert Kociemba's face-cube representation (see `face.h` for detailled documentation). See also the example below. When specifying `MAX_MOVES` as `-1` the solver will simply search for the full `TIME` milliseconds and then return the shortest solution. Note that running the program for the first time will generate fairly large lookup tables with may take a few minutes, these are then saved to a file so that consecutive starts are very quick (typically at most a few seconds).
+The CMD-program provides the following options:
 
-```
->> ./twophase -t 12 interactive
-Loading tables ...
-Done. 0.25s
-Enter >>solve FACECUBE MAX_MOVES TIME<< to solve or >>scramble TIME<< to scramble.
-Ready!
->> solve UDFUURRLDBFLURRDRUUFLLFRFDBRBRLDBUDLRBBFLBBUDDFFDBUFLL 20 100
-R2 F' D2 F' U2 R2 F R2 U2 F' D L F2 D' B' R' B R2 F U'
-0.205ms
-Ready!
->> solve UDFUURRLDBFLURRDRUUFLLFRFDBRBRLDBUDLRBBFLBBUDDFFDBUFLL -1 100
-D F U2 L' B' U' L U B2 R' B' U R U2 D2 B2 U D2 F2
-100.13ms
-Ready!
->> scramble 50
-F2 L2 F' D2 U F U' R2 U L' D2 B2 R D2 L' U' F'
-Ready!
-^C
-```
+* `-c` (default OFF): Compress solutions to AXHT. This is especially useful when solving in AXQT as properly merging move sequences like `U (U D)` is not entirely trivial without having all the proper move definitions at the ready.
 
-One of the key features of this program are the different solving modes. These have to be specified at compile times (both for simplicity but also for efficiency reasons). `-DQUARTER` solves in the quarter-turn metric (i.e. 180 degree turns are twice as expensive as quarter-turns), `-DAXIAL` in the axial-metric (consecutive moves on parallel faces can be performed at the same time; such moves are printed in brackets like `(U D)`) and `-DFACES5` produces solutions using only 5-faces (ignoring the back-face). All options are fully compatible and can be combined arbitrarily. The tables are always persisted in the same file named `twophase.tbl` hence only one version of the program may exist in a directory.
+* `-l` (default -1): Maximum solutions length. The search will stop once a solution of at most this length is found. With `-1` the solver will simply search for the full time-limit and eventually return the best solution found.
+
+* `-m` (default 10): Time-limit in milliseconds.
+
+* `-n` (default 1): Number of solutions to return, i.e. it will return the best `-n` solutions found of at most `-m` length.
+
+* `-s` (default 1): Number of splits for every IDA-search task. This is an advanced parallelization parameter most relevant for high thread-count. As a very rough guide, choose it so that `-t / -s` is close to 6 (or close to 4 when using `-DF5`).
+
+* `-t` (default 1): Number of threads. Best set this as the number of processor threads you have (typically number of cores times two), i.e. use hyper-threading.
+
+* `-w` (default 0): Number of random warmup solves to perform on start-up to optimally prepare the cache for the robot solves that matter.
+
+When first starting `rob-twophase`, it will generate fairly big tables which may take several seconds to minutes (see section below). Those are then persisted in files to make further start-ups very quick. After starting it can solve cubes by typing `solve FACECUBE` (see `src/face.h` for a detailed documentation of the Kociemba's face-cube representation of a cube), generate scrambles with `scramble` or run benchmarks with `bench`. Note that the program is already designed to be directly used by robots (for example via pipe communication) and thereby of course also does things such as always preloading all threads to ensure maximum solving speed.
 
 ## Performance
 
-All benchmarks were run on a stock *AMD Ryzen 5 3600 (6 cores, 12 threads)* processor (hence `-t 12`) combined with standard clocked *DDR4* memory and use exactly the same set of 10000 uniformly random cubes (file `bench.cubes`).
+All benchmarks were run on a stock AMD Ryzen 5 3600 (6 cores, 12 threads) processor (hence `-t 12 -s 2`) combined with standard clocked DDR4 memory and use exactly the same set of 10000 uniformly random cubes (file `bench.cubes`).
 
-The first table gives the average solution length (number of moves) when running the solver with a timelimit of 10ms per cube. The average optimal solution length in the standard half-turn metric is approximately 17.7, hence the solutions found by the solver are on average only 1 move longer. While no optimal average is known for the other modes, the solutions can be expected to be slightly further away from the optimum as those metrics are considerably harder (which is also why no reference exists).
+The first table gives for each solving mode (indicated by the compiler flags) the average solution length (number of moves) when running the solver with a timelimit of 10ms (`-m 10`) per cube in the varios metrics (half-turn HT, quarter-turn QT, axial half-turn AXHT and axial quarter-turn AXQT). The number in bold is the length in the metric that is being solved in (i.e. the number that is relevant), the other values are just given to illustrate the gains from directly solving in the appropriate metric.
 
-| `-DQUARTER` | `-DAXIAL`  | `-DFACES5` | Avg. #Moves | Setup Time | Table Size |
-| :---------: | :--------: | :--------: | :---------: | :--------: | :--------: |
-| -           | -          | -          | **18.62**   | 53s        | 676MB      |
-| YES         | -          | -          | **24.28**   | 40s        | 676MB      |
-| -           | YES        | -          | **14.98**   | 149s       | 1.2GB      |
-| YES         | YES        | -          | **20.29**   | 81s        | 1.2GB      |
-| -           | -          | YES        | **20.71**   | 175s       | 2.7GB      |
-| YES         | -          | YES        | **27.19**   | 128s       | 2.7GB      |
-| -           | YES        | YES        | **17.10**   | 455s       | 4.9GB      |
-| YES         | YES        | YES        | **23.05**  | 242s       | 4.9GB      |
+| `-DQT` | `-DAX` | `-DF5` | HT        | QT        | AXHT      | AXQT      | Setup Time | Table Size |
+| :----: | :----: | :----: | :-:       | :-:       | :--:      | :--:      | :--------: | :--------: |
+| -      | -      | -      | **18.56** | *26.46*   | *17.00*   | *24.60*   | 38s        | 676MB      |
+| YES    | -      | -      | *19.84*   | **24.22** | *17.97*   | *22.21*   | 26s        | 676MB      |
+| -      | YES    | -      | *21.83*   | *31.05*   | **14.71** | *22.95*   | 98s        | 1.2GB      |
+| YES    | YES    | -      | *22.76*   | *27.03*   | *16.40*   | **19.91** | 57s        | 1.2GB      |
+| -      | -      | YES    | **20.61** | *29.51*   | *18.90*   | *27.50*   | 125s       | 2.7GB      |
+| YES    | -      | YES    | *22.07*   | **26.98** | *19.99*   | *24.78*   | 85s        | 2.7GB      |
+| -      | YES    | YES    | *23.65*   | *33.34*   | **16.85** | *25.50*   | 287s       | 4.9GB      |
+| YES    | YES    | YES    | *25.08*   | *29.94*   | *18.38*   | **22.49** | 162s       | 4.9GB      |
 
-Finally, a speed comparison with Thomas Rokicki's [`cube20src`](https://github.com/rokicki/cube20src) solver which was also used to prove that God's number is 20. This extremely optimized implementation (from which `rob-twophase` learned many many greats tricks) is certainly still the best choice for batch solving a large number of cubes. Compared to `rob-twophase`'s single-threaded mode (`-t 1`), it performs slightly better on short searches (like half-turn length 20) but a bit worse on longer ones (ex. length 19). `cube20src` does however (as of right now) not support multi-threaded search for individual cubes (or any of the additional solving options for robots). With this enabled `rob-twophase` can perform considerably better (depending on the hardware of course), especially on harder solves where any threading overhead becomes negligible. The table below gives the average solving time for different move-bounds and metrics (using again `bench.cubes`).
+Finally, a speed comparison with Tomas Rokicki's [`cube20src`](https://github.com/rokicki/cube20src) solver which used to prove that God's number is 20 (and is probably the next fastest available solver). `rob-twophase` learned many great tricks from this extremely optimized implementation. Furthermore, `cube20src` clearly remains the best choice for batch-solving a very large number of cubes. However, it does (at least as of right now) not support robot metrics or single-solve multi-threading. In general, `rob-twophase` is slightly faster in single-threaded mode (apart from shorter QT searches it seems) but dramatically faster when multi-threading. The table below gives the average solving time for different move-bounds and metrics (using again `bench.cubes`).
 
-| Metric       | Max #Moves | `twophase` w. `-t 1` | `twophase` w. `-t 12` | `cube20src` |
-| ------       | :--------: | :------------------: | :-------------------: | :---------: |
-| Half-Turn    | 20         | 0.67ms               | **0.15ms**            | 0.55ms      |
-| Half-Turn    | 19         | 44.20ms              | **5.83ms**            | 53.04ms     |
-| Quarter-Turn | 26         | 11.29ms              | **1.42ms**            | 10.26ms     |
-| Quarter-Turn | 25         | 70.32ms              | **8.78ms**            | 77.94ms     |
+| Metric | Max #Moves | `rob-twophase` w. `-t 1` | `rob-twophase` w. `-t 12` | `cube20src` |
+| :----: | :--------: | :----------------------: | :-----------------------: | :---------: |
+| HT     | 20         | 00.48ms                  | **00.02ms**               | 00.55ms     |
+| HT     | 19         | 41.51ms                  | **04.37ms**               | 53.04ms     |
+| QT     | 26         | 11.20ms                  | **00.96ms**               | 10.26ms     |
+| QT     | 25         | 71.43ms                  | **07.13ms**               | 77.94ms     |

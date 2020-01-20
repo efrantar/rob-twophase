@@ -5,8 +5,8 @@ CPPFLAGS=-std=c++11 -lpthread -O3
 LDFLAGS=
 LDLIBS=-lpthread
 
-SRCS=main.cc coord.cc cubie.cc face.cc moves.cc prun.cc solve.cc sym.cc
-OBJS=$(subst .cc,.o,$(SRCS))
+SRCS=$(patsubst %,src/%,main.cpp coord.cpp cubie.cpp face.cpp move.cpp prun.cpp solve.cpp sym.cpp)
+OBJS=$(subst .cpp,.o,$(SRCS))
 
 all: tool
 
