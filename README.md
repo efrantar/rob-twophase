@@ -13,7 +13,27 @@ This is an extremely efficient Rubik's Cube solving algorithm designed particula
 
 ## Usage
 
-## Benchmarks
+The easiest way to use `rob-twophase` is to use the small interactive CMD-utility that it compiles to via `make`. Interfacing with this tool via pipes to STDIN/STDOUT should be more than sufficient for most applications (this is also what I do for my own robots). If you want to interface with it directly in C++ best have a look at `src/main.cpp` to see how to use the internal solver eninge. The solving mode needs to be selected during compile time via compiler-flags (both for efficiency but also simplicity reasons). Simply add them to `CPPFLAGS` if you are using the provided `makefile`. `-DQT` solves in the quarter-turn metric (only 90-degree moves), `-DAX` in the axial metric (opposite faces can be manipulated at the same time) and `-DF5` uses only 5-faces (never turning the B-face). All three of those flags can be combined arbitrarily.
+
+The CMD-program provides the following options:
+
+* `-c` (default OFF): Compress solutions to AXHT. This is especially useful when solving in AXQT as properly merging move sequences like `U (U D)` is not entirely trivial without having all the proper move definitions at the ready.
+
+* `-l` (default -1): Maximum solutions length. The search will stop once a solution of at most this length is found. With `-1` the solver will simply search for the full time-limit and eventually return the best solution found.
+
+* `-m` (default 10): Time-limit in milliseconds.
+
+* `-n` (default 1): Number of solutions to return, i.e. it will return the best `-n` solutions found of at most `-m` length.
+
+* `-s` (default 1): Number of splits for every IDA-search task. This is an advanced parallelization parameter most relevant for high thread-count. As a very rough guide, choose it so that `-t / -s` is close to 6 (or close to 4 when using `-DF5`).
+
+* `-t` (default 1): Number of threads. Best set this as the number of processor threads you have (typically number of cores times two), i.e. use hyper-threading.
+
+* `-w` (default 0): Number of random warmup solves to perform on start-up to optimally prepare the cache for the robot solves that matter.
+
+When first starting `rob-twophase`, it will generate fairly big tables which may take several seconds to minutes (see section below). Those are then persisted in files to make further start-ups very quick. After starting it can solve cubes by typing `solve FACECUBE` (see `src/face.h` for a detailed documentation of the Kociemba's face-cube representation of a cube), generate scrambles with `scramble` or run benchmarks with `bench`. Note that the program is already designed to be directly used by robots (for example via pipe communication) and thereby of course also does things such as always preloading all threads to ensure maximum solving speed.
+
+## Performance
 
 All benchmarks were run on a stock AMD Ryzen 5 3600 (6 cores, 12 threads) processor (hence `-t 12 -s 2`) combined with standard clocked DDR4 memory and use exactly the same set of 10000 uniformly random cubes (file `bench.cubes`).
 
