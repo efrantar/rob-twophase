@@ -17,7 +17,7 @@ The easiest way to use `rob-twophase` is to use the small interactive CMD-utilit
 
 The CMD-program provides the following options:
 
-* `-c` (default OFF): Compress solutions to AXHT. This is especially useful when solving in AXQT as properly merging move sequences like `U (U D)` is not entirely trivial without having all the proper move definitions at the ready.
+* `-c` (default OFF): Compress solutions to AXHT. This is especially useful when solving in AXQT as properly merging move sequences like `D (U D)` is not entirely trivial without having all the proper move definitions at the ready.
 
 * `-l` (default -1): Maximum solutions length. The search will stop once a solution of at most this length is found. With `-1` the solver will simply search for the full time-limit and eventually return the best solution found.
 
