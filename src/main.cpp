@@ -16,7 +16,7 @@
 const std::string BENCH_FILE = "bench.cubes";
 
 void usage() {
-  std::cerr << "Usage: ./twophase "
+  std::cout << "Usage: ./twophase "
     << "[-c] [-l MAX_LEN = 1] [-m MILLIS = 10] [-n N_SOLS = 1] [-s N_SPLITS = 1] [-t N_THREADS = 1] [-w N_WARMUPS = 0]"
   << std::endl;
   exit(1);
@@ -31,7 +31,7 @@ void init() {
   coord::init();
   sym::init();
   if (prun::init(true)) {
-    std::cerr << "Error." << std::endl;
+    std::cout << "Error." << std::endl;
     exit(1);
   }
 
@@ -101,25 +101,25 @@ int main(int argc, char *argv[]) {
           break;
         case 'n':
           if ((n_sols = std::stoi(optarg)) <= 0) {
-            std::cerr << "Error: Number of solutions (-n) must be >= 1." << std::endl;
+            std::cout << "Error: Number of solutions (-n) must be >= 1." << std::endl;
             return 1;
           }
           break;
         case 's':
           if ((n_splits = std::stoi(optarg)) <= 0) {
-            std::cerr << "Error: Number of job splits (-s) must be >= 1." << std::endl;
+            std::cout << "Error: Number of job splits (-s) must be >= 1." << std::endl;
             return 1;
           }
           break;
         case 't':
           if ((n_threads = std::stoi(optarg)) <= 0) {
-            std::cerr << "Error: Number of solver threads (-t) must be >= 1." << std::endl;
+            std::cout << "Error: Number of solver threads (-t) must be >= 1." << std::endl;
             return 1;
           }
           break;
         case 'w':
           if ((n_warmups = std::stoi(optarg)) <= 0) {
-            std::cerr << "Error: Number of warmup solves (-w) must be >= 0." << std::endl;
+            std::cout << "Error: Number of warmup solves (-w) must be >= 0." << std::endl;
             return 1;
           }
           break;
@@ -223,19 +223,19 @@ int main(int argc, char *argv[]) {
         std::cin >> fcube;
         int err = face::to_cubie(fcube, c);
         if (err != 0) {
-          std::cerr << "Face-error " << err << "." << std::endl;
+          std::cout << "Face-error " << err << "." << std::endl;
           continue;
         }
         err = cubie::check(c);
         if (err != 0) {
-          std::cerr << "Cubie-error " << err << "." << std::endl;
+          std::cout << "Cubie-error " << err << "." << std::endl;
           continue;
         }
       } else if (mode == "scramble") {
         cubie::shuffle(c);
         std::cout << face::from_cubie(c) << std::endl;
       } else {
-        std::cerr << "Error." << std::endl;
+        std::cout << "Error." << std::endl;
         continue;
       }
 
