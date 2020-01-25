@@ -31,7 +31,7 @@ The CMD-program provides the following options:
 
 * `-w` (default 0): Number of random warmup solves to perform on start-up to optimally prepare the cache for the robot solves that matter.
 
-When first starting `rob-twophase`, it will generate fairly big tables which may take several seconds to minutes (see section below). Those are then persisted in files to make further start-ups very quick. After starting it can solve cubes by typing `solve FACECUBE` (see `src/face.h` for a detailed documentation of the Kociemba's face-cube representation of a cube), generate scrambles with `scramble` or run benchmarks with `bench`. Note that the program is already designed to be directly used by robots (for example via pipe communication) and thereby of course also does things such as always preloading all threads to ensure maximum solving speed.
+When first starting `rob-twophase`, it will generate fairly big tables which may take several seconds to minutes (see section below). Those are then persisted in files to make further start-ups very quick. After starting it can solve cubes by typing `solve FACECUBE` (see [`src/face.h`](https://github.com/efrantar/rob-twophase/blob/master/src/face.h) for a detailed documentation of the Kociemba's face-cube representation of a cube), generate scrambles with `scramble` or run benchmarks with `bench`. Note that the program is already designed to be directly used by robots (for example via pipe communication) and thereby of course also does things such as always preloading all threads to ensure maximum solving speed.
 
 ## Performance
 
