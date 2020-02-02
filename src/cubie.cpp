@@ -117,8 +117,8 @@ namespace cubie {
     if (parity(c.cperm, corner::COUNT) != parity(c.eperm, edge::COUNT))
       std::swap(c.cperm[corner::COUNT - 2], c.cperm[corner::COUNT - 1]); // flip parity
 
-    coord::set_twist(c, std::uniform_int_distribution<int>(0, coord::N_TWIST)(gen));
-    coord::set_flip(c, std::uniform_int_distribution<int>(0, coord::N_FLIP)(gen));
+    coord::set_twist(c, std::uniform_int_distribution<int>(0, coord::N_TWIST - 1)(gen));
+    coord::set_flip(c, std::uniform_int_distribution<int>(0, coord::N_FLIP - 1)(gen));
   }
 
   // We could maybe make this faster, but it is not performance critical anyways
