@@ -25,7 +25,7 @@ The CMD-program provides the following options:
 
 * `-n` (default 1): Number of solutions to return, i.e. it will return the best `-n` solutions found of at most `-m` length.
 
-* `-s` (default 1): Number of splits for every IDA-search task. This is an advanced parallelization parameter most relevant for high thread-count. As a very rough guide, choose it so that `-t / -s` is close to 6 (or close to 4 when using `-DF5`).
+* `-s` (default 1): Number of splits for every IDA-search task. This is an advanced parallelization parameter most relevant for high thread-counts. As a very rough guide, choose it so that `-t / -s` is close to 6 (or close to 4 when using `-DF5`).
 
 * `-t` (default 1): Number of threads. Best set this as the number of processor threads you have (typically number of cores times two), i.e. use hyper-threading.
 
