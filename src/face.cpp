@@ -11,7 +11,7 @@ namespace face {
   }
 
   // Converts a cubelet and its orientation into a single unique code-number
-  int encode(const std::string &cubelet, int ori) {
+  int encode(const std::string& cubelet, int ori) {
     int res = 0;
     for (int i = 0; i < cubelet.size(); i++)
       res = color::COUNT * res + color::FROM_NAME.at(cubelet[mod(i - ori, cubelet.size())]);
