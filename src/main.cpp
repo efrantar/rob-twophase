@@ -233,7 +233,9 @@ int main(int argc, char *argv[]) {
         }
       } else if (mode == "scramble") {
         cubie::shuffle(c);
-        std::cout << face::from_cubie(c) << std::endl;
+        cubie::cube tmp;
+        cubie::inv(c, tmp);
+        std::cout << face::from_cubie(tmp) << std::endl; // the solution we find will actually be a scramble for the inverse
       } else {
         std::cout << "Error." << std::endl;
         continue;

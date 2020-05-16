@@ -54,7 +54,7 @@ namespace coord {
   inline int slice_to_slice1(int slice) { return slice / 24; }
   inline int slice1_to_slice(int slice1) { return 24 * slice1; }
   inline int slice_to_slice2(int slice) { return slice - N_SLICE2 * SLICE1_SOLVED; }
-  inline int slice2_to_slice(int slice) { return slice + N_SLICE2 * SLICE1_SOLVED; }
+  inline int slice2_to_slice(int slice2) { return slice2 + N_SLICE2 * SLICE1_SOLVED; }
   inline int fslice1(int flip, int slice1) { return N_FLIP * slice1 + flip; }
   inline int fslice1_to_flip(int fslice1) { return fslice1 % N_FLIP; }
   inline int fslice1_to_slice1(int fslice1) { return fslice1 / N_FLIP; }

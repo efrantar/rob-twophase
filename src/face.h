@@ -76,7 +76,7 @@ namespace face {
     {30, 43}, {34, 52}, {23, 12}, {21, 41}, {50, 39}, {48, 14}
   };
 
-  /* Routines for converting a facelet-string to a CubieCube and vice-versa */
+  /* Routines for converting a facelet-string to a cubie-cube and vice-versa */
   int to_cubie(const std::string& s, cubie::cube &c);
   std::string from_cubie(const cubie::cube &c);
 
