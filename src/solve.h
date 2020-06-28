@@ -38,6 +38,9 @@ namespace solve {
     int max_len; // find solutions with at most this length; -1 means simply search for the full `tlimit`
     int tlim; // search for this amount of milliseconds
 
+    bool display_solutions_immediately;  // if true, print solutions as the are found, -i flag
+    bool compress;                       // as in main.cpp (use for -i flag)
+
     coordc dirs[N_DIRS]; // search directions
     move::mask masks[move::COUNT1]; // split masks
     int depths[N_DIRS]; // current search depths per direction
@@ -57,12 +60,15 @@ namespace solve {
     public:
       Engine(
         int n_threads, int tlim,
-        int n_sols = 1, int max_len = -1, int n_splits = 1
+        int n_sols = 1, int max_len = -1, int n_splits = 1,
+        bool display_solutions_immediately = false,
+        bool compress = false
       );
       void prepare(); // setup all threads
       void solve(const cubie::cube& c, std::vector<std::vector<int>>& res); // actual solve
       void finish(); // wait for all threads to shutdown (mostly for clean program exit)
       void report_sol(searchres& sol); // report a solution; never call this from the outside
+      void abort(); // stop a correctly running solve
 
     void thread(); // search thread
 
