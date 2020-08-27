@@ -2,6 +2,7 @@
 
 #include <algorithm>
 #include <strings.h>
+#include <string.h>
 #include <thread>
 #include "prun.h"
 #include "sym.h"

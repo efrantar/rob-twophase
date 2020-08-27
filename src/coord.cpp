@@ -3,6 +3,7 @@
 #include <algorithm>
 #include <bitset>
 #include <strings.h>
+#include <string.h>
 
 #include "cubie.h"
 
