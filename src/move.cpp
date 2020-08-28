@@ -1,8 +1,5 @@
 #include "move.h"
 
-#include <algorithm>
-#include <iostream>
-
 namespace move {
 
   using namespace cubie::corner;
@@ -62,6 +59,7 @@ namespace move {
   int inv[COUNT];
 
   mask next[COUNT];
+  mask next_p1p2[COUNT];
   mask qt_skip[COUNT];
 
   mask p1mask = bit(45) - 1;
@@ -227,6 +225,24 @@ namespace move {
     #endif
     p1mask = reindex(p1mask);
     p2mask = reindex(p2mask);
+
+    for (int m = 0; m < COUNT; m++) {
+      if (p2mask & move::bit(m))
+        next_p1p2[m] = next[m]; // we can do normal blocking for phase 2 moves
+      else {
+        #ifndef AX
+          #ifdef QT
+            next_p1p2[m] = ~(mask(0x3) << 2 * (m / 2));
+            if (m / 2 > 1)
+              next_p1p2[m] &= ~(move::bit(COUNT1 + (m / 2) - 2));
+          #else
+            next_p1p2[m] = ~(mask(0x7) << 3 * (m / 3));
+          #endif
+        #else
+          next_p1p2[m] = next[m]; // no commutativity problems in axial mode
+        #endif
+      }
+    }
 
     cubie::cube c;
     for (int m1 = 0; m1 < 45; m1++) {
