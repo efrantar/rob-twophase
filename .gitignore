@@ -33,8 +33,7 @@
 
 # Project specific
 twophase
-twophase.tbl
-tables
+twophase*.tbl
 .depend
 .idea
 CMakeLists.txt

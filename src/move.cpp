@@ -89,6 +89,7 @@ namespace move {
 
     cubie::cube cubes1[45];
     int inv1[45];
+    // Not initializing the following arrays apparently causes problems on MacOS
     mask next1[45] = {0};
     mask qt_skip1[45] = {0};
 

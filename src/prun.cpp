@@ -5,19 +5,20 @@
 #include <cstring>
 
 namespace prun {
-  const std::string SAVE = "twophase"
-  #ifdef QT
-    "_QT"
-  #else
-    "_HT"
-  #endif
-  #ifdef AX
-    "_AX"
-  #endif
-  #ifdef F5
-    "_F5"
-  #endif
-  ".tbl";
+  const std::string SAVE = "twophase-"
+    #ifdef AX
+      "ax"
+    #endif
+    #ifdef QT
+      "qt"
+    #else
+      "ht"
+    #endif
+    #ifdef F5
+      "-f5"
+    #endif
+    ".tbl"
+  ;
 
   const int EMPTY = 0xff;
 
