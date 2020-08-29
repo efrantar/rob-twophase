@@ -89,8 +89,8 @@ namespace move {
 
     cubie::cube cubes1[45];
     int inv1[45];
-    mask next1[45];
-    mask qt_skip1[45];
+    mask next1[45] = {0};
+    mask qt_skip1[45] = {0};
 
     std::string fnames[] = {"U", "D", "R", "L", "F", "B"};
     std::string pnames[] = {"", "2", "'"};
