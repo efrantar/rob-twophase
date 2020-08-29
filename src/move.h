@@ -46,6 +46,7 @@ namespace move {
   extern int inv[COUNT];
 
   extern mask next[COUNT]; // successor moves that should be explored
+  extern mask next_p1p2[COUNT]; // `next` for phase1 to phase 2 transition
   extern mask qt_skip[COUNT]; // to avoid ever trying M^3 = M' in QT mode
 
   extern mask p1mask; // phase 1 moves

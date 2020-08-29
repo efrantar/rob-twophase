@@ -2,7 +2,7 @@
 
 #include <bitset>
 #include <iostream>
-#include <strings.h>
+#include <cstring>
 
 namespace prun {
 
