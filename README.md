@@ -7,19 +7,19 @@ This is an extremely efficient Rubik's Cube solving algorithm designed particula
 * Considerably faster solving performance by less table decomposition and proper elimination of redundant maneuvers in QT-modes.
 * Significantly faster initial table generation (also through better coordinates).
 * Much better utilization of high thread-counts via the `-s` parameter.
-* Return more than solution with `-n`.
+* Return more than one solution with `-n`.
 * Automatically compress QT-mode solutions back to HT using the `-c` option.
 * Cleaner code by major refactoring and elimination of questionable "optimizations".
 
 ## Usage
 
-The easiest way to use `rob-twophase` is to use the small interactive CMD-utility that it compiles to via `make`. Interfacing with this tool via pipes to STDIN/STDOUT should be more than sufficient for most applications (this is also what I do for my own robots). If you want to interface with it directly in C++ best have a look at `src/main.cpp` to see how to use the internal solver eninge. The solving mode needs to be selected during compile time via compiler-flags (both for efficiency but also simplicity reasons). Simply add them to `CPPFLAGS` if you are using the provided `makefile`. `-DQT` solves in the quarter-turn metric (only 90-degree moves), `-DAX` in the axial metric (opposite faces can be manipulated at the same time) and `-DF5` uses only 5-faces (never turning the B-face). All three of those flags can be combined arbitrarily.
+The easiest way to use `rob-twophase` is to use the small interactive CMD-utility that it compiles to via `make`. Interfacing with this tool via pipes to STDIN/STDOUT should be more than sufficient for most applications (this is also what I do for my own robots). If you want to interface with it directly in C++ best have a look at `src/main.cpp` to see how to use the internal solver engine. The solving mode needs to be selected during compile time via compiler-flags (both for efficiency but also simplicity reasons). Simply add them to `CPPFLAGS` if you are using the provided `makefile`. `-DQT` solves in the quarter-turn metric (only 90-degree moves), `-DAX` in the axial metric (opposite faces can be manipulated at the same time) and `-DF5` uses only 5 faces (never turning the B-face). All three of those flags can be combined arbitrarily.
 
 The CMD-program provides the following options:
 
 * `-c` (default OFF): Compress solutions to AXHT. This is especially useful when solving in AXQT as properly merging move sequences like `D (U D)` is not entirely trivial without having all the proper move definitions at the ready.
 
-* `-l` (default -1): Maximum solutions length. The search will stop once a solution of at most this length is found. With `-1` the solver will simply search for the full time-limit and eventually return the best solution found.
+* `-l` (default -1): Maximum solution length. The search will stop once a solution of at most this length is found. With `-1` the solver will simply search for the full time-limit and eventually return the best solution found.
 
 * `-m` (default 10): Time-limit in milliseconds.
 
@@ -37,7 +37,7 @@ When first starting `rob-twophase`, it will generate fairly big tables which may
 
 All benchmarks were run on a stock AMD Ryzen 5 3600 (6 cores, 12 threads) processor (hence `-t 12 -s 2`) combined with standard clocked DDR4 memory and use exactly the same set of 10000 uniformly random cubes (file `bench.cubes`).
 
-The first table gives for each solving mode (indicated by the compiler flags) the average solution length (number of moves) when running the solver with a timelimit of 10ms (`-m 10`) per cube in the varios metrics (half-turn HT, quarter-turn QT, axial half-turn AXHT and axial quarter-turn AXQT). The number in bold is the length in the metric that is being solved in (i.e. the number that is relevant), the other values are just given to illustrate the gains from directly solving in the appropriate metric.
+The first table gives for each solving mode (indicated by the compiler flags) the average solution length (number of moves) when running the solver with a timelimit of 10ms (`-m 10`) per cube in the various metrics (half-turn HT, quarter-turn QT, axial half-turn AXHT and axial quarter-turn AXQT). The number in bold is the length in the metric that is being solved in (i.e. the number that is relevant), the other values are just given to illustrate the gains from directly solving in the appropriate metric.
 
 | `-DQT` | `-DAX` | `-DF5` | HT        | QT        | AXHT      | AXQT      | Setup Time | Table Size |
 | :----: | :----: | :----: | :-:       | :-:       | :--:      | :--:      | :--------: | :--------: |
