@@ -2,11 +2,24 @@
 
 #include <bitset>
 #include <iostream>
-#include <strings.h>
+#include <cstring>
 
 namespace prun {
+  const std::string SAVE = "twophase-"
+    #ifdef AX
+      "ax"
+    #endif
+    #ifdef QT
+      "qt"
+    #else
+      "ht"
+    #endif
+    #ifdef F5
+      "-f5"
+    #endif
+    ".tbl"
+  ;
 
-  const std::string SAVE = "twophase.tbl";
   const int EMPTY = 0xff;
 
   #ifdef AX

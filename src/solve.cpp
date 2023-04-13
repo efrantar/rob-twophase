@@ -2,7 +2,7 @@
 
 #include <algorithm>
 #include <iostream>
-#include <strings.h>
+#include <cstring>
 #include <thread>
 #include "prun.h"
 #include "sym.h"
@@ -80,9 +80,7 @@ namespace solve {
         #endif
       #endif
       for (int togo1 = std::max(prun::get_phase2(corners, udedges2), tmp); togo1 < lenlim - depth; togo1 += delta) {
-        // We don't want to block any moves here as this might cause us to require another full search with
-        // a higher depth if we happen to get unlucky (~10% performance loss); same for `qt_skip`
-        if (phase2(depth, togo1, slice, udedges2, corners, move::p2mask, 0))
+        if (phase2(depth, togo1, slice, udedges2, corners, move::p2mask & move::next_p1p2[moves[depth - 1]], qt_skip))
           return; // once we have found a phase 2 solution, there cannot be any shorter ones -> quit
       }
       return;
