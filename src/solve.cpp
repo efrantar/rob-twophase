@@ -234,6 +234,8 @@ namespace solve {
     cubie::cube invc;
     cubie::inv(c, invc);
 
+    min_reported_length = -1;
+
     for (int dir = 0; dir < N_DIRS; dir++) {
       const cubie::cube& c1 = (dir & 1) ? invc : c; // reference is enough, we do not need to copy
       int rot = sym::ROT * (dir / 2);
@@ -310,10 +312,13 @@ namespace solve {
       }
     }
 
-    if (print_sol && display_solutions_immediately)
+    if (print_sol 
+        && display_solutions_immediately 
+        && (min_reported_length == -1 || sol.first.size() < min_reported_length)
+    )
     {
+      min_reported_length = sol.first.size();
       std::vector<int> res;
-      res.resize(sols.size());
       res.resize(sol.first.size());
 
       int rot = sym::ROT * (sol.second / 2);
@@ -325,14 +330,13 @@ namespace solve {
         for (int j = 0; j < res.size(); j++)
           res[j] = move::inv[res[j]];
         std::reverse(res.begin(), res.end());
-      }
-      std::cout << "New solution found: ";
-      if (compress)
-        std::cout << move::compress(res) << " ";
-      else
-        for (int m : res)
-          std::cout << move::names[m] << " ";
-      std::cout << "(" << sol.first.size() << ")" << std::endl;
+        }
+        if (compress)
+            std::cout << move::compress(res) << " ";
+        else
+            for (int m : res)
+            std::cout << move::names[m] << " ";
+        std::cout << "(" << sol.first.size() << ")" << std::endl;
     }
   }
 

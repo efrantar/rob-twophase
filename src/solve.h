@@ -38,8 +38,9 @@ namespace solve {
     int max_len; // find solutions with at most this length; -1 means simply search for the full `tlimit`
     int tlim; // search for this amount of milliseconds
 
-    bool display_solutions_immediately;  // if true, print solutions as the are found, -i flag
+    bool display_solutions_immediately;  // if true, print solutions as the are found, -i flag   
     bool compress;                       // as in main.cpp (use for -i flag)
+    int min_reported_length;             // for -i flag, to ensure that only better solutions are output
 
     coordc dirs[N_DIRS]; // search directions
     move::mask masks[move::COUNT1]; // split masks
