@@ -1,6 +1,7 @@
 #include "solve.h"
 
 #include <algorithm>
+#include <iostream>
 #include <cstring>
 #include <thread>
 #include "prun.h"
@@ -177,8 +178,13 @@ namespace solve {
 
   Engine::Engine(
     int n_threads, int tlim,
-    int n_sols, int max_len, int n_splits
-  ) : n_threads(n_threads), tlim(tlim), n_sols(n_sols), max_len(max_len), n_splits(n_splits) {
+    int n_sols, int max_len, int n_splits,
+    bool display_solutions_immediately,
+    bool compress
+  ) : n_threads(n_threads), tlim(tlim), 
+      n_sols(n_sols), max_len(max_len), n_splits(n_splits),
+      display_solutions_immediately(display_solutions_immediately),
+      compress(compress) {
     int tmp = (move::COUNT1 + n_splits - 1) / n_splits; // ceil to make sure that we always include all moves
     for (int i = 0; i < n_splits; i++)
       masks[i] = (move::mask(1) << tmp) - 1 << tmp * i;
@@ -228,6 +234,8 @@ namespace solve {
     cubie::cube invc;
     cubie::inv(c, invc);
 
+    min_reported_length = -1;
+
     for (int dir = 0; dir < N_DIRS; dir++) {
       const cubie::cube& c1 = (dir & 1) ? invc : c; // reference is enough, we do not need to copy
       int rot = sym::ROT * (dir / 2);
@@ -250,7 +258,10 @@ namespace solve {
 
     { // timeout
       std::unique_lock<std::mutex> lock(tout_mtx);
-      tout_cvar.wait_for(lock, std::chrono::milliseconds(tlim), [&]{ return done; });
+      if (tlim == -1)
+        tout_cvar.wait(lock, [&] { return done; });
+      else
+        tout_cvar.wait_for(lock, std::chrono::milliseconds(tlim), [&] { return done; });
       if (!done)
         done = true; // if we get here, this was a timeout
     }
@@ -281,10 +292,16 @@ namespace solve {
     if (done) // prevent any type of reporting after the solver has terminated (important for threading)
       return;
 
+    bool print_sol = false;
+
     sols.push(sol); // usually we only get here if we actually have a solution that will be added
     if (sols.size() > n_sols)
+    {
+      print_sol = sols.top() != sol;  // only print solution if is was actually added
       sols.pop();
+    }
     if (sols.size() == n_sols) {
+      print_sol = true;
       lenlim = sols.top().first.size(); // only search for strictly shorter solutions
 
       if (lenlim <= max_len) { // already found a solution that is short enough
@@ -294,6 +311,41 @@ namespace solve {
         tout_cvar.notify_one();
       }
     }
+
+    if (print_sol 
+        && display_solutions_immediately 
+        && (min_reported_length == -1 || sol.first.size() < min_reported_length)
+    )
+    {
+      min_reported_length = sol.first.size();
+      std::vector<int> res;
+      res.resize(sol.first.size());
+
+      int rot = sym::ROT * (sol.second / 2);
+      for (int j = 0; j < res.size(); j++) // undo rotation
+        res[j] = sym::conj_move[sol.first[j]][rot];
+
+      if (sol.second & 1)
+      { // undo inversion
+        for (int j = 0; j < res.size(); j++)
+          res[j] = move::inv[res[j]];
+        std::reverse(res.begin(), res.end());
+        }
+        if (compress)
+            std::cout << move::compress(res) << " ";
+        else
+            for (int m : res)
+            std::cout << move::names[m] << " ";
+        std::cout << "(" << sol.first.size() << ")" << std::endl;
+    }
+  }
+
+  void Engine::abort()
+  {
+    std::cout << "Aborting active solve" << std::endl;
+    done = true;
+    std::lock_guard<std::mutex> lock(tout_mtx);
+    tout_cvar.notify_one();
   }
 
   void Engine::finish() {

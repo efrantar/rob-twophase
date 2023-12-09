@@ -19,6 +19,11 @@ The CMD-program provides the following options:
 
 * `-c` (default OFF): Compress solutions to AXHT. This is especially useful when solving in AXQT as properly merging move sequences like `D (U D)` is not entirely trivial without having all the proper move definitions at the ready.
 
+* `-i` (default OFF): Immediately display new solutions as they are found, instead of displaying them after the timeout.
+                      If the `-m` parameter is provided, the search stops after the timeout, otherwise the search runs 
+                      forever and can be aborted by pressing CTRL-C.
+
+* `-l` (default -1): Maximum solutions length. The search will stop once a solution of at most this length is found. With `-1` the solver will simply search for the full time-limit and eventually return the best solution found.
 * `-l` (default -1): Maximum solution length. The search will stop once a solution of at most this length is found. With `-1` the solver will simply search for the full time-limit and eventually return the best solution found.
 
 * `-m` (default 10): Time-limit in milliseconds.

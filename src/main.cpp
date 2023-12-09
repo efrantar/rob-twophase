@@ -4,6 +4,7 @@
 #include <iostream>
 #include <vector>
 #include <numeric>
+#include <signal.h>
 
 #include "cubie.h"
 #include "coord.h"
@@ -17,7 +18,7 @@ const std::string BENCH_FILE = "bench.cubes";
 
 void usage() {
   std::cout << "Usage: ./twophase "
-    << "[-c] [-l MAX_LEN = 1] [-m MILLIS = 10] [-n N_SOLS = 1] [-s N_SPLITS = 1] [-t N_THREADS = 1] [-w N_WARMUPS = 0]"
+    << "[-c] [-i] [-l MAX_LEN = 1] [-m MILLIS = 10] [-n N_SOLS = 1] [-s N_SPLITS = 1] [-t N_THREADS = 1] [-w N_WARMUPS = 0]"
   << std::endl;
   exit(1);
 }
@@ -77,6 +78,20 @@ double mean(const std::vector<std::vector<int>>& sols, int (*len)(const std::vec
   return total / sols.size();
 }
 
+solve::Engine *ctrl_c_handler_engine = NULL;
+bool ctrl_c_handler_solving_now = false;
+
+void ctrl_c_handler(int s)
+{
+  if (ctrl_c_handler_engine == NULL)
+    exit(0);
+
+  if (!ctrl_c_handler_solving_now)
+    exit(0);
+
+  ctrl_c_handler_engine->abort();
+}
+
 int main(int argc, char *argv[]) {
   int n_threads = 1;
   int tlim = 10;
@@ -85,19 +100,26 @@ int main(int argc, char *argv[]) {
   int n_splits = 1;
   bool compress = false;
   int n_warmups = 0;
-
+    
+  bool display_solutions_immediately = false;  // -i flag
+  bool infinite_search_duration = true;        // only enabled if display_solutions_immediately==true 
+                                               // and -m is not given
   try {
     int opt;
-    while ((opt = getopt(argc, argv, "cl:m:n:s:t:w:")) != -1) {
+    while ((opt = getopt(argc, argv, "cil:m:n:s:t:w:")) != -1) {
       switch (opt) {
         case 'c':
           compress = true;
+          break;
+        case 'i':
+          display_solutions_immediately = true;
           break;
         case 'l':
           max_len = std::stoi(optarg);
           break;
         case 'm':
           tlim = std::stoi(optarg);
+          infinite_search_duration = false;
           break;
         case 'n':
           if ((n_sols = std::stoi(optarg)) <= 0) {
@@ -130,11 +152,26 @@ int main(int argc, char *argv[]) {
   } catch (...) { // catch any integer conversion errors
     usage();
   }
+  infinite_search_duration &= display_solutions_immediately;
+  if (infinite_search_duration)
+    tlim = -1;
 
   std::cout << "This is rob-twophase v2.0; copyright Elias Frantar 2020." << std::endl << std::endl;
   init();
-  solve::Engine solver(n_threads, tlim, n_sols, max_len, n_splits);
+  solve::Engine solver(n_threads, tlim, n_sols, max_len, n_splits, display_solutions_immediately, compress);
   warmup(solver, n_warmups);
+
+  // register signal handler for aborting search in immediate mode
+  if (display_solutions_immediately)
+  {
+    ctrl_c_handler_engine = &solver;
+
+    struct sigaction sigIntHandler;
+    sigIntHandler.sa_handler = ctrl_c_handler;
+    sigemptyset(&sigIntHandler.sa_mask);
+    sigIntHandler.sa_flags = 0;
+    sigaction(SIGINT, &sigIntHandler, NULL);
+  }
 
   std::cout << "Enter >>solve FACECUBE<< to solve, >>scramble<< to scramble or >>bench<< to benchmark." << std::endl << std::endl;
 
@@ -242,21 +279,24 @@ int main(int argc, char *argv[]) {
       }
 
       auto tick = std::chrono::high_resolution_clock::now();
+      ctrl_c_handler_solving_now = true;
       solver.solve(c, sols);
+      ctrl_c_handler_solving_now = false;
       std::cout << std::chrono::duration_cast<std::chrono::microseconds>(
         std::chrono::high_resolution_clock::now() - tick
       ).count() / 1000. << "ms" << std::endl;
 
-      for (std::vector<int>& sol : sols) {
-        int len = sol.size(); // always print uncompressed length
-        if (compress)
-          std::cout << move::compress(sol) << " ";
-        else {
-          for (int m : sol)
-            std::cout << move::names[m] << " ";
+      if (!display_solutions_immediately)
+        for (std::vector<int>& sol : sols) {
+          int len = sol.size(); // always print uncompressed length
+          if (compress)
+            std::cout << move::compress(sol) << " ";
+          else {
+            for (int m : sol)
+              std::cout << move::names[m] << " ";
+          }
+          std::cout << "(" << len << ")" << std::endl;
         }
-        std::cout << "(" << len << ")" << std::endl;
-      }
     }
   }
   solver.finish(); // clean exit
